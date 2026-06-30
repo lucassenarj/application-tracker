@@ -1,7 +1,7 @@
 # Application tracker
 
 ## Overview
-Project that give to you a application manager for jobs applications.
+Project that gives you an application manager for job applications.
 
 You can store an application
     - User should provide the details of the application, like:
@@ -12,51 +12,51 @@ You can store an application
         - Application status (interview, waiting, rejected, etc)
         - And others
 
-The application should have an page that list the application with filters available
-    - When user click in an application, should display page with the details of the application
+The application should have a page that lists the applications with filters available
+    - When the user clicks on an application, it should display a page with the details of the application
     - User can update status
-        - Select box that with status available
-        - Display status in logical order (since application until possibles feedbacks like rejection and job offer)
-        - When selected status, should open a modal with asking user for more information
-            - Should have a text area for user provide more information
-            - Data to recruter is optional
+        - Select box with the available statuses
+        - Display statuses in logical order (from application until possible feedback like rejection and job offer)
+        - When a status is selected, it should open a modal asking the user for more information
+            - Should have a text area for the user to provide more information
+            - Recruiter information is optional
             - Date
-            - Text area for extra informations
+            - Text area for extra information
 
 Project should have a dashboard with statistics about the applications,
     - Application total
     - Total rejections
     - Total Offers
-    - Total inverviews (technical and non-technical)
+    - Total interviews (technical and non-technical)
 
-Users should be possible to use application without an login, however, the data will only persists after registration
+Users should be able to use the application without logging in, however, the data will only persist after registration
 
-If user is logged, see a profile page
+If the user is logged in, they can see a profile page
 
 ## Technologies
 ### Overview
-- Project to studies porpouses, so may contain overengineered.
-- The goal is learn how to work using IA as an assistant
-- Learn architecture and design pattern pricipes
+- Project for study purposes, so it may contain overengineering.
+- The goal is to learn how to work using AI as an assistant
+- Learn architecture and design pattern principles
 
 ### Frontend
 **TO DO:**
 - Search for best strategy for the FE
 - Use or not framework
 - Which framework to use and why
-- How to handle with css
-- How to handle with optimization
-- How to handle with deploy
+- How to handle CSS
+- How to handle optimization
+- How to handle deployment
 
 ### Backend
 **TO DO:**
 - Microservices architecture (think about how)
-- Gateway that receive frontend requests and forward to the correct service
+- Gateway that receives frontend requests and forwards them to the correct service
 
 #### Gateway
 **TO DO:**
 - Search for why implementing a gateway service
-    - Keys points
+    - Key points
     - Best practices
     - Technologies
     - Frameworks
@@ -66,22 +66,22 @@ If user is logged, see a profile page
 **TO DO:**
 - Search for what kind of service an application of that type can have
     - What is the goal of each service
-    - The prons and coins of each service
-    - Best practices for services internal communications protocols 
+    - The pros and cons of each service
+    - Best practices for services' internal communication protocols
     - Storage strategies
 
-- Create a service using go lang
+- Create a service using Go
     - Overview why
     - Architecture
     - Goals
-    - Constrains
+    - Constraints
     - Design Patterns
 
 ### Infrastructure
 **TO DO:**
-- Search how to create a microservice infrastructure 
+- Search how to create a microservice infrastructure
 - Use docker container or any other orchestrator (?)
-- Local infrastructure should user custom domains
+- Local infrastructure should use custom domains
 
 ### Deploy
 **TO DO:**
@@ -91,10 +91,9 @@ If user is logged, see a profile page
 - How to optimize FE
 - How to optimize BE
 
-### Observation
+### Observability
 **TO DO:**
-- Search for observation strategies
+- Search for observability strategies
 - Why to use
 - What to use
 - How to use
-
