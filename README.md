@@ -49,44 +49,34 @@ If the user is logged in, they can see a profile page
 - How to handle deployment
 
 ### Backend
-**TO DO:**
-- Microservices architecture (think about how)
-- Gateway that receives frontend requests and forwards them to the correct service
+One deployable service, not microservices - nginx (see Infrastructure) is the only gateway needed here, so a Go-style gateway-plus-services split would just add deployment/communication overhead without a matching benefit at this scale.
 
-#### Gateway
-**TO DO:**
-- Search for why implementing a gateway service
-    - Key points
-    - Best practices
-    - Technologies
-    - Frameworks
-    - Use GraphQL (?)
-
-#### Service
-**TO DO:**
-- Search for what kind of service an application of that type can have
-    - What is the goal of each service
-    - The pros and cons of each service
-    - Best practices for services' internal communication protocols
-    - Storage strategies
-
-- Create a service using Go
-    - Overview why
-    - Architecture
-    - Goals
-    - Constraints
-    - Design Patterns
+- **Language/framework: NestJS (TypeScript).** Chosen over Go so the app can actually be used soon (existing TS knowledge beats learning a new language while building it). NestJS's module/DI system maps naturally onto DDD bounded contexts (an `applications` module, an `identity` module) inside the single service, and its decorators (guards, interceptors, pipes) double as design-pattern practice.
+- **API style: REST.** Simpler to build, test, and document than GraphQL; consistent with picking the simplest option at each fork of this project (nginx over a custom gateway, one service over microservices).
+- **Storage: PostgreSQL.** Exact ORM (TypeORM vs Prisma) is a TO DO for the "Configs and dependencies" step, not architecture.
+- **Domain model:**
+    - `Application` aggregate root — title, description, company, contact person (value object: name, email, position), current status.
+    - `StatusChange` — an append-only child entity/log (status, date, notes, optional interview details like participants), rather than overwriting fields on `Application`. This is what "update status with more info" and the dashboard stats naturally derive from.
+    - `User` aggregate lives in the identity module.
+- **State machine:** encapsulated in the domain layer (State pattern / guarded transition value object) that validates allowed transitions (e.g. blocks `INTERVIEW → APPLIED`) - a direct application of the "implement design patterns" goal, rather than ad hoc checks in a controller/service.
+- **Domain events (optional/stretch, not required for v1):** NestJS's built-in `EventEmitter`, e.g. an `ApplicationStatusChanged` event decoupling dashboard-stat recalculation from the write path (Observer pattern).
+- **Listing/filtering:** query params + DB indexes on `status`/`company`, paginated.
+- **Auth:** JWT in an httpOnly cookie scoped to `.domain.com`, so it's sent automatically to `api.domain.com`. CORS configured for credentials plus the explicit frontend origin. Chosen over a bearer-token-in-header approach for XSS resistance.
+- **Anonymous usage:** fully client-side (IndexedDB/localStorage), no backend calls at all until the user registers. On registration, the frontend bulk-uploads the local applications to the API once, then switches to API-backed mode. Chosen over a backend "guest session" concept to avoid orphaned-guest-data cleanup and account-linking complexity.
+- **Test pyramid:** unit tests on the domain layer (state machine, aggregates - no DB), integration tests on repositories (real Postgres), e2e tests on the HTTP layer.
 
 ### Infrastructure
+- **nginx as reverse proxy**, acting as the single entry point: `domain.com` routes to the frontend, `api.domain.com` routes to the API service.
+
 **TO DO:**
-- Search how to create a microservice infrastructure
 - Use docker container or any other orchestrator (?)
 - Local infrastructure should use custom domains
 
 ### Deploy
+- Constraint: prefer a cheap or free hosting option.
+
 **TO DO:**
-- Search for deploy strategies
-- Where to deploy
+- Where specifically to deploy (target platform)
 - How to deploy
 - How to optimize FE
 - How to optimize BE
