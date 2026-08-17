@@ -79,9 +79,9 @@ A personal job-application tracker: log an application (title, description, link
 - **Goal:** one predictable entry point instead of exposing multiple services/ports directly.
 - **Why this way:** `domain.com` routes to the frontend, `api.domain.com` routes to the API — the piece of infra that made decision 1 (single service, no microservice gateway) viable in the first place.
 
-### 14. `claude-box` image: added Node.js 22
-- **Goal:** get the Nest CLI available in the dev container so the project can actually be scaffolded.
-- **Why this way:** plain prerequisite, no alternatives considered — Nest CLI needs a Node runtime, the base image didn't have one.
+### 14. Runtime: Node.js 22
+- **Goal:** get the Nest CLI available so the project can actually be scaffolded.
+- **Why this way:** plain prerequisite, no alternatives considered — Nest CLI needs a Node runtime.
 
 ### 15. `Application` attributes & invariants (first pass)
 
@@ -168,8 +168,24 @@ A personal job-application tracker: log an application (title, description, link
   - Lives at `application-tracker/api/`, not `backend/` — matches the `api` naming already used in `C4-MODEL.md` and decision 13's `api.domain.com`.
   - Package manager is **Yarn Berry** (`yarn@4.18.0`, via corepack) — user's choice, prior job experience with it.
   - Linker is **`nodeLinker: node-modules`**, not PnP — deliberate, because Prisma (decision 4) has a well-known history of resolution issues under Yarn PnP; NestJS itself has no PnP issues.
-  - Scaffolded with `npx @nestjs/cli new api --skip-install --skip-git --package-manager yarn` rather than a global `nest` install, since the Nest CLI isn't (and doesn't need to be) a container-level tool — restates decision 14's Node.js-in-container prerequisite without adding another global binary.
+  - Scaffolded with `npx @nestjs/cli new api --skip-install --skip-git --package-manager yarn` rather than a global `nest` install, since the Nest CLI isn't (and doesn't need to be) a global tool — restates decision 14's Node.js prerequisite without adding another global binary.
 - **Verified:** `yarn install` completed clean (665 packages, `node_modules` present, confirming the node-modules linker took effect); `yarn start` boots the app and `GET /` returns 200.
+
+### 20. `applications` module internal layout: domain/ + infrastructure/, rest flat
+
+- **Goal:** make the boundaries decisions 5 and 6 already committed to (repository interface vs. Prisma adapter; domain owns the rules, service just orchestrates) visible in the file tree, without over-building folder ceremony for a module this size.
+- **Why this way:**
+  - `domain/` holds `Application`/`StatusChange`/`Contact`/`Company` (decisions 15–17), the state machine (decisions 9, 18), and the repository *interfaces* (decision 5's port side).
+  - `infrastructure/` holds the Prisma-backed repository *implementations* (decision 5's adapter side) — the only place Prisma types are allowed to appear.
+  - Everything else (`applications.controller.ts`, `applications.service.ts`, `dto/`) stays flat at the module root, matching normal Nest CLI conventions, rather than adding further layer folders (e.g. a dedicated `application/`/`use-cases/` layer) — considered and rejected as more ceremony than this module's size justifies, and `application/` specifically would read confusingly as a folder name right next to the `Application` entity.
+  - `Company` stays inside `applications/`, not its own module — decision 7 only names two bounded contexts (Applications, Identity); `Company` was never scoped as a third.
+  - `identity/` isn't scaffolded yet — `User`'s attributes/invariants were never decided (only `Application`/`StatusChange`/`Contact`/`Company` were, decisions 15–17), so scaffolding it now would mean guessing. Stays in "Still open" below.
+
+### 21. `api/Dockerfile` + `docker-compose.yml`: dev-only container, not the production image
+
+- **Goal:** let the user run/test the api manually without ever executing app code directly on the host — everything runs inside a container.
+- **Why this way:** explicitly scoped as dev-only (single stage, `yarn start:dev` watch mode, bind-mounted source) and labeled as such in the file itself, so it isn't mistaken later for the real production/deploy image — that decision (target platform, optimization) is still open per the README's Deploy section. Wired as an `api` service in this project's own `docker-compose.yml`, kept self-contained to `application-tracker/` — nothing about how this project runs depends on anything outside its own folder. An anonymous `node_modules` volume keeps the image's own install from being overwritten by the host bind mount.
+- **Not verified by me** — Docker wasn't available in the environment used to write this, so `docker compose build/up api` needs to be run and checked by the user.
 
 ---
 
@@ -187,7 +203,7 @@ A personal job-application tracker: log an application (title, description, link
 
 ## Next planned step
 
-NestJS scaffold is running (decision 19). Next: decide how the domain model (decisions 15–18) maps into actual NestJS modules/folders (`ApplicationsModule`, `IdentityModule` per decision 7) and start TDD on the state machine (decision 9) — per the repo-wide workflow, tests before code.
+NestJS scaffold is running (decision 19). Next: decide how the domain model (decisions 15–18) maps into actual NestJS modules/folders (`ApplicationsModule`, `IdentityModule` per decision 7) and start TDD on the state machine (decision 9) — tests before code.
 
 ---
 

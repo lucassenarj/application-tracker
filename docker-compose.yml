@@ -1,0 +1,13 @@
+services:
+  api:
+    build: ./api
+    container_name: application-tracker-api
+    working_dir: /app
+    restart: unless-stopped
+
+    ports:
+      - "3000:3000"
+
+    volumes:
+      - ./api:/app
+      - /app/node_modules
