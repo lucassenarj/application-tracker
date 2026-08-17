@@ -172,6 +172,9 @@ A personal job-application tracker: log an application (title, description, link
 - **Observability:** strategy — why, what, how.
 - **NestJS scaffold:** not created yet. `application-tracker/` currently has no `package.json`/`src/` — only `README.md` and this file.
 - **Identity (future idea, not scoped):** possible user-level settings — currency, timezone, other locale data — raised while discussing `Application.salary`.
+- **Auth: access/refresh token split.** Decision 10 only specifies a single JWT in an httpOnly cookie. A stolen token currently stays valid until it naturally expires — the standard mitigation is a short-lived access token plus a separately revocable long-lived refresh token. Not yet decided whether to adopt that split.
+- **CSRF protection.** Decision 10's cookie-based auth is exactly the pattern CSRF targets (a malicious site tricking a logged-in user's browser into firing a request using their session cookie). No CSRF-token strategy decided yet.
+- **Rate limiting.** No decision yet on limits per user/IP/endpoint, or overall — needed before this goes anywhere near production.
 
 ## Next planned step
 
