@@ -161,6 +161,16 @@ A personal job-application tracker: log an application (title, description, link
 - **Why this way:** one `INTERVIEW_SCHEDULED` status keeps the state machine's transition rules unchanged no matter how many interview flavors exist — a new flavor is just a new value somewhere else, not a new state with its own guard logic. `interviewCategory` (`TECHNICAL` | `NON_TECHNICAL`) is required only on rows where `status = INTERVIEW_SCHEDULED`, and is structured (not folded into `notes` like `rejectionReason` was) specifically because it backs a real stats requirement — finer flavors (HR vs. behavioral vs. manager) don't have a stats requirement behind them, so those stay in `notes`.
 - **Why `OFFER` isn't terminal:** an offer can be accepted, declined, or renegotiated (looping back through the free-movement group before landing on a revised `OFFER`) — only the outcome states (`OFFER_ACCEPTED`/`OFFER_DECLINED`) are terminal.
 
+### 19. NestJS scaffold: location, package manager, linker
+
+- **Goal:** get a running backend skeleton in place to build the domain model (decisions 15–18) against.
+- **Why this way:**
+  - Lives at `application-tracker/api/`, not `backend/` — matches the `api` naming already used in `C4-MODEL.md` and decision 13's `api.domain.com`.
+  - Package manager is **Yarn Berry** (`yarn@4.18.0`, via corepack) — user's choice, prior job experience with it.
+  - Linker is **`nodeLinker: node-modules`**, not PnP — deliberate, because Prisma (decision 4) has a well-known history of resolution issues under Yarn PnP; NestJS itself has no PnP issues.
+  - Scaffolded with `npx @nestjs/cli new api --skip-install --skip-git --package-manager yarn` rather than a global `nest` install, since the Nest CLI isn't (and doesn't need to be) a container-level tool — restates decision 14's Node.js-in-container prerequisite without adding another global binary.
+- **Verified:** `yarn install` completed clean (665 packages, `node_modules` present, confirming the node-modules linker took effect); `yarn start` boots the app and `GET /` returns 200.
+
 ---
 
 ## Still open (see README `TO DO` sections for the authoritative list)
@@ -170,7 +180,6 @@ A personal job-application tracker: log an application (title, description, link
 - **Infrastructure:** container/orchestrator choice, local custom domains.
 - **Deploy:** target platform, how, FE/BE optimization.
 - **Observability:** strategy — why, what, how.
-- **NestJS scaffold:** not created yet. `application-tracker/` currently has no `package.json`/`src/` — only `README.md` and this file.
 - **Identity (future idea, not scoped):** possible user-level settings — currency, timezone, other locale data — raised while discussing `Application.salary`.
 - **Auth: access/refresh token split.** Decision 10 only specifies a single JWT in an httpOnly cookie. A stolen token currently stays valid until it naturally expires — the standard mitigation is a short-lived access token plus a separately revocable long-lived refresh token. Not yet decided whether to adopt that split.
 - **CSRF protection.** Decision 10's cookie-based auth is exactly the pattern CSRF targets (a malicious site tricking a logged-in user's browser into firing a request using their session cookie). No CSRF-token strategy decided yet.
@@ -178,7 +187,7 @@ A personal job-application tracker: log an application (title, description, link
 
 ## Next planned step
 
-Domain model is fully defined (decisions 15–18: `Application`, `StatusChange`/`Contact`, `Company`, state machine). Next: run the NestJS scaffold — Node 22 is already in the container.
+NestJS scaffold is running (decision 19). Next: decide how the domain model (decisions 15–18) maps into actual NestJS modules/folders (`ApplicationsModule`, `IdentityModule` per decision 7) and start TDD on the state machine (decision 9) — per the repo-wide workflow, tests before code.
 
 ---
 
