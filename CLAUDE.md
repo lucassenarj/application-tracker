@@ -203,3 +203,13 @@ Before changing code, confirm:
 - [ ] If the architecture changed, `DECISIONS.md` and `C4-MODEL.md` were updated.
 
 This file is intentionally strict: prefer correctness, domain clarity, and incremental evolution over premature abstraction.
+
+---
+
+## 6. Known gaps (as of 2026-08-18)
+- No CI gate yet: nothing automatically runs lint/typecheck/tests before a commit lands.
+  Until a pre-commit hook or CI workflow exists, manually run `yarn lint`, `npx tsc --noEmit`,
+  and `yarn test` before considering work commit-ready.
+- `tsconfig.json` has `isolatedModules: true`, so `yarn test` (ts-jest) never runs the
+  TypeScript type checker — a typo in a `.spec.ts` file's typed literals can silently pass
+  as if it were valid. Run `npx tsc --noEmit` separately to catch this class of bug.
