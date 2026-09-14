@@ -29,7 +29,7 @@ No external systems appear here on purpose — the job posting link (`Applicatio
 
 ## Level 2 — Container
 
-The deployable units and how they talk to each other (decisions 1, 2, 4, 13).
+The deployable units and how they talk to each other (decisions 1, 2, 4, 13, 22).
 
 ```mermaid
 C4Container
@@ -38,20 +38,18 @@ C4Container
     Person(user, "User", "Anonymous or registered")
 
     System_Boundary(tracker, "Application Tracker") {
-        Container(frontend, "Frontend", "framework TBD", "Renders the UI; stores data locally (IndexedDB) until registration")
-        Container(nginx, "nginx", "Reverse proxy", "Single entry point: domain.com to frontend, api.domain.com to API")
-        Container(api, "Backend API", "NestJS, TypeScript", "REST API; owns the Applications and Identity bounded contexts")
-        ContainerDb(db, "Database", "PostgreSQL", "Application, Company, StatusChange, User data")
+        Container(frontend, "Frontend", "React + Vite, TypeScript, Tailwind", "Renders the UI; stores data locally (IndexedDB) until registration. Deployed to Vercel.")
+        Container(api, "Backend API", "NestJS, TypeScript", "REST API; owns the Applications and Identity bounded contexts. Deployed to Render.")
+        ContainerDb(db, "Database", "PostgreSQL", "Application, Company, StatusChange, User data. Hosted on Render.")
     }
 
-    Rel(user, nginx, "Uses", "HTTPS")
-    Rel(nginx, frontend, "Routes UI requests", "domain.com")
-    Rel(nginx, api, "Routes API requests", "api.domain.com")
+    Rel(user, frontend, "Uses", "HTTPS, via Vercel")
+    Rel(user, api, "Calls directly for API traffic", "HTTPS, via Render")
     Rel(frontend, api, "Calls", "REST/JSON")
     Rel(api, db, "Reads/writes", "Prisma")
 ```
 
-`Frontend`'s technology is intentionally "TBD" — the Frontend section of the README is still open. One deployable service, not microservices (decision 1): `Backend API` is a single container even though it internally splits into two bounded contexts (see Component level below).
+No reverse proxy container: an earlier design used nginx as a single entry point (`domain.com` / `api.domain.com`), but decision 22 replaced self-hosting with two managed platforms — Vercel and Render — that each terminate TLS/routing for their own service. One deployable service, not microservices (decision 1): `Backend API` is a single container even though it internally splits into two bounded contexts (see Component level below).
 
 ---
 

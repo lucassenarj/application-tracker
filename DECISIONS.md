@@ -75,9 +75,10 @@ A personal job-application tracker: log an application (title, description, link
 - **Goal:** confidence at the right cost per layer.
 - **Why this way:** unit tests on the domain layer (state machine, aggregates — no DB), integration tests on repositories (real Postgres), e2e tests on the HTTP layer. Mirrors decision 5 directly — the repository interface is what makes the unit layer fast and DB-free.
 
-### 13. Infrastructure: nginx as the single reverse-proxy entry point
+### 13. Infrastructure: nginx as the single reverse-proxy entry point — SUPERSEDED by decision 22
 - **Goal:** one predictable entry point instead of exposing multiple services/ports directly.
 - **Why this way:** `domain.com` routes to the frontend, `api.domain.com` routes to the API — the piece of infra that made decision 1 (single service, no microservice gateway) viable in the first place.
+- **Superseded:** decision 22 drops self-hosting (and nginx with it) in favor of Vercel + Render, which each terminate their own routing/TLS. Kept here for the historical rationale; do not implement nginx.
 
 ### 14. Runtime: Node.js 22
 - **Goal:** get the Nest CLI available so the project can actually be scaffolded.
@@ -189,12 +190,20 @@ A personal job-application tracker: log an application (title, description, link
 
 ---
 
+### 22. Frontend framework, CSS strategy, and deploy target
+
+- **Goal:** unblock frontend/deploy work under a one-week deadline (needed for job applications), without over-researching choices that don't matter much at this project's scale.
+- **Why this way:**
+  - **Frontend: React + Vite (SPA), TypeScript.** Next.js was considered — its main payoffs are SEO (crawlable static/server-rendered pages) and faster first paint on public content — but this app has no crawlable content: it's either anonymous-only (client-side/local) or behind auth, and all data is per-user and dynamic, so nothing benefits from SSR or static generation. Picking Next.js here would add routing/rendering-mode complexity with no matching payoff, the same reasoning already used to reject GraphQL (decision 3) and microservices (decision 1).
+  - **CSS: Tailwind CSS.** Fastest path to a clean UI without hand-writing/maintaining separate stylesheets, which matters given the deadline.
+  - **Deploy: Vercel (frontend) + Render (API + Postgres), not self-hosted nginx.** The original infra note (nginx as single reverse-proxy gateway, `domain.com` / `api.domain.com`) assumed self-hosting on one server; that's dropped in favor of two managed platforms with free tiers and near-zero deploy config, which is faster to stand up this week and needs no server/nginx maintained by hand. Trade-off: Render's free web service cold-starts after inactivity — acceptable for a portfolio demo, not for production traffic.
+
 ## Still open (see README `TO DO` sections for the authoritative list)
 
 - **Domain model:** none — `Application`, `StatusChange`/`Contact`, `Company`, and the state machine are all defined (decisions 15–18).
-- **Frontend:** framework or not, which one, CSS strategy, optimization, deploy approach.
-- **Infrastructure:** container/orchestrator choice, local custom domains.
-- **Deploy:** target platform, how, FE/BE optimization.
+- **Frontend:** framework/CSS/deploy target decided (decision 22, this week); FE optimization strategy still open.
+- **Infrastructure:** nginx/local-custom-domains superseded by decision 22's managed-platform deploy; no self-hosted orchestrator needed.
+- **Deploy:** platform decided (decision 22, this week); concrete CI/CD pipeline and BE optimization still open.
 - **Observability:** strategy — why, what, how.
 - **Identity (future idea, not scoped):** possible user-level settings — currency, timezone, other locale data — raised while discussing `Application.salary`.
 - **Auth: access/refresh token split.** Decision 10 only specifies a single JWT in an httpOnly cookie. A stolen token currently stays valid until it naturally expires — the standard mitigation is a short-lived access token plus a separately revocable long-lived refresh token. Not yet decided whether to adopt that split.
@@ -203,7 +212,7 @@ A personal job-application tracker: log an application (title, description, link
 
 ## Next planned step
 
-NestJS scaffold is running (decision 19). Next: decide how the domain model (decisions 15–18) maps into actual NestJS modules/folders (`ApplicationsModule`, `IdentityModule` per decision 7) and start TDD on the state machine (decision 9) — tests before code.
+State machine is implemented and green under TDD (decisions 9, 18 — see `application-status.state-machine.ts` and its spec). Frontend/CSS/deploy target decided (decision 22). Next: build out the rest of the `Application` domain (the aggregate itself, `StatusChange`, `Contact`, `Company`) under TDD, then the repository interfaces/Prisma schema/infrastructure layer, then controllers/DTOs — before starting the frontend, per the "status logic before frontend/auth" rule already in `CLAUDE.md`.
 
 ---
 

@@ -27,9 +27,9 @@ A personal job application tracker:
 - Persistence: PostgreSQL via Prisma
 - Package manager: Yarn Berry (`yarn@4.18.0`, via corepack)
 - Yarn linker: `nodeLinker: node-modules` to avoid known Prisma/PnP issues
-- Proxy/entry point: nginx planned as the single entry point (decided conceptually, not yet configured — see README's Infrastructure `TO DO`)
-- Containerization: Docker Compose for the development environment
-- Frontend: still open; not technically decided
+- Containerization: Docker Compose for the local development environment only
+- Frontend: React + Vite, TypeScript, Tailwind CSS
+- Deploy: Vercel (frontend), Render (API + Postgres) — no self-hosted reverse proxy; each platform handles its own routing/TLS (see `DECISIONS.md` #22)
 - Authentication: JWT in an `httpOnly` cookie, scoped to the parent domain (`.domain.com`) for API usage
 
 ### Usage model
@@ -49,12 +49,10 @@ The project follows a single deployable service architecture, not microservices.
 There is no deploy-level separation into multiple services; the goal is to keep operational complexity low while practicing DDD and good internal boundaries.
 
 ### C4 container summary
-- Frontend: UI, no framework defined yet, stores data locally until registration.
-- nginx: single reverse proxy, routes:
-  - `domain.com` → frontend
-  - `api.domain.com` → backend
-- Backend API: NestJS, TypeScript, REST
-- Database: PostgreSQL
+- Frontend: React + Vite SPA, Tailwind CSS, stores data locally until registration. Deployed to Vercel.
+- Backend API: NestJS, TypeScript, REST. Deployed to Render.
+- Database: PostgreSQL, hosted on Render.
+- No reverse proxy container — Vercel and Render each terminate TLS/routing for their own service (see decision 22; `C4-MODEL.md` updated to match).
 
 ### Main backend components
 - `ApplicationsController`: application area endpoints
@@ -153,6 +151,11 @@ The interview category is `interviewCategory` on `StatusChange`, not a separate 
 - When a new behavior is decided, document it in the decision log and C4 model.
 - Prioritize incremental evolution of the domain and applications module before creating new modules.
 
+### 3.8. Commit message convention
+- Format: `type(scope): summary` (Conventional Commits).
+- `scope` is the domain/module touched (e.g. `application`, `company`, `authentication`, `ci`, `docs`) — not the project name (`application-tracker`). Commits are made from the monorepo root, and the project is already evident from the changed file paths, so a project-name scope is redundant.
+- This applies going forward only; existing commit history is not being rewritten.
+
 ---
 
 ## 4. Current State and Next Steps
@@ -167,8 +170,8 @@ The interview category is `interviewCategory` on `StatusChange`, not a separate 
 - Runtime updated to Node.js 22 and Yarn Berry.
 
 ### What is still open
-- Frontend/framework and visual strategy.
-- Deployment infrastructure and local domains.
+- Frontend build-out (framework/CSS/deploy target decided — decision 22; the actual UI is not built yet).
+- Deployment: concrete CI/CD pipeline, FE/BE optimization.
 - Observability.
 - Complete Identity module and `User` definition.
 - Access/refresh token policy and CSRF.

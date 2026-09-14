@@ -40,19 +40,17 @@ If the user is logged in, they can see a profile page
 - Learn architecture and design pattern principles
 
 ### Frontend
+- **Framework: React + Vite, TypeScript.** Next.js's payoffs (SEO, SSR for public content) don't apply here — the app is either anonymous/client-only or behind auth, and all data is per-user and dynamic, so nothing benefits from static generation or server rendering. Same "simplest option that fits" reasoning as REST over GraphQL and one service over microservices. See `DECISIONS.md` #22.
+- **CSS: Tailwind CSS** — fastest path to a clean UI without hand-maintained stylesheets. See `DECISIONS.md` #22.
+
 **TO DO:**
-- Search for best strategy for the FE
-- Use or not framework
-- Which framework to use and why
-- How to handle CSS
 - How to handle optimization
-- How to handle deployment
 
 ### Backend
-One deployable service, not microservices - nginx (see Infrastructure) is the only gateway needed here, so a Go-style gateway-plus-services split would just add deployment/communication overhead without a matching benefit at this scale.
+One deployable service, not microservices - a Go-style gateway-plus-services split would just add deployment/communication overhead without a matching benefit at this scale.
 
 - **Language/framework: NestJS (TypeScript).** Chosen over Go so the app can actually be used soon (existing TS knowledge beats learning a new language while building it). NestJS's module/DI system maps naturally onto DDD bounded contexts (an `applications` module, an `identity` module) inside the single service, and its decorators (guards, interceptors, pipes) double as design-pattern practice.
-- **API style: REST.** Simpler to build, test, and document than GraphQL; consistent with picking the simplest option at each fork of this project (nginx over a custom gateway, one service over microservices).
+- **API style: REST.** Simpler to build, test, and document than GraphQL; consistent with picking the simplest option at each fork of this project (managed deploy platforms over a self-hosted gateway, one service over microservices).
 - **Storage: PostgreSQL, via Prisma.**
     - **Why Prisma over TypeORM:** TypeORM's entities are TS classes decorated directly with persistence annotations (`@Entity`, `@Column`), which makes it easy - and is the "normal" TypeORM way - to reuse that same class as the domain object. That conflates persistence with domain and only stays clean if you deliberately keep a separate domain class and map by hand every time. Prisma has no entity class at all: it generates plain, type-safe data types from a schema file, so there's nothing to be tempted to reuse as `Application`. That forces the repository-mapping boundary to happen structurally instead of by self-discipline, which fits the point of this project (practicing DDD deliberately) better. Prisma's migration workflow (`prisma migrate dev`) and end-to-end type safety are also smoother than TypeORM's, which matters given the goal of actually shipping this app soon. The trade-off: NestJS's first-party integration is with TypeORM (`@nestjs/typeorm`, `@InjectRepository`); Prisma needs a small hand-written `PrismaService` wrapper instead - a well-documented, one-time cost, not an ongoing one.
     - **Repository pattern, on top of Prisma:** one repository per aggregate root (`ApplicationRepository`, `UserRepository`). This is the layer that translates between Prisma's generated types and the domain aggregates, so Prisma never leaks into domain or service code. It also means application services can depend on a repository interface, so domain-layer unit tests can fake it - no real Postgres needed to test business logic (see Test pyramid below).
@@ -72,18 +70,14 @@ One deployable service, not microservices - nginx (see Infrastructure) is the on
 - **Test pyramid:** unit tests on the domain layer (state machine, aggregates - no DB), integration tests on repositories (real Postgres), e2e tests on the HTTP layer.
 
 ### Infrastructure
-- **nginx as reverse proxy**, acting as the single entry point: `domain.com` routes to the frontend, `api.domain.com` routes to the API service.
-
-**TO DO:**
-- Use docker container or any other orchestrator (?)
-- Local infrastructure should use custom domains
+- Local dev only: Docker Compose runs the API (see `docker-compose.yml`). No self-hosted reverse proxy — deploy is to managed platforms (see Deploy), which each handle their own routing/TLS.
 
 ### Deploy
 - Constraint: prefer a cheap or free hosting option.
+- **Frontend: Vercel.** **API + Postgres: Render.** Both have free tiers and near-zero deploy config, so no server or reverse proxy to provision/maintain by hand. Trade-off: Render's free web service cold-starts after inactivity — acceptable for a portfolio demo, not production traffic. See `DECISIONS.md` #22.
 
 **TO DO:**
-- Where specifically to deploy (target platform)
-- How to deploy
+- How to deploy (concrete steps/CI pipeline)
 - How to optimize FE
 - How to optimize BE
 
