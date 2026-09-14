@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Application } from './domain/application';
 import type { ApplicationRepository } from './domain/application.repository';
 import type { CompanyRepository } from './domain/company.repository';
@@ -25,8 +25,8 @@ interface ChangeStatusInput {
 @Injectable()
 export class ApplicationsService {
   constructor(
-    private readonly applicationRepository: ApplicationRepository,
-    private readonly companyRepository: CompanyRepository,
+    @Inject('ApplicationRepository') private readonly applicationRepository: ApplicationRepository,
+    @Inject('CompanyRepository') private readonly companyRepository: CompanyRepository,
   ) {}
 
   create(input: CreateApplicationInput): Promise<Application> {
