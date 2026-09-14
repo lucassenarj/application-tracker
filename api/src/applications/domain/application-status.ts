@@ -7,3 +7,14 @@ export type ApplicationStatus =
   | 'OFFER_ACCEPTED'
   | 'OFFER_DECLINED'
   | 'REJECTED';
+
+export const APPLICATION_STATUSES: ApplicationStatus[] = [
+  'APPLIED',
+  'WAITING_FEEDBACK',
+  'ASSIGNMENT',
+  'INTERVIEW_SCHEDULED',
+  'OFFER',
+  'OFFER_ACCEPTED',
+  'OFFER_DECLINED',
+  'REJECTED',
+];
