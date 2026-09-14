@@ -7,7 +7,7 @@ export class ApplicationsController {
   constructor(private readonly applicationsService: ApplicationsService) {}
 
   @Post()
-  create(@Body() body: unknown): Promise<Application> {
+  create(@Body() _body: unknown): Promise<Application> {
     throw new Error('Not implemented');
   }
 
@@ -17,12 +17,15 @@ export class ApplicationsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<Application> {
+  findOne(@Param('id') _id: string): Promise<Application> {
     throw new Error('Not implemented');
   }
 
   @Patch(':id/status')
-  changeStatus(@Param('id') id: string, @Body() body: unknown): Promise<Application> {
+  changeStatus(
+    @Param('id') _id: string,
+    @Body() _body: unknown,
+  ): Promise<Application> {
     throw new Error('Not implemented');
   }
 }
