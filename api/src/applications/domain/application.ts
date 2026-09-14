@@ -67,13 +67,11 @@ export class Application {
     const now = new Date();
     const id = randomUUID();
 
-    const initialStatusChange: StatusChange = {
-      id: randomUUID(),
+    const initialStatusChange = StatusChange.create({
       applicationId: id,
       status: 'APPLIED',
       eventDate: now,
-      createdAt: now,
-    };
+    });
 
     return new Application({
       id,
