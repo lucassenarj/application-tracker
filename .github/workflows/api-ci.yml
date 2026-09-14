@@ -1,0 +1,35 @@
+name: api-ci
+
+on:
+  pull_request:
+    paths:
+      - 'api/**'
+  push:
+    branches: [main]
+    paths:
+      - 'api/**'
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+          cache-dependency-path: api/yarn.lock
+
+      - run: corepack enable
+
+      - run: yarn install --immutable
+
+      - run: yarn eslint "{src,apps,libs,test}/**/*.ts"
+
+      - run: npx tsc --noEmit
+
+      - run: yarn test
