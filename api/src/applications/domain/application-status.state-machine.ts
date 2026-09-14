@@ -3,7 +3,7 @@ import { ApplicationStatus } from './application-status';
 const TERMINAL_STATUS: ApplicationStatus[] = [
   'OFFER_ACCEPTED',
   'OFFER_DECLINED',
-  'REJECTED'
+  'REJECTED',
 ];
 
 const ONLY_REACHABLE_FROM_OFFER: ApplicationStatus[] = [
@@ -12,7 +12,10 @@ const ONLY_REACHABLE_FROM_OFFER: ApplicationStatus[] = [
 ];
 
 export class ApplicationStatusStateMachine {
-  static canTransition(from: ApplicationStatus, to: ApplicationStatus): boolean {
+  static canTransition(
+    from: ApplicationStatus,
+    to: ApplicationStatus,
+  ): boolean {
     if (to === 'APPLIED') {
       return false;
     }

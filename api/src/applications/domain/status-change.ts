@@ -61,7 +61,9 @@ export class StatusChange {
     }
 
     if (input.status === 'INTERVIEW_SCHEDULED' && !input.interviewCategory) {
-      throw new Error('interviewCategory is required when status is INTERVIEW_SCHEDULED');
+      throw new Error(
+        'interviewCategory is required when status is INTERVIEW_SCHEDULED',
+      );
     }
 
     return new StatusChange({

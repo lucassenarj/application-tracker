@@ -25,23 +25,28 @@ interface ChangeStatusInput {
 @Injectable()
 export class ApplicationsService {
   constructor(
-    @Inject('ApplicationRepository') private readonly applicationRepository: ApplicationRepository,
-    @Inject('CompanyRepository') private readonly companyRepository: CompanyRepository,
+    @Inject('ApplicationRepository')
+    private readonly applicationRepository: ApplicationRepository,
+    @Inject('CompanyRepository')
+    private readonly companyRepository: CompanyRepository,
   ) {}
 
-  create(input: CreateApplicationInput): Promise<Application> {
+  create(_input: CreateApplicationInput): Promise<Application> {
     throw new Error('Not implemented');
   }
 
-  findById(id: string): Promise<Application> {
+  findById(_id: string): Promise<Application> {
     throw new Error('Not implemented');
   }
 
-  findAllByUser(userId: string): Promise<Application[]> {
+  findAllByUser(_userId: string): Promise<Application[]> {
     throw new Error('Not implemented');
   }
 
-  changeStatus(applicationId: string, input: ChangeStatusInput): Promise<Application> {
+  changeStatus(
+    _applicationId: string,
+    _input: ChangeStatusInput,
+  ): Promise<Application> {
     throw new Error('Not implemented');
   }
 }

@@ -1,4 +1,10 @@
-import { IsDateString, IsEmail, IsIn, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsEmail,
+  IsIn,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import type { ApplicationStatus } from '../domain/application-status';
 import { APPLICATION_STATUSES } from '../domain/application-status';
 import type { InterviewCategory } from '../domain/status-change';

@@ -4,7 +4,10 @@ import { ApplicationStatusStateMachine } from './application-status.state-machin
 describe('ApplicationStatusStateMachine', () => {
   it('rejects any transition back into APPLIED, since it is entry-only', () => {
     expect(
-      ApplicationStatusStateMachine.canTransition('WAITING_FEEDBACK', 'APPLIED'),
+      ApplicationStatusStateMachine.canTransition(
+        'WAITING_FEEDBACK',
+        'APPLIED',
+      ),
     ).toBe(false);
   });
 
@@ -13,7 +16,7 @@ describe('ApplicationStatusStateMachine', () => {
     (from) => {
       expect(
         ApplicationStatusStateMachine.canTransition(from, 'WAITING_FEEDBACK'),
-      ).toBe(false)
+      ).toBe(false);
     },
   );
 
@@ -22,22 +25,27 @@ describe('ApplicationStatusStateMachine', () => {
     ['ASSIGNMENT', 'INTERVIEW_SCHEDULED'],
     ['INTERVIEW_SCHEDULED', 'OFFER'],
   ])(
-    'allows movement from %s to %s within the free-movement group', (from, to) => {
+    'allows movement from %s to %s within the free-movement group',
+    (from, to) => {
       expect(ApplicationStatusStateMachine.canTransition(from, to)).toBe(true);
-    }
+    },
   );
 
   it.each<ApplicationStatus>(['INTERVIEW_SCHEDULED', 'OFFER'])(
     'allow %s to transition to itself (self-loop)',
     (status) => {
-      expect(ApplicationStatusStateMachine.canTransition(status, status)).toBe(true);
-    }
+      expect(ApplicationStatusStateMachine.canTransition(status, status)).toBe(
+        true,
+      );
+    },
   );
 
   it.each<ApplicationStatus>(['APPLIED', 'OFFER'])(
     'allows %s to transition to REJECTED',
     (from) => {
-      expect(ApplicationStatusStateMachine.canTransition(from, 'REJECTED')).toBe(true);
+      expect(
+        ApplicationStatusStateMachine.canTransition(from, 'REJECTED'),
+      ).toBe(true);
     },
   );
 
@@ -56,7 +64,9 @@ describe('ApplicationStatusStateMachine', () => {
   it.each<ApplicationStatus>(['OFFER_ACCEPTED', 'OFFER_DECLINED'])(
     'allows transition from OFFER to %s',
     (to) => {
-      expect(ApplicationStatusStateMachine.canTransition('OFFER', to)).toBe(true);
+      expect(ApplicationStatusStateMachine.canTransition('OFFER', to)).toBe(
+        true,
+      );
     },
   );
 });
