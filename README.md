@@ -70,7 +70,26 @@ One deployable service, not microservices - a Go-style gateway-plus-services spl
 - **Test pyramid:** unit tests on the domain layer (state machine, aggregates - no DB), integration tests on repositories (real Postgres), e2e tests on the HTTP layer.
 
 ### Infrastructure
-- Local dev only: Docker Compose runs the API (see `docker-compose.yml`). No self-hosted reverse proxy — deploy is to managed platforms (see Deploy), which each handle their own routing/TLS.
+- **Local dev:** full self-hosted-style stack via Docker Compose — `nginx` (reverse proxy, TLS via mkcert), `api`, and (once scaffolded) `frontend`/`db` containers, kept ready to redeploy as-is to a VPS in a later phase. See `DECISIONS.md` #23.
+- **Public deploy (phase 1, this week):** no self-hosted reverse proxy — Vercel and Render each handle their own routing/TLS. See Deploy below and `DECISIONS.md` #24.
+
+**Local setup prerequisites:**
+- [mkcert](https://github.com/FiloSottile/mkcert) — required because `.dev` domains are forced to HTTPS by browsers via HSTS preload, so local nginx needs a locally-trusted TLS cert. Install it, then run once per machine:
+  ```
+  mkcert -install
+  ```
+  Then generate the project's local cert (gitignored, not committed — regenerate per machine):
+  ```
+  mkdir -p nginx/certs
+  mkcert -cert-file nginx/certs/local.pem \
+         -key-file nginx/certs/local-key.pem \
+         local.application-tracker.lucassenarj.dev local.api.application-tracker.lucassenarj.dev
+  ```
+- Add to `/etc/hosts`:
+  ```
+  127.0.0.1 local.application-tracker.lucassenarj.dev
+  127.0.0.1 local.api.application-tracker.lucassenarj.dev
+  ```
 
 ### Deploy
 - Constraint: prefer a cheap or free hosting option.

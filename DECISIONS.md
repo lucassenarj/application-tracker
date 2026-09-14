@@ -75,10 +75,10 @@ A personal job-application tracker: log an application (title, description, link
 - **Goal:** confidence at the right cost per layer.
 - **Why this way:** unit tests on the domain layer (state machine, aggregates — no DB), integration tests on repositories (real Postgres), e2e tests on the HTTP layer. Mirrors decision 5 directly — the repository interface is what makes the unit layer fast and DB-free.
 
-### 13. Infrastructure: nginx as the single reverse-proxy entry point — SUPERSEDED by decision 22
+### 13. Infrastructure: nginx as the single reverse-proxy entry point — PARTIALLY SUPERSEDED (see decisions 23–24)
 - **Goal:** one predictable entry point instead of exposing multiple services/ports directly.
 - **Why this way:** `domain.com` routes to the frontend, `api.domain.com` routes to the API — the piece of infra that made decision 1 (single service, no microservice gateway) viable in the first place.
-- **Superseded:** decision 22 drops self-hosting (and nginx with it) in favor of Vercel + Render, which each terminate their own routing/TLS. Kept here for the historical rationale; do not implement nginx.
+- **Superseded for the public deploy, revived for local dev:** decision 22/24 drops self-hosted nginx for the *public* deploy in favor of Vercel + Render. Decision 23 brings nginx back for *local development only* — a real nginx + Docker Compose stack, kept ready to redeploy to a VPS in a later phase.
 
 ### 14. Runtime: Node.js 22
 - **Goal:** get the Nest CLI available so the project can actually be scaffolded.
@@ -196,14 +196,30 @@ A personal job-application tracker: log an application (title, description, link
 - **Why this way:**
   - **Frontend: React + Vite (SPA), TypeScript.** Next.js was considered — its main payoffs are SEO (crawlable static/server-rendered pages) and faster first paint on public content — but this app has no crawlable content: it's either anonymous-only (client-side/local) or behind auth, and all data is per-user and dynamic, so nothing benefits from SSR or static generation. Picking Next.js here would add routing/rendering-mode complexity with no matching payoff, the same reasoning already used to reject GraphQL (decision 3) and microservices (decision 1).
   - **CSS: Tailwind CSS.** Fastest path to a clean UI without hand-writing/maintaining separate stylesheets, which matters given the deadline.
-  - **Deploy: Vercel (frontend) + Render (API + Postgres), not self-hosted nginx.** The original infra note (nginx as single reverse-proxy gateway, `domain.com` / `api.domain.com`) assumed self-hosting on one server; that's dropped in favor of two managed platforms with free tiers and near-zero deploy config, which is faster to stand up this week and needs no server/nginx maintained by hand. Trade-off: Render's free web service cold-starts after inactivity — acceptable for a portfolio demo, not for production traffic.
+  - **Deploy: Vercel (frontend) + Render (API), not self-hosted nginx — for now.** The original infra note (nginx as single reverse-proxy gateway, `domain.com` / `api.domain.com`) assumed self-hosting on one server; that's dropped for the *public* deploy in favor of two managed platforms with free tiers and near-zero deploy config, faster to stand up this week and needing no server/nginx maintained by hand. Trade-off: Render's free web service cold-starts after inactivity — acceptable for a portfolio demo, not for production traffic. Database provider and domain scheme refined by decisions 23–24; local development takes a different path than the public deploy (decision 23).
+
+### 23. Domain/subdomain scheme; local dev mirrors self-hosted target architecture
+
+- **Goal:** pick a domain scheme that works identically regardless of deploy target (managed platforms now, a VPS later), and let local development rehearse the real self-hosted architecture (nginx + containers) without committing to self-hosting *now*.
+- **Why this way:**
+  - **Public subdomains:** `application-tracker.lucassenarj.dev` (frontend), `api.application-tracker.lucassenarj.dev` (API) — real subdomains under the user's own domain, not the placeholder `domain.com`/`api.domain.com` used earlier. This scopes decision 10's auth cookie to `.application-tracker.lucassenarj.dev` specifically, not the user's whole personal domain, and is deploy-target-agnostic: switching the API from Render to a self-hosted VPS later only means repointing DNS, not changing the cookie/auth architecture.
+  - **Local subdomains:** `local.application-tracker.lucassenarj.dev` / `local.api.application-tracker.lucassenarj.dev`, resolved to `127.0.0.1` via `/etc/hosts`. Using a real subdomain of the owned domain (rather than a fake TLD like `.test`) was considered against `.local` (rejected — reserved for mDNS/Bonjour, RFC 6762, can misbehave) — but since the domain is `.dev`, which is entirely on the browser HSTS preload list (`include_subdomains: true, mode: force-https`), every subdomain including the local ones is forced to HTTPS by the browser regardless of hosting. **mkcert** is used to issue a locally-trusted TLS cert for local nginx, so local dev runs HTTPS end-to-end too — closer parity with production, not just a workaround.
+  - **Local infra partially un-supersedes decision 13:** local development runs the full self-hosted-style stack via Docker Compose — `nginx` (reverse proxy, TLS via mkcert), `api`, `frontend`, `db` (Postgres) containers — so it's ready to redeploy as-is to a VPS in a later phase. This is *only* for local dev; decision 22/24's managed-platform choice for the *public* deploy stands unchanged.
+
+### 24. Temporary public deploy target: Vercel + Render + Neon (phase 1)
+
+- **Goal:** have a live, linkable deployment this week for job applications, without taking on self-hosted VPS setup/maintenance risk under deadline pressure.
+- **Why this way:**
+  - **Database: Neon**, not Render's own Postgres. Render's free Postgres expires 30 days after creation (14-day grace period, then deletion, no backups on the free tier) — a real risk of the demo silently breaking mid-job-search. Verified Neon's free tier is permanent (no credit card, never expires), with only scale-to-zero compute suspension after 5 minutes idle, not data deletion.
+  - **Custom domains:** `application-tracker.lucassenarj.dev` → Vercel, `api.application-tracker.lucassenarj.dev` → Render, both configured as custom domains on their respective free tiers (decision 23's scheme applies from day one, not just after a future VPS migration).
+  - **Phase 2 (not now, not blocking this week):** swap this deploy target for the self-hosted VPS running decision 23's local Docker Compose stack, once there's no deadline pressure. Only DNS targets and the DB connection string change — the domain scheme, cookie/auth architecture, and container layout stay the same.
 
 ## Still open (see README `TO DO` sections for the authoritative list)
 
 - **Domain model:** none — `Application`, `StatusChange`/`Contact`, `Company`, and the state machine are all defined (decisions 15–18).
-- **Frontend:** framework/CSS/deploy target decided (decision 22, this week); FE optimization strategy still open.
-- **Infrastructure:** nginx/local-custom-domains superseded by decision 22's managed-platform deploy; no self-hosted orchestrator needed.
-- **Deploy:** platform decided (decision 22, this week); concrete CI/CD pipeline and BE optimization still open.
+- **Frontend:** framework/CSS/deploy target decided (decisions 22–24, this week); FE optimization strategy still open.
+- **Infrastructure:** local dev infra (nginx + containers) and public deploy target decided (decisions 23–24, this week); local Docker Compose stack itself not yet built.
+- **Deploy:** platform decided (decisions 22–24, this week); concrete CI/CD pipeline and BE optimization still open.
 - **Observability:** strategy — why, what, how.
 - **Identity (future idea, not scoped):** possible user-level settings — currency, timezone, other locale data — raised while discussing `Application.salary`.
 - **Auth: access/refresh token split.** Decision 10 only specifies a single JWT in an httpOnly cookie. A stolen token currently stays valid until it naturally expires — the standard mitigation is a short-lived access token plus a separately revocable long-lived refresh token. Not yet decided whether to adopt that split.
@@ -212,7 +228,7 @@ A personal job-application tracker: log an application (title, description, link
 
 ## Next planned step
 
-State machine is implemented and green under TDD (decisions 9, 18 — see `application-status.state-machine.ts` and its spec). Frontend/CSS/deploy target decided (decision 22). Next: build out the rest of the `Application` domain (the aggregate itself, `StatusChange`, `Contact`, `Company`) under TDD, then the repository interfaces/Prisma schema/infrastructure layer, then controllers/DTOs — before starting the frontend, per the "status logic before frontend/auth" rule already in `CLAUDE.md`.
+`Application` aggregate construction/invariants implemented under TDD (see `application.ts`/`.spec.ts`). Domain skeleton (StatusChange/Contact, Company, repository interfaces, service/controller shells, DTOs) in place. Domain scheme, local dev infra, and phase-1 public deploy target decided (decisions 23–24). Next: build the local Docker Compose stack (nginx + api + frontend + db containers, mkcert TLS) per decision 23, even though the frontend/API aren't functional yet — deliberately built ahead so there's a working local rehearsal environment ready as soon as they are.
 
 ---
 
