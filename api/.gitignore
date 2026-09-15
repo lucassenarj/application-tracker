@@ -8,6 +8,6 @@ dist/
 !.yarn/sdks
 !.yarn/versions
 
-/generated/prisma
+/src/generated/prisma
 
 .env
