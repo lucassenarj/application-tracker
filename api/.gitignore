@@ -7,3 +7,7 @@ dist/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+/generated/prisma
+
+.env

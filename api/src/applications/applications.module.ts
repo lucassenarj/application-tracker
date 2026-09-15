@@ -1,30 +1,22 @@
 import { Module } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { ApplicationsController } from './applications.controller';
 import { ApplicationsService } from './applications.service';
-
-const notImplemented = () => {
-  throw new Error('Not implemented');
-};
+import { PrismaApplicationRepository } from './infrastructure/application.repository.prisma';
+import { PrismaCompanyRepository } from './infrastructure/company.repository.prisma';
 
 @Module({
   controllers: [ApplicationsController],
   providers: [
     ApplicationsService,
+    PrismaService,
     {
       provide: 'ApplicationRepository',
-      useValue: {
-        save: notImplemented,
-        findById: notImplemented,
-        findAllByUser: notImplemented,
-      },
+      useClass: PrismaApplicationRepository,
     },
     {
       provide: 'CompanyRepository',
-      useValue: {
-        save: notImplemented,
-        findByNormalizedName: notImplemented,
-        search: notImplemented,
-      },
+      useClass: PrismaCompanyRepository,
     },
   ],
 })
