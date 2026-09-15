@@ -77,4 +77,17 @@ export class StatusChange {
       createdAt: new Date(),
     });
   }
+
+  static reconstitute(props: {
+    id: string;
+    applicationId: string;
+    status: ApplicationStatus;
+    eventDate: Date;
+    notes?: string;
+    contact?: Contact;
+    interviewCategory?: InterviewCategory;
+    createdAt: Date;
+  }): StatusChange {
+    return new StatusChange(props);
+  }
 }

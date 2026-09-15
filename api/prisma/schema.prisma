@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ApplicationStatus {
+  APPLIED
+  WAITING_FEEDBACK
+  ASSIGNMENT
+  INTERVIEW_SCHEDULED
+  OFFER
+  OFFER_ACCEPTED
+  OFFER_DECLINED
+  REJECTED
+}
+
+enum InterviewCategory {
+  TECHNICAL
+  NON_TECHNICAL
+}
+
+model Company {
+  id      String  @id @default(uuid())
+  name    String  @unique
+  website String?
+
+  applications Application[]
+}
+
+model Application {
+  id            String            @id @default(uuid())
+  title         String            @db.VarChar(255)
+  description   String?
+  externalUrl   String?
+  salary        Float?
+  companyId     String
+  userId        String
+  currentStatus ApplicationStatus
+  createdAt     DateTime          @default(now())
+
+  company       Company        @relation(fields: [companyId], references: [id])
+  statusChanges StatusChange[]
+
+  @@index([companyId])
+  @@index([userId])
+}
+
+model StatusChange {
+  id                String             @id @default(uuid())
+  applicationId     String
+  status            ApplicationStatus
+  eventDate         DateTime
+  notes             String?
+  contactName       String?
+  contactEmail      String?
+  interviewCategory InterviewCategory?
+  createdAt         DateTime           @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id])
+
+  @@index([applicationId])
+}
