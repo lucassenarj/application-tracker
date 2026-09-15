@@ -1,4 +1,5 @@
 import { Application } from './application';
+import { StatusChange } from './status-change';
 
 describe('Application', () => {
   it('creates an Application with valid required fields (title, companyId, userId) and exposes those values back', () => {
@@ -102,5 +103,93 @@ describe('Application', () => {
         userId: '',
       }),
     ).toThrow();
+  });
+
+  it('changes currentStatus and appends a StatusChange when the transition is valid', () => {
+    const application = Application.create({
+      title: 'Senior Backend Engineer',
+      companyId: 'company-1',
+      userId: 'user-1',
+    });
+
+    const updated = application.changeStatus({
+      status: 'INTERVIEW_SCHEDULED',
+      eventDate: new Date(),
+      interviewCategory: 'NON_TECHNICAL',
+    });
+
+    expect(updated.currentStatus).toBe('INTERVIEW_SCHEDULED');
+    expect(updated.statusHistory).toHaveLength(2);
+    expect(updated.statusHistory[1].status).toBe('INTERVIEW_SCHEDULED');
+  });
+
+  it('throws an error when the transition is invalid', () => {
+    const application = Application.create({
+      title: 'Senior Backend Engineer',
+      companyId: 'company-1',
+      userId: 'user-1',
+    });
+
+    expect(() =>
+      application.changeStatus({
+        status: 'OFFER_ACCEPTED',
+        eventDate: new Date(),
+      }),
+    ).toThrow();
+  });
+
+  it('throws an error when status is INTERVIEW_SCHEDULED and interviewCategory is missing', () => {
+    const application = Application.create({
+      title: 'Senior Backend Engineer',
+      companyId: 'company-1',
+      userId: 'user-1',
+    });
+
+    expect(() =>
+      application.changeStatus({
+        status: 'INTERVIEW_SCHEDULED',
+        eventDate: new Date(),
+      }),
+    ).toThrow();
+  });
+
+  it('does not mutate the original Application when changing status', () => {
+    const application = Application.create({
+      title: 'Senior Backend Engineer',
+      companyId: 'company-1',
+      userId: 'user-1',
+    });
+
+    application.changeStatus({
+      status: 'WAITING_FEEDBACK',
+      eventDate: new Date(),
+    });
+
+    expect(application.currentStatus).toBe('APPLIED');
+    expect(application.statusHistory).toHaveLength(1);
+  });
+
+  it('reconstitutes an Application from persisted values without regenerating id or defaulting currentStatus/statusHistory', () => {
+    const createdAt = new Date('2026-01-01');
+    const statusChange = StatusChange.create({
+      applicationId: 'existing-id',
+      status: 'APPLIED',
+      eventDate: createdAt,
+    });
+
+    const application = Application.reconstitute({
+      id: 'existing-id',
+      title: 'Senior Backend Engineer',
+      companyId: 'company-1',
+      userId: 'user-1',
+      currentStatus: 'WAITING_FEEDBACK',
+      statusHistory: [statusChange],
+      createdAt,
+    });
+
+    expect(application.id).toBe('existing-id');
+    expect(application.currentStatus).toBe('WAITING_FEEDBACK');
+    expect(application.statusHistory).toEqual([statusChange]);
+    expect(application.createdAt).toBe(createdAt);
   });
 });

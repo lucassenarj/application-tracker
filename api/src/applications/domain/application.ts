@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { ApplicationStatus } from './application-status';
-import { StatusChange } from './status-change';
+import { ApplicationStatusStateMachine } from './application-status.state-machine';
+import { Contact, InterviewCategory, StatusChange } from './status-change';
 
 export interface CreateApplicationProps {
   title: string;
@@ -85,5 +86,61 @@ export class Application {
       statusHistory: [initialStatusChange],
       createdAt: now,
     });
+  }
+
+  changeStatus(input: {
+    status: ApplicationStatus;
+    eventDate: Date;
+    notes?: string;
+    contact?: Contact;
+    interviewCategory?: InterviewCategory;
+  }): Application {
+    if (
+      !ApplicationStatusStateMachine.canTransition(
+        this.currentStatus,
+        input.status,
+      )
+    ) {
+      throw new Error(
+        `cannot transition from ${this.currentStatus} to ${input.status}`,
+      );
+    }
+
+    const statusChange = StatusChange.create({
+      applicationId: this.id,
+      status: input.status,
+      eventDate: input.eventDate,
+      notes: input.notes,
+      contact: input.contact,
+      interviewCategory: input.interviewCategory,
+    });
+
+    return new Application({
+      id: this.id,
+      title: this.title,
+      description: this.description,
+      externalUrl: this.externalUrl,
+      salary: this.salary,
+      companyId: this.companyId,
+      userId: this.userId,
+      currentStatus: input.status,
+      statusHistory: [...this.statusHistory, statusChange],
+      createdAt: this.createdAt,
+    });
+  }
+
+  static reconstitute(props: {
+    id: string;
+    title: string;
+    description?: string;
+    externalUrl?: string;
+    salary?: number;
+    companyId: string;
+    userId: string;
+    currentStatus: ApplicationStatus;
+    statusHistory: StatusChange[];
+    createdAt: Date;
+  }): Application {
+    return new Application(props);
   }
 }

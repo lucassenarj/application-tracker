@@ -80,4 +80,20 @@ describe('StatusChange', () => {
     expect(statusChange.notes).toBeUndefined();
     expect(statusChange.contact).toBeUndefined();
   });
+
+  it('reconstitutes a StatusChange from persisted values without regenerating id or createdAt', () => {
+    const eventDate = new Date('2026-01-01');
+    const createdAt = new Date('2026-01-02');
+
+    const statusChange = StatusChange.reconstitute({
+      id: 'existing-id',
+      applicationId: 'application-1',
+      status: 'WAITING_FEEDBACK',
+      eventDate,
+      createdAt,
+    });
+
+    expect(statusChange.id).toBe('existing-id');
+    expect(statusChange.createdAt).toBe(createdAt);
+  });
 });
