@@ -98,9 +98,8 @@ function toStatusChange(row: PersistedStatusChange): StatusChange {
     eventDate: row.eventDate,
     notes: row.notes ?? undefined,
     contact,
-    interviewCategory: row.interviewCategory as
-      | StatusChange['interviewCategory']
-      | undefined,
+    interviewCategory:
+      (row.interviewCategory as StatusChange['interviewCategory']) ?? undefined,
     createdAt: row.createdAt,
   });
 }
