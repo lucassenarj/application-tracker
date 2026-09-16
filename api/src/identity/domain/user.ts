@@ -73,4 +73,18 @@ export class User {
   static normalizeEmail(email: string): string {
     return email.toLowerCase();
   }
+
+  static reconstitute(props: {
+    id: string;
+    email: string;
+    passwordHash?: string;
+    authProvider: AuthProvider;
+    name?: string;
+    avatar?: string;
+    role: UserRole;
+    isActive: boolean;
+    createdAt: Date;
+  }): User {
+    return new User(props);
+  }
 }

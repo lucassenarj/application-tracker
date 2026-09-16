@@ -69,4 +69,25 @@ describe('User', () => {
       expect(first.id).not.toBe(second.id);
     });
   });
+
+  describe('reconstitute', () => {
+    it('reconstitutes a User from persisted values without regenerating id or re-normalizing email', () => {
+      const user = User.reconstitute({
+        id: 'existing-id',
+        email: 'jane@example.com',
+        passwordHash: 'hashed-password',
+        authProvider: 'PASSWORD',
+        name: 'Jane Doe',
+        avatar: 'https://example.com/avatar.png',
+        role: 'ADMIN',
+        isActive: false,
+        createdAt: new Date('2026-01-01'),
+      });
+
+      expect(user.id).toBe('existing-id');
+      expect(user.email).toBe('jane@example.com');
+      expect(user.role).toBe('ADMIN');
+      expect(user.isActive).toBe(false);
+    });
+  });
 });
