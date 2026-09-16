@@ -23,7 +23,7 @@ export class Company {
 
     return new Company({
       id: randomUUID(),
-      name: normalizeName(input.name),
+      name: Company.normalizeName(input.name),
       website: input.website,
     });
   }
@@ -35,8 +35,8 @@ export class Company {
   }): Company {
     return new Company(props);
   }
-}
 
-function normalizeName(name: string): string {
-  return name.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+  static normalizeName(name: string): string {
+    return name.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+  }
 }

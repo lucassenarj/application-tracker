@@ -16,6 +16,19 @@ type PersistedStatusChange = {
   createdAt: Date;
 };
 
+type PersistedApplication = {
+  id: string;
+  title: string;
+  description: string | null;
+  externalUrl: string | null;
+  salary: number | null;
+  companyId: string;
+  userId: string;
+  currentStatus: string;
+  statusChanges: PersistedStatusChange[];
+  createdAt: Date;
+};
+
 @Injectable()
 export class PrismaApplicationRepository implements ApplicationRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -59,27 +72,32 @@ export class PrismaApplicationRepository implements ApplicationRepository {
       include: { statusChanges: { orderBy: { createdAt: 'asc' } } },
     });
 
-    if (!row) {
-      return null;
-    }
+    return row ? toApplication(row) : null;
+  }
 
-    return Application.reconstitute({
-      id: row.id,
-      title: row.title,
-      description: row.description ?? undefined,
-      externalUrl: row.externalUrl ?? undefined,
-      salary: row.salary ?? undefined,
-      companyId: row.companyId,
-      userId: row.userId,
-      currentStatus: row.currentStatus,
-      statusHistory: row.statusChanges.map(toStatusChange),
-      createdAt: row.createdAt,
+  async findAllByUser(userId: string): Promise<Application[]> {
+    const rows = await this.prisma.application.findMany({
+      where: { userId },
+      include: { statusChanges: { orderBy: { createdAt: 'asc' } } },
     });
-  }
 
-  findAllByUser(): Promise<Application[]> {
-    throw new Error('Not implemented');
+    return rows.map(toApplication);
   }
+}
+
+function toApplication(row: PersistedApplication): Application {
+  return Application.reconstitute({
+    id: row.id,
+    title: row.title,
+    description: row.description ?? undefined,
+    externalUrl: row.externalUrl ?? undefined,
+    salary: row.salary ?? undefined,
+    companyId: row.companyId,
+    userId: row.userId,
+    currentStatus: row.currentStatus as Application['currentStatus'],
+    statusHistory: row.statusChanges.map(toStatusChange),
+    createdAt: row.createdAt,
+  });
 }
 
 function toStatusChange(row: PersistedStatusChange): StatusChange {
