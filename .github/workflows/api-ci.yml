@@ -4,34 +4,71 @@ on:
   pull_request:
     paths:
       - 'api/**'
+      - '.github/workflows/api-ci.yml'
   push:
     branches: [main]
     paths:
       - 'api/**'
+      - '.github/workflows/api-ci.yml'
+
+defaults:
+  run:
+    working-directory: api
 
 jobs:
-  ci:
+  lint:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: api
     steps:
       - uses: actions/checkout@v4
-
       - run: corepack enable
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'yarn'
           cache-dependency-path: api/yarn.lock
-
       - run: yarn install --immutable
-
       - run: node_modules/.bin/prisma generate
-
       - run: yarn eslint "{src,apps,libs,test}/**/*.ts"
 
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+          cache-dependency-path: api/yarn.lock
+      - run: yarn install --immutable
+      - run: node_modules/.bin/prisma generate
       - run: npx tsc --noEmit
 
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+          cache-dependency-path: api/yarn.lock
+      - run: yarn install --immutable
+      - run: node_modules/.bin/prisma generate
       - run: yarn test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Build production image
+        uses: docker/build-push-action@v7
+        with:
+          context: api
+          file: api/Dockerfile.prod
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
