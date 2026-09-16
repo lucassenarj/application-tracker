@@ -126,6 +126,7 @@ The interview category is `interviewCategory` on `StatusChange`, not a separate 
   3. HTTP e2e tests
 - Do not write business logic before first writing a test describing the behavior.
 - Test variable names must be domain-specific, not generic: name the thing under test by its role (`applicationService`, `companyRepository`, not `service`/`repository`), and name entities by what they represent, not by generic result words (`newApplication`, `firstCompany`, `updatedApplication`, `foundApplication` — not `result`, `first`/`second`, `updated`, `found`). When a test needs two instances of the same type, distinguish them with a descriptive prefix rather than positional names.
+- Group tests with a nested `describe` block per method under test (e.g. `describe('create', ...)`, `describe('findById', ...)` inside the outer `describe('ClassName', ...)`), so test output reads as `ClassName › methodName › behavior` and it's clear which method each test targets at a glance. Skip this nesting when a class has only one public method being tested — nothing to disambiguate.
 - Do not “mock the behavior we are trying to prove”; test the real behavior of the domain.
 
 ### 3.4. State machine rules
