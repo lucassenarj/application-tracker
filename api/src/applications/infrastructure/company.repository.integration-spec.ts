@@ -13,10 +13,11 @@ describe('PrismaCompanyRepository', () => {
   });
 
   afterAll(async () => {
+    await prisma.company.deleteMany({ where: { name: 'Acme Corp' } });
     await prisma.$disconnect();
   });
 
-  afterEach(async () => {
+  beforeEach(async () => {
     await prisma.company.deleteMany({ where: { name: 'Acme Corp' } });
   });
 

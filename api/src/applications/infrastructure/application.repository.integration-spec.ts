@@ -17,14 +17,23 @@ describe('PrismaApplicationRepository', () => {
   });
 
   afterAll(async () => {
+    await prisma.statusChange.deleteMany({
+      where: { application: { userId: { in: ['user-1', 'user-2'] } } },
+    });
+    await prisma.application.deleteMany({
+      where: { userId: { in: ['user-1', 'user-2'] } },
+    });
+    await prisma.company.deleteMany({ where: { name: 'Acme Corp' } });
     await prisma.$disconnect();
   });
 
-  afterEach(async () => {
+  beforeEach(async () => {
     await prisma.statusChange.deleteMany({
-      where: { application: { userId: 'user-1' } },
+      where: { application: { userId: { in: ['user-1', 'user-2'] } } },
     });
-    await prisma.application.deleteMany({ where: { userId: 'user-1' } });
+    await prisma.application.deleteMany({
+      where: { userId: { in: ['user-1', 'user-2'] } },
+    });
     await prisma.company.deleteMany({ where: { name: 'Acme Corp' } });
   });
 
@@ -140,6 +149,50 @@ describe('PrismaApplicationRepository', () => {
         await applicationRepository.findById('nonexistent-id');
 
       expect(foundApplication).toBeNull();
+    });
+  });
+
+  describe('findAllByUser', () => {
+    it('returns all Applications belonging to the given user', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const firstApplication = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(firstApplication);
+
+      const secondApplication = Application.create({
+        title: 'Staff Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(secondApplication);
+
+      const otherUserApplication = Application.create({
+        title: 'Should not appear',
+        companyId: company.id,
+        userId: 'user-2',
+      });
+      await applicationRepository.save(otherUserApplication);
+
+      const foundApplications =
+        await applicationRepository.findAllByUser('user-1');
+
+      expect(foundApplications).toHaveLength(2);
+      expect(foundApplications.map((a) => a.id).sort()).toEqual(
+        [firstApplication.id, secondApplication.id].sort(),
+      );
+    });
+
+    it('returns an empty array when the user has no Applications', async () => {
+      const foundApplications = await applicationRepository.findAllByUser(
+        'user-without-applications',
+      );
+
+      expect(foundApplications).toEqual([]);
     });
   });
 });
