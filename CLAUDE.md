@@ -125,6 +125,7 @@ The interview category is `interviewCategory` on `StatusChange`, not a separate 
   2. repository integration tests with real Postgres
   3. HTTP e2e tests
 - Do not write business logic before first writing a test describing the behavior.
+- Test variable names must be domain-specific, not generic: name the thing under test by its role (`applicationService`, `companyRepository`, not `service`/`repository`), and name entities by what they represent, not by generic result words (`newApplication`, `firstCompany`, `updatedApplication`, `foundApplication` — not `result`, `first`/`second`, `updated`, `found`). When a test needs two instances of the same type, distinguish them with a descriptive prefix rather than positional names.
 - Do not “mock the behavior we are trying to prove”; test the real behavior of the domain.
 
 ### 3.4. State machine rules
@@ -172,7 +173,7 @@ The interview category is `interviewCategory` on `StatusChange`, not a separate 
 ### What is still open
 - Frontend build-out (framework/CSS/deploy target decided — decision 22; the actual UI is not built yet).
 - Deployment: concrete CI/CD pipeline, FE/BE optimization.
-- Observability.
+- Observability — when tackled, decide on a real logging service (structured logs, persisted/shipped somewhere), distinct from Nest's default console `Logger`. Also revisit whether uncaught domain errors (e.g. invalid status transitions) should stay as plain `Error`s relying on Nest's default global exception handling (logs full detail server-side, returns a generic 500 to the client — already safe as-is) or get explicit handling for more specific/curated client-facing messages.
 - Complete Identity module and `User` definition.
 - Access/refresh token policy and CSRF.
 - Rate limiting.
