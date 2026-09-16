@@ -53,21 +53,21 @@ describe('StatusChange', () => {
   });
 
   it('generates id and createdAt on creation, never passed in', () => {
-    const first = StatusChange.create({
+    const firstStatusChange = StatusChange.create({
       applicationId: 'application-1',
       status: 'WAITING_FEEDBACK',
       eventDate: new Date(),
     });
-    const second = StatusChange.create({
+    const secondStatusChange = StatusChange.create({
       applicationId: 'application-1',
       status: 'WAITING_FEEDBACK',
       eventDate: new Date(),
     });
 
-    expect(first.id).toEqual(expect.any(String));
-    expect(first.id).not.toBe('');
-    expect(first.createdAt).toBeInstanceOf(Date);
-    expect(first.id).not.toBe(second.id);
+    expect(firstStatusChange.id).toEqual(expect.any(String));
+    expect(firstStatusChange.id).not.toBe('');
+    expect(firstStatusChange.createdAt).toBeInstanceOf(Date);
+    expect(firstStatusChange.id).not.toBe(secondStatusChange.id);
   });
 
   it('leaves optional fields (notes, contact) undefined when omitted', () => {

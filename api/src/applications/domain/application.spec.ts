@@ -112,15 +112,17 @@ describe('Application', () => {
       userId: 'user-1',
     });
 
-    const updated = application.changeStatus({
+    const updatedApplication = application.changeStatus({
       status: 'INTERVIEW_SCHEDULED',
       eventDate: new Date(),
       interviewCategory: 'NON_TECHNICAL',
     });
 
-    expect(updated.currentStatus).toBe('INTERVIEW_SCHEDULED');
-    expect(updated.statusHistory).toHaveLength(2);
-    expect(updated.statusHistory[1].status).toBe('INTERVIEW_SCHEDULED');
+    expect(updatedApplication.currentStatus).toBe('INTERVIEW_SCHEDULED');
+    expect(updatedApplication.statusHistory).toHaveLength(2);
+    expect(updatedApplication.statusHistory[1].status).toBe(
+      'INTERVIEW_SCHEDULED',
+    );
   });
 
   it('throws an error when the transition is invalid', () => {
