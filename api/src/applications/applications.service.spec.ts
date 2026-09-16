@@ -105,4 +105,40 @@ describe('ApplicationsService', () => {
       ).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('findAllByUser', () => {
+    it('returns all Applications belonging to the given user', async () => {
+      const firstApplication = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      const secondApplication = await applicationService.create({
+        title: 'Staff Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      await applicationService.create({
+        title: 'Should not appear',
+        companyName: 'Acme Corp',
+        userId: 'user-2',
+      });
+
+      const applications = await applicationService.findAllByUser('user-1');
+
+      expect(applications).toHaveLength(2);
+      expect(applications[0].id).toBe(firstApplication.id);
+      expect(applications[1].id).toBe(secondApplication.id);
+    });
+
+    it('returns an empty array when the user has no Applications', async () => {
+      const applications = await applicationService.findAllByUser(
+        'user-without-applications',
+      );
+
+      expect(applications).toEqual([]);
+    });
+  });
 });

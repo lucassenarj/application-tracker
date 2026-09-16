@@ -66,8 +66,8 @@ export class ApplicationsService {
     return application;
   }
 
-  findAllByUser(_userId: string): Promise<Application[]> {
-    throw new Error('Not implemented');
+  findAllByUser(userId: string): Promise<Application[]> {
+    return this.applicationRepository.findAllByUser(userId);
   }
 
   async changeStatus(
