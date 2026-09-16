@@ -1,0 +1,15 @@
+{
+  "name": "application-tracker",
+  "private": true,
+  "packageManager": "yarn@4.18.0",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1"
+  },
+  "scripts": {
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "api/**/*.ts": "bash -c 'cd api && yarn eslint \"{src,apps,libs,test}/**/*.ts\"'"
+  }
+}
