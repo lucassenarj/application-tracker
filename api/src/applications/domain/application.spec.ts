@@ -15,7 +15,7 @@ describe('Application', () => {
       expect(application.userId).toBe('user-1');
     });
 
-    it('sets currentStatus to APPLIED automatically on creation, never passed in', () => {
+    it('sets currentStatus to APPLIED automatically on creation', () => {
       const application = Application.create({
         title: 'Senior Backend Engineer',
         companyId: 'company-1',
@@ -36,7 +36,7 @@ describe('Application', () => {
       expect(application.statusHistory[0].status).toBe('APPLIED');
     });
 
-    it('generates id and createdAt on creation, never passed in', () => {
+    it('generates id and createdAt on creation', () => {
       const first = Application.create({
         title: 'Senior Backend Engineer',
         companyId: 'company-1',

@@ -24,7 +24,7 @@ describe('Company', () => {
       expect(company.website).toBeUndefined();
     });
 
-    it('generates id on creation, never passed in', () => {
+    it('generates id on creation', () => {
       const first = Company.create({ name: 'Acme Corp' });
       const second = Company.create({ name: 'Acme Corp' });
 
