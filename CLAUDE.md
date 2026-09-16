@@ -175,7 +175,8 @@ The interview category is `interviewCategory` on `StatusChange`, not a separate 
 - Frontend build-out (framework/CSS/deploy target decided — decision 22; the actual UI is not built yet).
 - Deployment: concrete CI/CD pipeline, FE/BE optimization.
 - Observability — when tackled, decide on a real logging service (structured logs, persisted/shipped somewhere), distinct from Nest's default console `Logger`. Also revisit whether uncaught domain errors (e.g. invalid status transitions) should stay as plain `Error`s relying on Nest's default global exception handling (logs full detail server-side, returns a generic 500 to the client — already safe as-is) or get explicit handling for more specific/curated client-facing messages.
-- Complete Identity module and `User` definition.
+- Complete Identity module and `User` definition. `ApplicationsController` currently uses a hardcoded `PLACEHOLDER_USER_ID` constant in place of an authenticated user's id (no way to derive one yet without auth) — replace with the real session/JWT-derived user id once this lands.
+- HTTP e2e tests for `applications` — the controller is wired (create/findAll/findOne/changeStatus all delegate to the now-fully-implemented `ApplicationsService`) but has no dedicated tests of its own yet, deliberately deferred per the test pyramid (tier 3, and the controller itself has no real logic beyond DTO-to-service mapping).
 - Access/refresh token policy and CSRF.
 - Rate limiting.
 
