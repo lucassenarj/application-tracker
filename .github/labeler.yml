@@ -1,0 +1,26 @@
+api:
+  - changed-files:
+      - any-glob-to-any-file: 'api/**'
+
+frontend:
+  - changed-files:
+      - any-glob-to-any-file: 'frontend/**'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/**'
+          - 'Dockerfile'
+          - 'docker-compose.yml'
+
+infra:
+  - changed-files:
+      - any-glob-to-any-file: 'nginx/**'
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'README.md'
+          - 'DECISIONS.md'
+          - 'C4-MODEL.md'
+          - 'CLAUDE.md'
