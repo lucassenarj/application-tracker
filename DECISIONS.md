@@ -214,21 +214,56 @@ A personal job-application tracker: log an application (title, description, link
   - **Custom domains:** `application-tracker.lucassenarj.dev` → Vercel, `api.application-tracker.lucassenarj.dev` → Render, both configured as custom domains on their respective free tiers (decision 23's scheme applies from day one, not just after a future VPS migration).
   - **Phase 2 (not now, not blocking this week):** swap this deploy target for the self-hosted VPS running decision 23's local Docker Compose stack, once there's no deadline pressure. Only DNS targets and the DB connection string change — the domain scheme, cookie/auth architecture, and container layout stay the same.
 
+### 25. `User` attributes & invariants
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `id` | UUID | system-generated | identity |
+| `email` | string | yes | unique |
+| `passwordHash` | string | only when `authProvider = PASSWORD` | `null` for social-login-only accounts |
+| `authProvider` | enum (`PASSWORD` initially, more values added per provider later) | yes, system-managed | see rationale below |
+| `name` | string | no | editable later (profile page) |
+| `avatar` | string (URL) | no | editable later (profile page) |
+| `role` | enum (`USER` \| `ADMIN`) | yes, system-managed, default `USER` | |
+| `isActive` | boolean | yes, default `true` | admin can disable to stop abuse without deleting the account/data |
+| `createdAt` | timestamp | system-generated | |
+
+- **Goal:** pin down `User`'s exact shape before Identity module implementation begins — mirrors how decisions 15–18 did this for `Application` before that module was built.
+- **Why this way:**
+  - `passwordHash` nullable + `authProvider` as an enum (not a boolean flag) specifically to leave room for future social login without a schema-shape change later — an enum can grow new provider values, a boolean can't represent *which* provider. Social login itself is explicitly **not** being built now; this only avoids painting the schema into a corner.
+  - `role` + `isActive` exist to support a lightweight admin capability, decided alongside this: an admin can disable a user's account to stop abusive behavior (e.g. spamming random `Company` rows) without deleting their data. Deliberately **not** a full SaaS/subscription/admin-dashboard layer — considered and set aside as disproportionate to this app's actual product shape (a personal tool, not multi-tenant B2B); `role`/`isActive` alone covers basic account moderation.
+  - `name`/`avatar` optional and editable later, matching the profile page mentioned in the README's usage model.
+  - Account linking (one user, multiple auth methods e.g. password + Google) is a real future possibility but needs a separate linked-accounts table (`userId`, `provider`, `providerAccountId`), not a field on `User` itself — out of scope until social login is actually decided.
+
+### 26. Password hashing: Argon2id
+
+- **Goal:** hash `passwordHash` securely, per current best practice rather than an outdated default.
+- **Why this way:** Argon2id is the current OWASP-recommended default — memory-hard, resistant to GPU/ASIC cracking — over bcrypt (older, still acceptable, not the modern default) or scrypt/PBKDF2 (not recommended for new projects). Implemented via the `argon2` npm package.
+
+### 27. Auth: access + refresh token split, with rotation and reuse detection
+
+- **Goal:** resolve the "access/refresh token split" question decision 10 left open — reduce the blast radius of a stolen/leaked token.
+- **Why this way:** decision 10 only specified a single JWT in an httpOnly cookie with no expiration strategy, so a stolen token stayed valid until it naturally expired. Fix: a short-lived access token (~15 min) plus a separately-stored, longer-lived refresh token (~30 days), both in `httpOnly`/`Secure`/`SameSite` cookies — the refresh cookie scoped to the refresh endpoint's path only. Every refresh rotates the token (the old one is invalidated, a new one issued); reuse of an already-rotated-away token is treated as a theft signal, revoking the whole token family. Chosen over the simpler single-long-lived-token approach as a deliberate complexity trade-off (needs a refresh endpoint, token-family storage, rotation/reuse-detection logic) — accepted because it demonstrates a real, recognizable pattern, per this project's "intentionally overengineer for learning" allowance.
+
+### 28. CSRF protection: explicit double-submit token
+
+- **Goal:** resolve the CSRF question decision 10 left open — cookie-based auth is exactly the pattern CSRF targets.
+- **Why this way:** `SameSite=Strict`/`Lax` alone would handle most CSRF scenarios but isn't airtight (known edge cases). Chosen instead: an explicit double-submit CSRF token as defense-in-depth on top of `SameSite`, validated on state-changing requests.
+
 ## Still open (see README `TO DO` sections for the authoritative list)
 
-- **Domain model:** none — `Application`, `StatusChange`/`Contact`, `Company`, and the state machine are all defined (decisions 15–18).
-- **Frontend:** framework/CSS/deploy target decided (decisions 22–24, this week); FE optimization strategy still open.
-- **Infrastructure:** local dev infra (nginx + containers) and public deploy target decided (decisions 23–24, this week); local Docker Compose stack itself not yet built.
-- **Deploy:** platform decided (decisions 22–24, this week); concrete CI/CD pipeline and BE optimization still open.
+- **Domain model:** none — `Application`, `StatusChange`/`Contact`, `Company`, the state machine, and now `User` are all defined (decisions 15–18, 25).
+- **Frontend:** framework/CSS/deploy target decided (decisions 22–24); FE optimization strategy still open.
+- **Infrastructure:** local dev infra (nginx + containers) and public deploy target decided (decisions 23–24); local Docker Compose stack itself not yet built.
+- **Deploy:** platform decided (decisions 22–24); concrete CI/CD pipeline and BE optimization still open.
 - **Observability:** strategy — why, what, how.
-- **Identity (future idea, not scoped):** possible user-level settings — currency, timezone, other locale data — raised while discussing `Application.salary`.
-- **Auth: access/refresh token split.** Decision 10 only specifies a single JWT in an httpOnly cookie. A stolen token currently stays valid until it naturally expires — the standard mitigation is a short-lived access token plus a separately revocable long-lived refresh token. Not yet decided whether to adopt that split.
-- **CSRF protection.** Decision 10's cookie-based auth is exactly the pattern CSRF targets (a malicious site tricking a logged-in user's browser into firing a request using their session cookie). No CSRF-token strategy decided yet.
+- **Identity module implementation:** attributes and auth strategy decided (decisions 25–28) — `User` domain code, Prisma schema, `UserRepository`, `AuthService`/`AuthController` not yet built.
+- **Identity (future idea, not scoped):** possible user-level settings — currency, timezone, other locale data — raised while discussing `Application.salary`. Also: social login (decision 25's `authProvider`/nullable `passwordHash` leave room for it, but no provider is decided or being built) and account linking (needs a separate linked-accounts table, not scoped).
 - **Rate limiting.** No decision yet on limits per user/IP/endpoint, or overall — needed before this goes anywhere near production.
 
 ## Next planned step
 
-`Application` aggregate construction/invariants implemented under TDD (see `application.ts`/`.spec.ts`). Domain skeleton (StatusChange/Contact, Company, repository interfaces, service/controller shells, DTOs) in place. Domain scheme, local dev infra, and phase-1 public deploy target decided (decisions 23–24). Next: build the local Docker Compose stack (nginx + api + frontend + db containers, mkcert TLS) per decision 23, even though the frontend/API aren't functional yet — deliberately built ahead so there's a working local rehearsal environment ready as soon as they are.
+`Application`, `Company`, and `StatusChange` are all implemented under TDD with a working Prisma persistence layer, and the `applications` module is wired end-to-end (domain → repository → service → REST controller — see `ApplicationsService`/`ApplicationsController`). `User` attributes and the full auth strategy (Argon2id, access/refresh tokens with rotation, CSRF double-submit token) are now decided (decisions 25–28). Next: scaffold the `identity/` module (mirroring `applications/`'s `domain/`/`infrastructure/` layout) and implement `User` construction under TDD, same pattern as `Application`/`Company`.
 
 ---
 
