@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Application } from './domain/application';
 import type { ApplicationRepository } from './domain/application.repository';
+import { Company } from './domain/company';
 import type { CompanyRepository } from './domain/company.repository';
 import { ApplicationStatus } from './domain/application-status';
 import { Contact, InterviewCategory } from './domain/status-change';
@@ -31,8 +32,28 @@ export class ApplicationsService {
     private readonly companyRepository: CompanyRepository,
   ) {}
 
-  create(_input: CreateApplicationInput): Promise<Application> {
-    throw new Error('Not implemented');
+  async create(input: CreateApplicationInput): Promise<Application> {
+    const normalizedName = Company.normalizeName(input.companyName);
+    let company =
+      await this.companyRepository.findByNormalizedName(normalizedName);
+
+    if (!company) {
+      company = Company.create({ name: input.companyName });
+      await this.companyRepository.save(company);
+    }
+
+    const application = Application.create({
+      title: input.title,
+      description: input.description,
+      externalUrl: input.externalUrl,
+      salary: input.salary,
+      companyId: company.id,
+      userId: input.userId,
+    });
+
+    await this.applicationRepository.save(application);
+
+    return application;
   }
 
   findById(_id: string): Promise<Application> {
