@@ -7,7 +7,8 @@
     "lint-staged": "^17.5.1"
   },
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "lint-staged": "lint-staged"
   },
   "lint-staged": {
     "api/**/*.ts": "bash -c 'cd api && yarn eslint \"{src,apps,libs,test}/**/*.ts\"'"
