@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Application } from './domain/application';
 import type { ApplicationRepository } from './domain/application.repository';
 import { Company } from './domain/company';
@@ -56,18 +56,30 @@ export class ApplicationsService {
     return application;
   }
 
-  findById(_id: string): Promise<Application> {
-    throw new Error('Not implemented');
+  async findById(id: string): Promise<Application> {
+    const application = await this.applicationRepository.findById(id);
+
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
+
+    return application;
   }
 
   findAllByUser(_userId: string): Promise<Application[]> {
     throw new Error('Not implemented');
   }
 
-  changeStatus(
-    _applicationId: string,
-    _input: ChangeStatusInput,
+  async changeStatus(
+    applicationId: string,
+    input: ChangeStatusInput,
   ): Promise<Application> {
-    throw new Error('Not implemented');
+    const application = await this.findById(applicationId);
+
+    const updatedApplication = application.changeStatus(input);
+
+    await this.applicationRepository.save(updatedApplication);
+
+    return updatedApplication;
   }
 }
