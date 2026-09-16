@@ -28,6 +28,15 @@ enum InterviewCategory {
   NON_TECHNICAL
 }
 
+enum AuthProvider {
+  PASSWORD
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
 model Company {
   id      String  @id @default(uuid())
   name    String  @unique
@@ -68,4 +77,33 @@ model StatusChange {
   application Application @relation(fields: [applicationId], references: [id])
 
   @@index([applicationId])
+}
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  passwordHash String?
+  authProvider AuthProvider @default(PASSWORD)
+  name         String?
+  avatar       String?
+  role         UserRole     @default(USER)
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  familyId  String
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([familyId])
 }
