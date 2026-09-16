@@ -43,4 +43,8 @@ describe('Company', () => {
     expect(company.name).toBe('Acme Corp');
     expect(company.website).toBe('https://acme.example');
   });
+
+  it('exposes normalizeName so callers can normalize a name the same way before searching', () => {
+    expect(Company.normalizeName('STRIPE INC')).toBe('Stripe Inc');
+  });
 });
