@@ -1,0 +1,155 @@
+import { randomUUID } from 'crypto';
+import { Inject, Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { User } from './domain/user';
+import { RefreshToken } from './domain/refresh-token';
+import type { PasswordHasher } from './domain/password-hasher';
+import type { RefreshTokenRepository } from './domain/refresh-token.repository';
+import type { UserRepository } from './domain/user.repository';
+import {
+  generateRefreshToken,
+  hashRefreshToken,
+} from './infrastructure/refresh-token-crypto';
+
+const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+interface RegisterInput {
+  email: string;
+  password: string;
+}
+
+interface LoginInput {
+  email: string;
+  password: string;
+}
+
+interface LoginResult {
+  accessToken: string;
+  refreshToken: string;
+}
+
+@Injectable()
+export class AuthService {
+  constructor(
+    @Inject('UserRepository')
+    private readonly userRepository: UserRepository,
+    @Inject('PasswordHasher')
+    private readonly passwordHasher: PasswordHasher,
+    @Inject('RefreshTokenRepository')
+    private readonly refreshTokenRepository: RefreshTokenRepository,
+    private readonly jwtService: JwtService,
+  ) {}
+
+  async register(input: RegisterInput): Promise<User> {
+    const normalizedEmail = User.normalizeEmail(input.email);
+    const existingUser = await this.userRepository.findByEmail(normalizedEmail);
+
+    if (existingUser) {
+      throw new Error('a User with this email already exists');
+    }
+
+    const passwordHash = await this.passwordHasher.hash(input.password);
+
+    const user = User.create({
+      email: input.email,
+      passwordHash,
+    });
+
+    await this.userRepository.save(user);
+
+    return user;
+  }
+
+  async login(input: LoginInput): Promise<LoginResult> {
+    const normalizedEmail = User.normalizeEmail(input.email);
+    const user = await this.userRepository.findByEmail(normalizedEmail);
+
+    if (!user || !user.passwordHash) {
+      throw new Error('invalid credentials');
+    }
+
+    const isPasswordValid = await this.passwordHasher.verify(
+      input.password,
+      user.passwordHash,
+    );
+
+    if (!isPasswordValid) {
+      throw new Error('invalid credentials');
+    }
+
+    const accessToken = this.jwtService.sign({ sub: user.id });
+
+    const rawRefreshToken = generateRefreshToken();
+    const refreshToken = RefreshToken.create({
+      userId: user.id,
+      tokenHash: hashRefreshToken(rawRefreshToken),
+      familyId: randomUUID(),
+      expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+    });
+    await this.refreshTokenRepository.save(refreshToken);
+
+    return { accessToken, refreshToken: rawRefreshToken };
+  }
+
+  async refresh(rawRefreshToken: string): Promise<LoginResult> {
+    const tokenHash = hashRefreshToken(rawRefreshToken);
+    const existingRefreshToken =
+      await this.refreshTokenRepository.findByTokenHash(tokenHash);
+
+    if (!existingRefreshToken) {
+      throw new Error('invalid refresh token');
+    }
+
+    if (existingRefreshToken.revokedAt) {
+      const familyRefreshTokens =
+        await this.refreshTokenRepository.findAllByFamilyId(
+          existingRefreshToken.familyId,
+        );
+
+      await Promise.all(
+        familyRefreshTokens
+          .filter((refreshToken) => !refreshToken.revokedAt)
+          .map((refreshToken) =>
+            this.refreshTokenRepository.save(refreshToken.revoke()),
+          ),
+      );
+
+      throw new Error('refresh token has been reused; token family revoked');
+    }
+
+    if (existingRefreshToken.expiresAt < new Date()) {
+      throw new Error('refresh token has expired');
+    }
+
+    const revokedRefreshToken = existingRefreshToken.revoke();
+    await this.refreshTokenRepository.save(revokedRefreshToken);
+
+    const accessToken = this.jwtService.sign({
+      sub: existingRefreshToken.userId,
+    });
+
+    const newRawRefreshToken = generateRefreshToken();
+    const newRefreshToken = RefreshToken.create({
+      userId: existingRefreshToken.userId,
+      tokenHash: hashRefreshToken(newRawRefreshToken),
+      familyId: existingRefreshToken.familyId,
+      expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+    });
+    await this.refreshTokenRepository.save(newRefreshToken);
+
+    return { accessToken, refreshToken: newRawRefreshToken };
+  }
+
+  async logout(rawRefreshToken: string): Promise<void> {
+    const tokenHash = hashRefreshToken(rawRefreshToken);
+    const existingRefreshToken =
+      await this.refreshTokenRepository.findByTokenHash(tokenHash);
+
+    if (!existingRefreshToken || existingRefreshToken.revokedAt) {
+      return;
+    }
+
+    const revokedRefreshToken = existingRefreshToken.revoke();
+    await this.refreshTokenRepository.save(revokedRefreshToken);
+  }
+}

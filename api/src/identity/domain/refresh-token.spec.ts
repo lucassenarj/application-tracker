@@ -119,7 +119,7 @@ describe('RefreshToken', () => {
 
   describe('revoke', () => {
     it('revokes the RefreshToken by setting revokedAt', () => {
-      const now = new Date('2026-09-17T12:00:00.000Z');
+      const now = new Date();
       jest.useFakeTimers().setSystemTime(now);
 
       const refreshToken = RefreshToken.create({
