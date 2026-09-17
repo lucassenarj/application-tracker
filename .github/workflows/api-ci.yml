@@ -56,7 +56,7 @@ jobs:
           cache-dependency-path: api/yarn.lock
       - run: yarn install --immutable
       - run: node_modules/.bin/prisma generate
-      - run: yarn test
+      - run: yarn test:cov
 
   integration:
     runs-on: ubuntu-latest

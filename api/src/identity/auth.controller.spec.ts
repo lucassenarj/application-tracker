@@ -1,3 +1,4 @@
+import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { instanceToPlain } from 'class-transformer';
 import { Request, Response } from 'express';
@@ -144,6 +145,15 @@ describe('AuthController', () => {
         expect.objectContaining({ httpOnly: true }),
       );
     });
+
+    it('throws an UnauthorizedException when no refresh token cookie is present', async () => {
+      const mockRequest = { cookies: {} } as unknown as Request;
+      const mockResponse = { cookie: jest.fn() } as unknown as Response;
+
+      await expect(
+        authController.refresh(mockRequest, mockResponse),
+      ).rejects.toThrow(UnauthorizedException);
+    });
   });
 
   describe('logout', () => {
@@ -220,6 +230,18 @@ describe('AuthController', () => {
       await authController.logout(mockRequest, mockResponse);
 
       expect(mockResponse.clearCookie).toHaveBeenCalledWith('csrfToken');
+    });
+
+    it('does not call authService.logout when no refresh token cookie is present', async () => {
+      const mockRequest = { cookies: {} } as unknown as Request;
+      const mockResponse = {
+        cookie: jest.fn(),
+        clearCookie: jest.fn(),
+      } as unknown as Response;
+
+      await authController.logout(mockRequest, mockResponse);
+
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith('accessToken');
     });
   });
 
