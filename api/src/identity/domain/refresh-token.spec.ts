@@ -115,4 +115,36 @@ describe('RefreshToken', () => {
       expect(refreshToken.revokedAt).toBe(revokedAt);
     });
   });
+
+  describe('revoke', () => {
+    it('revokes the RefreshToken by setting revokedAt', () => {
+      const now = new Date('2026-09-17T12:00:00.000Z');
+      jest.useFakeTimers().setSystemTime(now);
+
+      const refreshToken = RefreshToken.create({
+        userId: 'user-1',
+        tokenHash: 'hashed-token',
+        familyId: 'family-1',
+        expiresAt: new Date('2026-10-01'),
+      });
+
+      const revokedRefreshToken = refreshToken.revoke();
+
+      expect(revokedRefreshToken.revokedAt).toEqual(now);
+
+      jest.useRealTimers();
+    });
+
+    it('throws an error when the RefreshToken is already revoked', () => {
+      const refreshToken = RefreshToken.create({
+        userId: 'user-1',
+        tokenHash: 'hashed-token',
+        familyId: 'family-1',
+        expiresAt: new Date('2026-10-01'),
+      });
+      const revokedRefreshToken = refreshToken.revoke();
+
+      expect(() => revokedRefreshToken.revoke()).toThrow();
+    });
+  });
 });

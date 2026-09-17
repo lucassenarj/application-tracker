@@ -72,4 +72,20 @@ export class RefreshToken {
   }): RefreshToken {
     return new RefreshToken(props);
   }
+
+  revoke(): RefreshToken {
+    if (this.revokedAt) {
+      throw new Error('RefreshToken is already revoked');
+    }
+
+    return new RefreshToken({
+      id: this.id,
+      userId: this.userId,
+      tokenHash: this.tokenHash,
+      familyId: this.familyId,
+      expiresAt: this.expiresAt,
+      createdAt: this.createdAt,
+      revokedAt: new Date(),
+    });
+  }
 }
