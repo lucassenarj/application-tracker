@@ -53,7 +53,7 @@ describe('StatusChange', () => {
       ).toThrow();
     });
 
-    it('generates id and createdAt on creation, never passed in', () => {
+    it('generates id and createdAt on creation', () => {
       const firstStatusChange = StatusChange.create({
         applicationId: 'application-1',
         status: 'WAITING_FEEDBACK',

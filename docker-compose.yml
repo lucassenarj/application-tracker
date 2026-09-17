@@ -8,7 +8,10 @@ services:
       - db
 
     environment:
-      DATABASE_URL: postgresql://application_tracker:application_tracker@db:5432/application_tracker?schema=public
+      DATABASE_URL: ${DATABASE_CONNECTION}://${DATABASE_USER}:${DATABASE_PASS}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      CSRF_SECRET: ${CSRF_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
 
     ports:
       - "3000:3000"
@@ -22,9 +25,9 @@ services:
     container_name: application-tracker-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: application_tracker
-      POSTGRES_PASSWORD: application_tracker
-      POSTGRES_DB: application_tracker
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASS}
+      POSTGRES_DB: ${DATABASE_NAME}
     ports:
       - "5432:5432"
     volumes:

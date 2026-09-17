@@ -24,13 +24,13 @@ describe('Company', () => {
       expect(company.website).toBeUndefined();
     });
 
-    it('generates id on creation, never passed in', () => {
-      const first = Company.create({ name: 'Acme Corp' });
-      const second = Company.create({ name: 'Acme Corp' });
+    it('generates id on creation', () => {
+      const firstCompany = Company.create({ name: 'Acme Corp' });
+      const secondCompany = Company.create({ name: 'Acme Corp' });
 
-      expect(first.id).toEqual(expect.any(String));
-      expect(first.id).not.toBe('');
-      expect(first.id).not.toBe(second.id);
+      expect(firstCompany.id).toEqual(expect.any(String));
+      expect(firstCompany.id).not.toBe('');
+      expect(firstCompany.id).not.toBe(secondCompany.id);
     });
   });
 
