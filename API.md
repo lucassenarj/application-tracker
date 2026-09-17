@@ -1,0 +1,34 @@
+# API Reference
+
+Base URL (local): `https://local.api.application-tracker.lucassenarj.dev`
+Base URL (production): `https://api.application-tracker.lucassenarj.dev`
+
+## Auth (`/auth`)
+
+No auth guard required, but some routes are CSRF-protected (see below).
+
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| POST | `/auth/register` | `{ email, password }` | Returns the created user (no `passwordHash`) |
+| POST | `/auth/login` | `{ email, password }` | Returns the user; sets `accessToken`/`refreshToken` httpOnly cookies |
+| POST | `/auth/refresh` | — (reads `refreshToken` cookie) | **CSRF-protected**; rotates both cookies |
+| POST | `/auth/logout` | — (reads `refreshToken` cookie) | **CSRF-protected**; clears all cookies |
+| GET | `/auth/csrf-token` | — | Returns `{ csrfToken }`; sets the signed CSRF cookie |
+
+## Applications (`/applications`)
+
+All routes require a valid `accessToken` cookie (set by `/auth/login` or `/auth/refresh`).
+
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| POST | `/applications` | `{ title, companyName, description?, externalUrl?, salary? }` | **CSRF-protected** |
+| GET | `/applications` | — | Only the authenticated user's applications |
+| GET | `/applications/:id` | — | 404 if the application belongs to a different user (not 403 — avoids confirming existence) |
+| PATCH | `/applications/:id/status` | `{ status, eventDate, notes?, contactName?, contactEmail?, interviewCategory? }` | **CSRF-protected** |
+
+## Testing flow (e.g. via Postman)
+
+1. `POST /auth/register` (or skip if already registered)
+2. `POST /auth/login` — grabs `accessToken`/`refreshToken` cookies
+3. `GET /auth/csrf-token` — grabs the CSRF cookie and returns the plain token in the response body
+4. For any `POST`/`PATCH` call above marked CSRF-protected, set header `x-csrf-token: <value from step 3>`
