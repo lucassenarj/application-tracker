@@ -27,6 +27,7 @@ describe('ApplicationsService', () => {
 
       expect(newApplication.title).toBe('Senior Backend Engineer');
       expect(newApplication.companyId).toEqual(expect.any(String));
+      expect(newApplication.companyId).not.toBe('');
 
       const savedCompany =
         await companyRepository.findByNormalizedName('Acme Corp');
