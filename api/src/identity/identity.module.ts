@@ -37,6 +37,7 @@ import { PrismaUserRepository } from './infrastructure/user.repository.prisma';
       useClass: PrismaRefreshTokenRepository,
     },
   ],
+  exports: [JwtModule],
 })
 export class IdentityModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
