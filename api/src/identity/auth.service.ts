@@ -1,5 +1,10 @@
 import { randomUUID } from 'crypto';
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from './domain/user';
 import { RefreshToken } from './domain/refresh-token';
@@ -49,7 +54,7 @@ export class AuthService {
     const existingUser = await this.userRepository.findByEmail(normalizedEmail);
 
     if (existingUser) {
-      throw new Error('a User with this email already exists');
+      throw new ConflictException('a User with this email already exists');
     }
 
     const passwordHash = await this.passwordHasher.hash(input.password);
@@ -69,7 +74,7 @@ export class AuthService {
     const user = await this.userRepository.findByEmail(normalizedEmail);
 
     if (!user || !user.passwordHash) {
-      throw new Error('invalid credentials');
+      throw new UnauthorizedException('invalid credentials');
     }
 
     const isPasswordValid = await this.passwordHasher.verify(
@@ -78,7 +83,7 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
-      throw new Error('invalid credentials');
+      throw new UnauthorizedException('invalid credentials');
     }
 
     const accessToken = this.jwtService.sign({ sub: user.id });
@@ -101,7 +106,7 @@ export class AuthService {
       await this.refreshTokenRepository.findByTokenHash(tokenHash);
 
     if (!existingRefreshToken) {
-      throw new Error('invalid refresh token');
+      throw new UnauthorizedException('invalid refresh token');
     }
 
     if (existingRefreshToken.revokedAt) {
@@ -118,11 +123,13 @@ export class AuthService {
           ),
       );
 
-      throw new Error('refresh token has been reused; token family revoked');
+      throw new UnauthorizedException(
+        'refresh token has been reused; token family revoked',
+      );
     }
 
     if (existingRefreshToken.expiresAt < new Date()) {
-      throw new Error('refresh token has expired');
+      throw new UnauthorizedException('refresh token has expired');
     }
 
     const revokedRefreshToken = existingRefreshToken.revoke();

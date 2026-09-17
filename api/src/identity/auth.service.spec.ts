@@ -1,3 +1,4 @@
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { RefreshToken } from './domain/refresh-token';
@@ -51,7 +52,7 @@ describe('AuthService', () => {
           email: 'jane@example.com',
           password: 'another-password',
         }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(ConflictException);
     });
     it('throws an error when a User with the given email already exists in a different case', async () => {
       await authService.register({
@@ -64,7 +65,7 @@ describe('AuthService', () => {
           email: 'JANE@EXAMPLE.COM',
           password: 'another-password',
         }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(ConflictException);
     });
   });
 
@@ -91,7 +92,7 @@ describe('AuthService', () => {
           email: 'jane@example.com',
           password: 'plain-text-password',
         }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(UnauthorizedException);
     });
     it('throws an error when the password does not match', async () => {
       await authService.register({
@@ -104,7 +105,7 @@ describe('AuthService', () => {
           email: 'jane@example.com',
           password: 'wrong-password',
         }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(UnauthorizedException);
     });
     it('creates a new refresh token family on each login', async () => {
       await authService.register({
@@ -177,7 +178,9 @@ describe('AuthService', () => {
       jest.useRealTimers();
     });
     it('throws an error when the refresh token does not exist', async () => {
-      await expect(authService.refresh('nonexistent-token')).rejects.toThrow();
+      await expect(authService.refresh('nonexistent-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
     it('throws an error when the refresh token is expired', async () => {
       const newUser = await authService.register({
@@ -194,7 +197,9 @@ describe('AuthService', () => {
       });
       await refreshTokenRepository.save(expiredRefreshToken);
 
-      await expect(authService.refresh(rawRefreshToken)).rejects.toThrow();
+      await expect(authService.refresh(rawRefreshToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
     it('revokes the entire token family when an already-revoked refresh token is reused', async () => {
       await authService.register({
@@ -215,7 +220,7 @@ describe('AuthService', () => {
 
       await expect(
         authService.refresh(loginResult.refreshToken),
-      ).rejects.toThrow();
+      ).rejects.toThrow(UnauthorizedException);
 
       const rotatedRefreshToken = await refreshTokenRepository.findByTokenHash(
         hashRefreshToken(firstRefreshResult.refreshToken),
