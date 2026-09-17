@@ -58,6 +58,72 @@ jobs:
       - run: node_modules/.bin/prisma generate
       - run: yarn test
 
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: application_tracker
+          POSTGRES_PASSWORD: application_tracker
+          POSTGRES_DB: application_tracker
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://application_tracker:application_tracker@localhost:5432/application_tracker?schema=public
+      JWT_SECRET: ci-test-jwt-secret
+      CSRF_SECRET: ci-test-csrf-secret
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+          cache-dependency-path: api/yarn.lock
+      - run: yarn install --immutable
+      - run: node_modules/.bin/prisma generate
+      - run: node_modules/.bin/prisma migrate deploy
+      - run: yarn test:integration
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: application_tracker
+          POSTGRES_PASSWORD: application_tracker
+          POSTGRES_DB: application_tracker
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://application_tracker:application_tracker@localhost:5432/application_tracker?schema=public
+      JWT_SECRET: ci-test-jwt-secret
+      CSRF_SECRET: ci-test-csrf-secret
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+          cache-dependency-path: api/yarn.lock
+      - run: yarn install --immutable
+      - run: node_modules/.bin/prisma generate
+      - run: node_modules/.bin/prisma migrate deploy
+      - run: yarn test:e2e
+
   build:
     runs-on: ubuntu-latest
     steps:
