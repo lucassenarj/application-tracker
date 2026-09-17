@@ -23,9 +23,13 @@ interface LoginInput {
   password: string;
 }
 
-interface LoginResult {
+interface RefreshResult {
   accessToken: string;
   refreshToken: string;
+}
+
+interface LoginResult extends RefreshResult {
+  user: User;
 }
 
 @Injectable()
@@ -88,10 +92,10 @@ export class AuthService {
     });
     await this.refreshTokenRepository.save(refreshToken);
 
-    return { accessToken, refreshToken: rawRefreshToken };
+    return { accessToken, refreshToken: rawRefreshToken, user };
   }
 
-  async refresh(rawRefreshToken: string): Promise<LoginResult> {
+  async refresh(rawRefreshToken: string): Promise<RefreshResult> {
     const tokenHash = hashRefreshToken(rawRefreshToken);
     const existingRefreshToken =
       await this.refreshTokenRepository.findByTokenHash(tokenHash);
