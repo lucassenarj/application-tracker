@@ -1,9 +1,10 @@
+import { daysFromNow } from '../test-utils/dates';
 import { RefreshToken } from './refresh-token';
 
 describe('RefreshToken', () => {
   describe('create', () => {
     it('creates a RefreshToken with valid props and exposes them back', () => {
-      const expiresAt = new Date('2026-10-01');
+      const expiresAt = daysFromNow(30);
 
       const refreshToken = RefreshToken.create({
         userId: 'user-1',
@@ -24,7 +25,7 @@ describe('RefreshToken', () => {
           userId: '',
           tokenHash: 'hashed-token',
           familyId: 'family-1',
-          expiresAt: new Date('2026-10-01'),
+          expiresAt: daysFromNow(30),
         }),
       ).toThrow();
     });
@@ -35,7 +36,7 @@ describe('RefreshToken', () => {
           userId: 'user-1',
           tokenHash: '',
           familyId: 'family-1',
-          expiresAt: new Date('2026-10-01'),
+          expiresAt: daysFromNow(30),
         }),
       ).toThrow();
     });
@@ -46,7 +47,7 @@ describe('RefreshToken', () => {
           userId: 'user-1',
           tokenHash: 'hashed-token',
           familyId: '',
-          expiresAt: new Date('2026-10-01'),
+          expiresAt: daysFromNow(30),
         }),
       ).toThrow();
     });
@@ -67,7 +68,7 @@ describe('RefreshToken', () => {
         userId: 'user-1',
         tokenHash: 'hashed-token',
         familyId: 'family-1',
-        expiresAt: new Date('2026-10-01'),
+        expiresAt: daysFromNow(30),
       });
 
       expect(refreshToken.revokedAt).toBeUndefined();
@@ -78,13 +79,13 @@ describe('RefreshToken', () => {
         userId: 'user-1',
         tokenHash: 'hashed-token',
         familyId: 'family-1',
-        expiresAt: new Date('2026-10-01'),
+        expiresAt: daysFromNow(30),
       });
       const secondRefreshToken = RefreshToken.create({
         userId: 'user-1',
         tokenHash: 'hashed-token',
         familyId: 'family-1',
-        expiresAt: new Date('2026-10-01'),
+        expiresAt: daysFromNow(30),
       });
 
       expect(firstRefreshToken.id).toEqual(expect.any(String));
@@ -125,7 +126,7 @@ describe('RefreshToken', () => {
         userId: 'user-1',
         tokenHash: 'hashed-token',
         familyId: 'family-1',
-        expiresAt: new Date('2026-10-01'),
+        expiresAt: daysFromNow(30),
       });
 
       const revokedRefreshToken = refreshToken.revoke();
@@ -140,7 +141,7 @@ describe('RefreshToken', () => {
         userId: 'user-1',
         tokenHash: 'hashed-token',
         familyId: 'family-1',
-        expiresAt: new Date('2026-10-01'),
+        expiresAt: daysFromNow(30),
       });
       const revokedRefreshToken = refreshToken.revoke();
 
