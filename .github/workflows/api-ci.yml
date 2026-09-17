@@ -111,6 +111,7 @@ jobs:
       DATABASE_URL: postgresql://application_tracker:application_tracker@localhost:5432/application_tracker?schema=public
       JWT_SECRET: ci-test-jwt-secret
       CSRF_SECRET: ci-test-csrf-secret
+      FRONTEND_URL: http://localhost:5173
     steps:
       - uses: actions/checkout@v4
       - run: corepack enable
