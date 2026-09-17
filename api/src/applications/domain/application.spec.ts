@@ -37,21 +37,21 @@ describe('Application', () => {
     });
 
     it('generates id and createdAt on creation', () => {
-      const first = Application.create({
+      const firstApplication = Application.create({
         title: 'Senior Backend Engineer',
         companyId: 'company-1',
         userId: 'user-1',
       });
-      const second = Application.create({
+      const secondApplication = Application.create({
         title: 'Senior Backend Engineer',
         companyId: 'company-1',
         userId: 'user-1',
       });
 
-      expect(first.id).toEqual(expect.any(String));
-      expect(first.id).not.toBe('');
-      expect(first.createdAt).toBeInstanceOf(Date);
-      expect(first.id).not.toBe(second.id);
+      expect(firstApplication.id).toEqual(expect.any(String));
+      expect(firstApplication.id).not.toBe('');
+      expect(firstApplication.createdAt).toBeInstanceOf(Date);
+      expect(firstApplication.id).not.toBe(secondApplication.id);
     });
 
     it('leaves optional fields (description, externalUrl, salary) undefined when omitted', () => {

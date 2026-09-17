@@ -25,12 +25,12 @@ describe('Company', () => {
     });
 
     it('generates id on creation', () => {
-      const first = Company.create({ name: 'Acme Corp' });
-      const second = Company.create({ name: 'Acme Corp' });
+      const firstCompany = Company.create({ name: 'Acme Corp' });
+      const secondCompany = Company.create({ name: 'Acme Corp' });
 
-      expect(first.id).toEqual(expect.any(String));
-      expect(first.id).not.toBe('');
-      expect(first.id).not.toBe(second.id);
+      expect(firstCompany.id).toEqual(expect.any(String));
+      expect(firstCompany.id).not.toBe('');
+      expect(firstCompany.id).not.toBe(secondCompany.id);
     });
   });
 
