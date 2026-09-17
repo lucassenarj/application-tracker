@@ -1,4 +1,10 @@
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
+import { doubleCsrfProtection } from '../csrf.config';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApplicationsController } from './applications.controller';
 import { ApplicationsService } from './applications.service';
@@ -20,4 +26,13 @@ import { PrismaCompanyRepository } from './infrastructure/company.repository.pri
     },
   ],
 })
-export class ApplicationsModule {}
+export class ApplicationsModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(doubleCsrfProtection)
+      .forRoutes(
+        { path: 'applications', method: RequestMethod.POST },
+        { path: 'applications/:id/status', method: RequestMethod.PATCH },
+      );
+  }
+}

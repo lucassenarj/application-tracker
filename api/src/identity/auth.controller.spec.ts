@@ -198,5 +198,42 @@ describe('AuthController', () => {
         expect.objectContaining({ path: '/auth/refresh' }),
       );
     });
+
+    it('clears the CSRF token cookie', async () => {
+      await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+      });
+      const loginResult = await authService.login({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+      });
+
+      const mockRequest = {
+        cookies: { refreshToken: loginResult.refreshToken },
+      } as unknown as Request;
+      const mockResponse = {
+        cookie: jest.fn(),
+        clearCookie: jest.fn(),
+      } as unknown as Response;
+
+      await authController.logout(mockRequest, mockResponse);
+
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith('csrfToken');
+    });
+  });
+
+  describe('csrfToken', () => {
+    it('returns a CSRF token', () => {
+      const mockRequest = {
+        cookies: { refreshToken: 'some-refresh-token' },
+      } as unknown as Request;
+      const mockResponse = { cookie: jest.fn() } as unknown as Response;
+
+      const result = authController.getCsrfToken(mockRequest, mockResponse);
+
+      expect(result.csrfToken).toEqual(expect.any(String));
+      expect(result.csrfToken).not.toBe('');
+    });
   });
 });

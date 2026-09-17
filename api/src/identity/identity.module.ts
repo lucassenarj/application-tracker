@@ -1,5 +1,11 @@
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { doubleCsrfProtection } from '../csrf.config';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -32,4 +38,13 @@ import { PrismaUserRepository } from './infrastructure/user.repository.prisma';
     },
   ],
 })
-export class IdentityModule {}
+export class IdentityModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(doubleCsrfProtection)
+      .forRoutes(
+        { path: 'auth/refresh', method: RequestMethod.POST },
+        { path: 'auth/logout', method: RequestMethod.POST },
+      );
+  }
+}

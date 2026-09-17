@@ -1,12 +1,14 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
   Req,
   Res,
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { generateCsrfToken } from '../csrf.config';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -94,5 +96,16 @@ export class AuthController {
 
     response.clearCookie('accessToken');
     response.clearCookie('refreshToken', { path: '/auth/refresh' });
+    response.clearCookie('csrfToken');
+  }
+
+  @Get('csrf-token')
+  getCsrfToken(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ): { csrfToken: string } {
+    const csrfToken = generateCsrfToken(request, response);
+
+    return { csrfToken };
   }
 }

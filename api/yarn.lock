@@ -3171,6 +3171,7 @@ __metadata:
     class-transformer: "npm:^0.5.1"
     class-validator: "npm:^0.15.1"
     cookie-parser: "npm:^1.4.7"
+    csrf-csrf: "npm:^4.0.3"
     eslint: "npm:^9.18.0"
     eslint-config-prettier: "npm:^10.0.1"
     eslint-plugin-prettier: "npm:^5.2.2"
@@ -3964,6 +3965,15 @@ __metadata:
     shebang-command: "npm:^2.0.0"
     which: "npm:^2.0.1"
   checksum: 10c0/053ea8b2135caff68a9e81470e845613e374e7309a47731e81639de3eaeb90c3d01af0e0b44d2ab9d50b43467223b88567dfeb3262db942dc063b9976718ffc1
+  languageName: node
+  linkType: hard
+
+"csrf-csrf@npm:^4.0.3":
+  version: 4.0.3
+  resolution: "csrf-csrf@npm:4.0.3"
+  dependencies:
+    http-errors: "npm:^2.0.0"
+  checksum: 10c0/29a73ca1448226233dc48669f9b02b19e27d5e2238af284d72ba938cf8619971fc1dac3a2c5f7d6f1a23f9b0ed0fc9941e1328900c498df63ecea9a6b3b93db5
   languageName: node
   linkType: hard
 
