@@ -1,0 +1,46 @@
+# api-v1.0.0 (2026-09-17)
+
+
+### Bug Fixes
+
+* **api:** copy prisma7.config.ts into the production image ([2cdd3eb](https://github.com/lucassenarj/application-tracker/commit/2cdd3eb1205f20a7c38a55c6692b81fb54c10a66))
+* **api:** include prisma/ in the production image ([29c5160](https://github.com/lucassenarj/application-tracker/commit/29c5160bd5bb14bbd21bf02e00e1cce6dc0226f5))
+* **api:** run migrations on container start instead of Render's pre-deploy command ([417dfec](https://github.com/lucassenarj/application-tracker/commit/417dfecf6a769fc08e0b614c93cbf5f388ab4a68))
+* **application:** resolve lint errors (prettier formatting, unused stub params) ([f993403](https://github.com/lucassenarj/application-tracker/commit/f9934033d95b6db00fe1a64ec19b08d90b1649e4))
+* **applications:** assert generated companyId is non-empty ([885ca7f](https://github.com/lucassenarj/application-tracker/commit/885ca7fd72665e3f54d537879d607a562bab7d6f))
+* **ci:** fix Postgres 18 volume mount and Prisma OpenSSL detection ([4c4bb67](https://github.com/lucassenarj/application-tracker/commit/4c4bb67d216a1acccce08353e83a4442cff94d57))
+* **identity:** map AuthService errors to proper HTTP exceptions ([d935930](https://github.com/lucassenarj/application-tracker/commit/d9359308e7622f3334b03e8e189f84df60961765))
+* **infrastructure:** coalesce interviewCategory null to undefined] ([1b58f03](https://github.com/lucassenarj/application-tracker/commit/1b58f0386b6867ff778652fad081c817a69559a4))
+* **infrastructure:** fix dist/main.js path by relocating generated Prisma client ([9541bf4](https://github.com/lucassenarj/application-tracker/commit/9541bf4387507c3a5c2f3b230ccbf705f8870408))
+* **infrastructure:** serialize integration tests to avoid cross-file DB races ([d40364b](https://github.com/lucassenarj/application-tracker/commit/d40364b385b211226aeff84e2c941138d18851c5))
+
+
+### Features
+
+* **api:** enable CORS for the frontend origin ([069e8a4](https://github.com/lucassenarj/application-tracker/commit/069e8a4d26ac300e7342782698ea6cb2c8f445f9))
+* **application-tracker:** implement APPLIED entry-only rule for status state machine ([c14b199](https://github.com/lucassenarj/application-tracker/commit/c14b1995cdfaff3de77fc467de9be9f697553048))
+* **application-tracker:** implement full status transition rules for state machine ([58c5cc7](https://github.com/lucassenarj/application-tracker/commit/58c5cc76703627a639687b89bf7f7936a1434c64))
+* **application:** add changeStatus transition method ([bfc97b5](https://github.com/lucassenarj/application-tracker/commit/bfc97b5a4b16f6d2b9e5ce473d6c8b230b6dbdb5))
+* **application:** add request DTOs with class-validator ([f5a4c27](https://github.com/lucassenarj/application-tracker/commit/f5a4c2714c118f1517b8234b21b52e0d07fa7241))
+* **application:** implement Application aggregate construction and invariants ([d708847](https://github.com/lucassenarj/application-tracker/commit/d70884700507b0c37e8d92a7b7396174530d5c20))
+* **application:** implement Application aggregate construction and invariants ([8b5e319](https://github.com/lucassenarj/application-tracker/commit/8b5e3193727defcfc43e84daa204f2694727e7e9))
+* **application:** implement StatusChange construction and invariants ([a74a5c5](https://github.com/lucassenarj/application-tracker/commit/a74a5c50078a01b36b4a00521a295a0bebb4bb8b))
+* **applications:** require authentication and enforce ownership ([ccc1196](https://github.com/lucassenarj/application-tracker/commit/ccc1196b0c085d452358cf0c4d7a95b902868efb))
+* **application:** wire ApplicationsController to the real service ([6ca2395](https://github.com/lucassenarj/application-tracker/commit/6ca239527b37878944eda47e88d4e18949dbe5e4))
+* **application:** wire ApplicationsService.create to real repositories ([9398cde](https://github.com/lucassenarj/application-tracker/commit/9398cded88d8ed33576d1f856d814cd66f5f75e0))
+* **application:** wire ApplicationsService.findAllByUser to the real repository ([ea77d0a](https://github.com/lucassenarj/application-tracker/commit/ea77d0ade2153383ad8ca24b4bac1ba81cd54a61))
+* **application:** wire ApplicationsService.findById and changeStatus to real repositories ([ad37a02](https://github.com/lucassenarj/application-tracker/commit/ad37a02a000c63ab63fcd582847b614e298e669d))
+* **identity:** add AuthController with register, login, refresh, and logout endpoints ([25ffaa5](https://github.com/lucassenarj/application-tracker/commit/25ffaa5cf939a17e62395068d076f3af916d2710))
+* **identity:** add AuthService with register, login, refresh, and logout ([c8eedb1](https://github.com/lucassenarj/application-tracker/commit/c8eedb10ce81a23b908656140af8f892b41114cb))
+* **identity:** add JwtAuthGuard for verifying the access token cookie ([5ff7347](https://github.com/lucassenarj/application-tracker/commit/5ff7347f622b07be04e417f467c4eb7f44f4fd7f))
+* **identity:** add Prisma schema and PrismaUserRepository ([6dc2641](https://github.com/lucassenarj/application-tracker/commit/6dc26410da367941357eb15f271a0e70107d4f68))
+* **identity:** add RefreshToken.revoke domain method ([f401c74](https://github.com/lucassenarj/application-tracker/commit/f401c741f58e96c1afed54330ddd2b84f74461c6))
+* **identity:** add RefreshTokenRepository and Prisma implementation ([95af947](https://github.com/lucassenarj/application-tracker/commit/95af947b959c9f23221e1641ad0765c944434737))
+* **identity:** add User.reconstitute and Argon2id password hashing ([08cfcfc](https://github.com/lucassenarj/application-tracker/commit/08cfcfc3c8b49e5b3a7a333c7111a18e4f835664))
+* **identity:** implement RefreshToken domain entity construction under TDD ([21435ce](https://github.com/lucassenarj/application-tracker/commit/21435cee91904b17c5d5f040103c1d45f951168a))
+* **identity:** implement User domain entity construction under TDD ([6166e92](https://github.com/lucassenarj/application-tracker/commit/6166e920ca54d8fbe9b65ca77b6f759f3bd7e05f))
+* **identity:** wire IdentityModule into the app ([84d5d58](https://github.com/lucassenarj/application-tracker/commit/84d5d58f2239a7c4e3c0cf55906efe60ad6c3a70))
+* **infrastructure:** add Prisma schema and repository implementations ([f06839a](https://github.com/lucassenarj/application-tracker/commit/f06839abe1063d06ae37cc930ddbdc5c79f8004f))
+* **infrastructure:** add production Dockerfile for api ([2e0467c](https://github.com/lucassenarj/application-tracker/commit/2e0467c1b04e33f5b495be60145fc2f2c3255690))
+* **infrastructure:** implement PrismaApplicationRepository.findAllByUser ([36793d6](https://github.com/lucassenarj/application-tracker/commit/36793d6fb49d6e076c1f21c81b7bc3017b6af818))
+* **security:** add CSRF double-submit token protection ([93c82da](https://github.com/lucassenarj/application-tracker/commit/93c82dafb348d1edbfd46fb12cb14e1a621e600d))
