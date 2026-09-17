@@ -41,8 +41,17 @@ describe('CSRF protection (e2e)', () => {
       where: { title: 'CSRF Test Application' },
     });
     await prisma.company.deleteMany({ where: { name: 'CSRF Test Co' } });
+    await prisma.refreshToken.deleteMany({
+      where: {
+        user: {
+          email: { in: ['csrf-test@example.com', 'csrf-test-2@example.com'] },
+        },
+      },
+    });
     await prisma.user.deleteMany({
-      where: { email: 'csrf-test@example.com' },
+      where: {
+        email: { in: ['csrf-test@example.com', 'csrf-test-2@example.com'] },
+      },
     });
     await app.close();
   });
@@ -67,6 +76,15 @@ describe('CSRF protection (e2e)', () => {
   });
   it('accepts a protected request with a valid CSRF token', async () => {
     const agent = request.agent(app.getHttpServer());
+
+    await agent.post('/auth/register').send({
+      email: 'csrf-test-2@example.com',
+      password: 'plain-text-password',
+    });
+    await agent.post('/auth/login').send({
+      email: 'csrf-test-2@example.com',
+      password: 'plain-text-password',
+    });
 
     const csrfResponse = await agent.get('/auth/csrf-token');
     const csrfToken = (csrfResponse.body as { csrfToken: string }).csrfToken;

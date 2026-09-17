@@ -5,6 +5,8 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { doubleCsrfProtection } from '../csrf.config';
+import { IdentityModule } from '../identity/identity.module';
+import { JwtAuthGuard } from '../identity/guards/jwt-auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApplicationsController } from './applications.controller';
 import { ApplicationsService } from './applications.service';
@@ -12,10 +14,12 @@ import { PrismaApplicationRepository } from './infrastructure/application.reposi
 import { PrismaCompanyRepository } from './infrastructure/company.repository.prisma';
 
 @Module({
+  imports: [IdentityModule],
   controllers: [ApplicationsController],
   providers: [
     ApplicationsService,
     PrismaService,
+    JwtAuthGuard,
     {
       provide: 'ApplicationRepository',
       useClass: PrismaApplicationRepository,

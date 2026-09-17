@@ -63,7 +63,10 @@ describe('ApplicationsService', () => {
         userId: 'user-1',
       });
 
-      const application = await applicationService.findById(newApplication.id);
+      const application = await applicationService.findById(
+        newApplication.id,
+        'user-1',
+      );
 
       expect(application.id).toBe(newApplication.id);
       expect(application.title).toBe('Senior Backend Engineer');
@@ -71,7 +74,19 @@ describe('ApplicationsService', () => {
 
     it('throws a NotFoundException when no Application matches the given id', async () => {
       await expect(
-        applicationService.findById('nonexistent-id'),
+        applicationService.findById('nonexistent-id', 'user-1'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws a NotFoundException when the Application belongs to a different user', async () => {
+      const newApplication = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      await expect(
+        applicationService.findById(newApplication.id, 'user-2'),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -86,6 +101,7 @@ describe('ApplicationsService', () => {
 
       const updatedApplication = await applicationService.changeStatus(
         newApplication.id,
+        'user-1',
         { status: 'WAITING_FEEDBACK', eventDate: new Date() },
       );
 
@@ -99,7 +115,22 @@ describe('ApplicationsService', () => {
 
     it('throws a NotFoundException when no Application matches the given id', async () => {
       await expect(
-        applicationService.changeStatus('nonexistent-id', {
+        applicationService.changeStatus('nonexistent-id', 'user-1', {
+          status: 'WAITING_FEEDBACK',
+          eventDate: new Date(),
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws a NotFoundException when the Application belongs to a different user', async () => {
+      const newApplication = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      await expect(
+        applicationService.changeStatus(newApplication.id, 'user-2', {
           status: 'WAITING_FEEDBACK',
           eventDate: new Date(),
         }),
