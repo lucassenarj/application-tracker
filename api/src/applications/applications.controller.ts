@@ -46,6 +46,8 @@ export class ApplicationsController {
     return this.applicationsService.findAllByUser(request.user!.id, {
       page: query.page ?? 1,
       pageSize: query.pageSize ?? 10,
+      search: query.search,
+      status: query.status,
     });
   }
 

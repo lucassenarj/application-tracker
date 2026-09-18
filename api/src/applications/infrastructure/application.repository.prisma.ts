@@ -84,16 +84,32 @@ export class PrismaApplicationRepository implements ApplicationRepository {
     options: FindAllByUserOptions,
   ): Promise<PaginatedResult<Application>> {
     const skip = (options.page - 1) * options.pageSize;
+    const searchQuery = options.search
+      ? toPrefixTsQuery(options.search)
+      : undefined;
+
+    const where = {
+      userId,
+      ...(options.status ? { currentStatus: options.status } : {}),
+      ...(searchQuery
+        ? {
+            OR: [
+              { title: { search: searchQuery } },
+              { company: { name: { search: searchQuery } } },
+            ],
+          }
+        : {}),
+    };
 
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.application.findMany({
-        where: { userId },
+        where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: options.pageSize,
         include: { statusChanges: { orderBy: { createdAt: 'asc' } } },
       }),
-      this.prisma.application.count({ where: { userId } }),
+      this.prisma.application.count({ where }),
     ]);
 
     return { items: rows.map(toApplication), total };
@@ -113,6 +129,21 @@ function toApplication(row: PersistedApplication): Application {
     statusHistory: row.statusChanges.map(toStatusChange),
     createdAt: row.createdAt,
   });
+}
+
+function toPrefixTsQuery(search: string): string | undefined {
+  const terms = search
+    .split(/\s+/)
+    .map((term) => term.replace(/[^a-zA-Z0-9]/g, ''))
+    .filter((term) => term.length > 0);
+
+  if (terms.length === 0) {
+    return undefined;
+  }
+
+  return terms
+    .map((term, index) => (index === terms.length - 1 ? `${term}:*` : term))
+    .join(' & ');
 }
 
 function toStatusChange(row: PersistedStatusChange): StatusChange {

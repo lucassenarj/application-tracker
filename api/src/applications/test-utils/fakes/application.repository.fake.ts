@@ -21,9 +21,18 @@ export class FakeApplicationRepository implements ApplicationRepository {
     userId: string,
     options: FindAllByUserOptions,
   ): Promise<PaginatedResult<Application>> {
-    const matching = [...this.applications.values()].filter(
+    let matching = [...this.applications.values()].filter(
       (a) => a.userId === userId,
     );
+
+    if (options.search) {
+      const search = options.search.toLowerCase();
+      matching = matching.filter((a) => a.title.toLowerCase().includes(search));
+    }
+
+    if (options.status) {
+      matching = matching.filter((a) => a.currentStatus === options.status);
+    }
 
     const start = (options.page - 1) * options.pageSize;
     const items = matching.slice(start, start + options.pageSize);

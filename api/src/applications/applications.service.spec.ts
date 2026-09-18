@@ -211,5 +211,116 @@ describe('ApplicationsService', () => {
 
       expect(result.total).toBe(3);
     });
+
+    it('returns only Applications whose title matches the search term', async () => {
+      await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+      await applicationService.create({
+        title: 'Frontend Developer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      const result = await applicationService.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+        search: 'backend',
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].title).toBe('Senior Backend Engineer');
+    });
+    it('returns all Applications when no search term is provided', async () => {
+      await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+      await applicationService.create({
+        title: 'Frontend Developer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      const result = await applicationService.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+      });
+
+      expect(result.items).toHaveLength(2);
+    });
+    it('returns an empty result when no Application matches the search term', async () => {
+      await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      const result = await applicationService.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+        search: 'nonexistent',
+      });
+
+      expect(result.items).toEqual([]);
+      expect(result.total).toBe(0);
+    });
+
+    it('returns only Applications matching the given status', async () => {
+      const firstApplication = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+      await applicationService.create({
+        title: 'Staff Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      await applicationService.changeStatus(firstApplication.id, 'user-1', {
+        status: 'WAITING_FEEDBACK',
+        eventDate: new Date(),
+      });
+
+      const result = await applicationService.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+        status: 'WAITING_FEEDBACK',
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].id).toBe(firstApplication.id);
+    });
+    it('returns all Applications when no status filter is provided', async () => {
+      const firstApplication = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+      const secondApplication = await applicationService.create({
+        title: 'Staff Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      await applicationService.changeStatus(firstApplication.id, 'user-1', {
+        status: 'WAITING_FEEDBACK',
+        eventDate: new Date(),
+      });
+
+      const result = await applicationService.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+      });
+
+      expect(result.items).toHaveLength(2);
+      expect(result.items.map((a) => a.id)).toEqual(
+        expect.arrayContaining([firstApplication.id, secondApplication.id]),
+      );
+    });
   });
 });
