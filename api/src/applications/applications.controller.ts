@@ -5,15 +5,18 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../identity/guards/jwt-auth.guard';
 import { Application } from './domain/application';
+import type { PaginatedResult } from './domain/application.repository';
 import { ApplicationsService } from './applications.service';
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { CreateApplicationDto } from './dto/create-application.dto';
+import { FindAllApplicationsDto } from './dto/find-all-applications.dto';
 
 @Controller('applications')
 @UseGuards(JwtAuthGuard)
@@ -36,8 +39,14 @@ export class ApplicationsController {
   }
 
   @Get()
-  findAll(@Req() request: Request): Promise<Application[]> {
-    return this.applicationsService.findAllByUser(request.user!.id);
+  findAll(
+    @Query() query: FindAllApplicationsDto,
+    @Req() request: Request,
+  ): Promise<PaginatedResult<Application>> {
+    return this.applicationsService.findAllByUser(request.user!.id, {
+      page: query.page ?? 1,
+      pageSize: query.pageSize ?? 10,
+    });
   }
 
   @Get(':id')

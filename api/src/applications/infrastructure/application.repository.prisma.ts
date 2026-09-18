@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Application } from '../domain/application';
-import type { ApplicationRepository } from '../domain/application.repository';
+import type {
+  ApplicationRepository,
+  FindAllByUserOptions,
+  PaginatedResult,
+} from '../domain/application.repository';
 import { Contact, StatusChange } from '../domain/status-change';
 
 type PersistedStatusChange = {
@@ -75,14 +79,24 @@ export class PrismaApplicationRepository implements ApplicationRepository {
     return row ? toApplication(row) : null;
   }
 
-  async findAllByUser(userId: string): Promise<Application[]> {
-    const rows = await this.prisma.application.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      include: { statusChanges: { orderBy: { createdAt: 'asc' } } },
-    });
+  async findAllByUser(
+    userId: string,
+    options: FindAllByUserOptions,
+  ): Promise<PaginatedResult<Application>> {
+    const skip = (options.page - 1) * options.pageSize;
 
-    return rows.map(toApplication);
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.application.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: options.pageSize,
+        include: { statusChanges: { orderBy: { createdAt: 'asc' } } },
+      }),
+      this.prisma.application.count({ where: { userId } }),
+    ]);
+
+    return { items: rows.map(toApplication), total };
   }
 }
 

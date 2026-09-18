@@ -1,6 +1,10 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Application } from './domain/application';
-import type { ApplicationRepository } from './domain/application.repository';
+import type {
+  ApplicationRepository,
+  FindAllByUserOptions,
+  PaginatedResult,
+} from './domain/application.repository';
 import { Company } from './domain/company';
 import type { CompanyRepository } from './domain/company.repository';
 import { ApplicationStatus } from './domain/application-status';
@@ -66,8 +70,11 @@ export class ApplicationsService {
     return application;
   }
 
-  findAllByUser(userId: string): Promise<Application[]> {
-    return this.applicationRepository.findAllByUser(userId);
+  findAllByUser(
+    userId: string,
+    options: FindAllByUserOptions,
+  ): Promise<PaginatedResult<Application>> {
+    return this.applicationRepository.findAllByUser(userId, options);
   }
 
   async changeStatus(

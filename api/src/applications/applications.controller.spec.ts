@@ -38,10 +38,13 @@ describe('ApplicationsController', () => {
         mockRequest,
       );
 
-      const applications = await applicationsController.findAll(mockRequest);
+      const result = await applicationsController.findAll(
+        { page: 1, pageSize: 10 },
+        mockRequest,
+      );
 
-      expect(applications).toHaveLength(1);
-      expect(applications[0].userId).toBe('user-1');
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].userId).toBe('user-1');
     });
   });
 

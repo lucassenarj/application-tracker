@@ -178,12 +178,14 @@ describe('PrismaApplicationRepository', () => {
       });
       await applicationRepository.save(otherUserApplication);
 
-      const foundApplications =
-        await applicationRepository.findAllByUser('user-1');
+      const result = await applicationRepository.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+      });
 
-      expect(foundApplications).toHaveLength(2);
-      expect(foundApplications.map((a) => a.id).sort()).toEqual(
-        [firstApplication.id, secondApplication.id].sort(),
+      expect(result.items).toHaveLength(2);
+      expect(result.items.map((a) => a.id)).toEqual(
+        expect.arrayContaining([firstApplication.id, secondApplication.id]),
       );
     });
 
@@ -213,19 +215,45 @@ describe('PrismaApplicationRepository', () => {
         data: { createdAt: new Date('2026-01-02T00:00:00.000Z') },
       });
 
-      const foundApplications =
-        await applicationRepository.findAllByUser('user-1');
+      const result = await applicationRepository.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+      });
 
-      expect(foundApplications[0].id).toBe(newerApplication.id);
-      expect(foundApplications[1].id).toBe(olderApplication.id);
+      expect(result.items[0].id).toBe(newerApplication.id);
+      expect(result.items[1].id).toBe(olderApplication.id);
     });
 
-    it('returns an empty array when the user has no Applications', async () => {
-      const foundApplications = await applicationRepository.findAllByUser(
+    it('returns an empty result when the user has no Applications', async () => {
+      const result = await applicationRepository.findAllByUser(
         'user-without-applications',
+        { page: 1, pageSize: 10 },
       );
 
-      expect(foundApplications).toEqual([]);
+      expect(result.items).toEqual([]);
+      expect(result.total).toBe(0);
+    });
+
+    it('returns only the requested page, while total reflects all matching Applications', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      for (let i = 0; i < 3; i++) {
+        const application = Application.create({
+          title: `Application ${i}`,
+          companyId: company.id,
+          userId: 'user-1',
+        });
+        await applicationRepository.save(application);
+      }
+
+      const result = await applicationRepository.findAllByUser('user-1', {
+        page: 2,
+        pageSize: 2,
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.total).toBe(3);
     });
   });
 });

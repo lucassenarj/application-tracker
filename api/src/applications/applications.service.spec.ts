@@ -158,19 +158,58 @@ describe('ApplicationsService', () => {
         userId: 'user-2',
       });
 
-      const applications = await applicationService.findAllByUser('user-1');
+      const result = await applicationService.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+      });
 
-      expect(applications).toHaveLength(2);
-      expect(applications[0].id).toBe(firstApplication.id);
-      expect(applications[1].id).toBe(secondApplication.id);
+      expect(result.items).toHaveLength(2);
+      expect(result.items[0].id).toBe(firstApplication.id);
+      expect(result.items[1].id).toBe(secondApplication.id);
     });
 
-    it('returns an empty array when the user has no Applications', async () => {
-      const applications = await applicationService.findAllByUser(
+    it('returns an empty result when the user has no Applications', async () => {
+      const result = await applicationService.findAllByUser(
         'user-without-applications',
+        { page: 1, pageSize: 10 },
       );
 
-      expect(applications).toEqual([]);
+      expect(result.items).toEqual([]);
+      expect(result.total).toBe(0);
+    });
+
+    it('returns only the requested page of results', async () => {
+      for (let i = 0; i < 3; i++) {
+        await applicationService.create({
+          title: `Application ${i}`,
+          companyName: 'Acme Corp',
+          userId: 'user-1',
+        });
+      }
+
+      const result = await applicationService.findAllByUser('user-1', {
+        page: 2,
+        pageSize: 2,
+      });
+
+      expect(result.items).toHaveLength(1);
+    });
+
+    it('returns the total count of matching Applications, not just the current page', async () => {
+      for (let i = 0; i < 3; i++) {
+        await applicationService.create({
+          title: `Application ${i}`,
+          companyName: 'Acme Corp',
+          userId: 'user-1',
+        });
+      }
+
+      const result = await applicationService.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 2,
+      });
+
+      expect(result.total).toBe(3);
     });
   });
 });
