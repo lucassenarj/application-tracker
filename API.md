@@ -28,6 +28,14 @@ All routes require a valid `accessToken` cookie (set by `/auth/login` or `/auth/
 | GET | `/applications/:id` | — | 404 if the application belongs to a different user (not 403 — avoids confirming existence) |
 | PATCH | `/applications/:id/status` | `{ status, eventDate, notes?, contactName?, contactEmail?, interviewCategory? }` | **CSRF-protected** |
 
+## Companies (`/companies`)
+
+All routes require a valid `accessToken` cookie.
+
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| GET | `/companies/search` | — | Query param `q` (required). Full-text, prefix-matching; capped at 10 results. Meant for the create-application autocomplete, so a new application can reuse an existing company instead of creating a near-duplicate |
+
 ## Testing flow (e.g. via Postman)
 
 1. `POST /auth/register` (or skip if already registered)

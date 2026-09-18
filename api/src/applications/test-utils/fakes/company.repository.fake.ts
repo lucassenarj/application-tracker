@@ -15,7 +15,13 @@ export class FakeCompanyRepository implements CompanyRepository {
     );
   }
 
-  search(): Promise<Company[]> {
-    throw new Error('Not implemented');
+  search(query: string): Promise<Company[]> {
+    const normalizedQuery = query.toLowerCase();
+
+    const matching = [...this.companies.values()].filter((c) =>
+      c.name.toLowerCase().includes(normalizedQuery),
+    );
+
+    return Promise.resolve(matching.slice(0, 10));
   }
 }

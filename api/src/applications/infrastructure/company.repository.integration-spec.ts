@@ -73,4 +73,54 @@ describe('PrismaCompanyRepository', () => {
       expect(foundCompany).toBeNull();
     });
   });
+
+  describe('search', () => {
+    let acme: Company;
+
+    beforeAll(async () => {
+      acme = Company.create({ name: 'Search Test Acme Corp' });
+      await companyRepository.save(acme);
+      await companyRepository.save(
+        Company.create({ name: 'Search Test Globex Inc' }),
+      );
+
+      for (let i = 0; i < 15; i++) {
+        await companyRepository.save(
+          Company.create({ name: `Search Test Widget Co ${i}` }),
+        );
+      }
+    });
+
+    afterAll(async () => {
+      await prisma.company.deleteMany({
+        where: { name: { startsWith: 'Search Test' } },
+      });
+    });
+
+    it('returns Companies whose name matches the search term', async () => {
+      const results = await companyRepository.search('acme');
+
+      expect(results).toHaveLength(1);
+      expect(results[0].id).toBe(acme.id);
+    });
+
+    it('matches on a partial/prefix word, for autocomplete-style typing', async () => {
+      const results = await companyRepository.search('glob');
+
+      expect(results).toHaveLength(1);
+      expect(results[0].name).toBe('Search Test Globex Inc');
+    });
+
+    it('returns an empty array when no Company matches', async () => {
+      const results = await companyRepository.search('nonexistent');
+
+      expect(results).toEqual([]);
+    });
+
+    it('limits results to at most 10 companies', async () => {
+      const results = await companyRepository.search('widget');
+
+      expect(results).toHaveLength(10);
+    });
+  });
 });

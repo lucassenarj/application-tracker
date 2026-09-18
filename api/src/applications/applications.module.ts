@@ -10,14 +10,17 @@ import { JwtAuthGuard } from '../identity/guards/jwt-auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApplicationsController } from './applications.controller';
 import { ApplicationsService } from './applications.service';
+import { CompaniesController } from './companies.controller';
+import { CompaniesService } from './companies.service';
 import { PrismaApplicationRepository } from './infrastructure/application.repository.prisma';
 import { PrismaCompanyRepository } from './infrastructure/company.repository.prisma';
 
 @Module({
   imports: [IdentityModule],
-  controllers: [ApplicationsController],
+  controllers: [ApplicationsController, CompaniesController],
   providers: [
     ApplicationsService,
+    CompaniesService,
     PrismaService,
     JwtAuthGuard,
     {

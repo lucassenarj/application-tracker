@@ -7,6 +7,7 @@ import type {
   PaginatedResult,
 } from '../domain/application.repository';
 import { Contact, StatusChange } from '../domain/status-change';
+import { toPrefixTsQuery } from './postgres-search';
 
 type PersistedStatusChange = {
   id: string;
@@ -129,21 +130,6 @@ function toApplication(row: PersistedApplication): Application {
     statusHistory: row.statusChanges.map(toStatusChange),
     createdAt: row.createdAt,
   });
-}
-
-function toPrefixTsQuery(search: string): string | undefined {
-  const terms = search
-    .split(/\s+/)
-    .map((term) => term.replace(/[^a-zA-Z0-9]/g, ''))
-    .filter((term) => term.length > 0);
-
-  if (terms.length === 0) {
-    return undefined;
-  }
-
-  return terms
-    .map((term, index) => (index === terms.length - 1 ? `${term}:*` : term))
-    .join(' & ');
 }
 
 function toStatusChange(row: PersistedStatusChange): StatusChange {

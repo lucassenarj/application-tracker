@@ -2,6 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Company } from '../domain/company';
 import type { CompanyRepository } from '../domain/company.repository';
+import { toPrefixTsQuery } from './postgres-search';
+
+type PersistedCompany = {
+  id: string;
+  name: string;
+  website: string | null;
+};
 
 @Injectable()
 export class PrismaCompanyRepository implements CompanyRepository {
@@ -22,18 +29,29 @@ export class PrismaCompanyRepository implements CompanyRepository {
   async findByNormalizedName(name: string): Promise<Company | null> {
     const row = await this.prisma.company.findUnique({ where: { name } });
 
-    if (!row) {
-      return null;
+    return row ? toCompany(row) : null;
+  }
+
+  async search(query: string): Promise<Company[]> {
+    const searchQuery = toPrefixTsQuery(query);
+
+    if (!searchQuery) {
+      return [];
     }
 
-    return Company.reconstitute({
-      id: row.id,
-      name: row.name,
-      website: row.website ?? undefined,
+    const rows = await this.prisma.company.findMany({
+      where: { name: { search: searchQuery } },
+      take: 10,
     });
-  }
 
-  search(): Promise<Company[]> {
-    throw new Error('Not implemented');
+    return rows.map(toCompany);
   }
+}
+
+function toCompany(row: PersistedCompany): Company {
+  return Company.reconstitute({
+    id: row.id,
+    name: row.name,
+    website: row.website ?? undefined,
+  });
 }
