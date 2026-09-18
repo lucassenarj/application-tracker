@@ -6,8 +6,6 @@ export class UserResponse {
   @Expose() email: string;
   @Expose() name?: string;
   @Expose() avatar?: string;
-  @Expose() role: string;
-  @Expose() isActive: boolean;
   @Expose() createdAt: Date;
 
   @Exclude()

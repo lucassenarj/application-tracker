@@ -6,6 +6,7 @@ import {
   Post,
   Req,
   Res,
+  SerializeOptions,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
@@ -21,6 +22,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 const isDev = process.env.NODE_ENV !== 'production';
 
 @Controller('auth')
+@SerializeOptions({ excludeExtraneousValues: true })
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
