@@ -118,16 +118,20 @@ describe('RefreshToken', () => {
   });
 
   describe('revoke', () => {
-    it('revokes the RefreshToken by setting revokedAt', () => {
-      const now = new Date();
-      jest.useFakeTimers().setSystemTime(now);
+    let refreshToken: RefreshToken;
 
-      const refreshToken = RefreshToken.create({
+    beforeAll(() => {
+      refreshToken = RefreshToken.create({
         userId: 'user-1',
         tokenHash: 'hashed-token',
         familyId: 'family-1',
         expiresAt: daysFromNow(30),
       });
+    });
+
+    it('revokes the RefreshToken by setting revokedAt', () => {
+      const now = new Date();
+      jest.useFakeTimers().setSystemTime(now);
 
       const revokedRefreshToken = refreshToken.revoke();
 
@@ -137,12 +141,6 @@ describe('RefreshToken', () => {
     });
 
     it('throws an error when the RefreshToken is already revoked', () => {
-      const refreshToken = RefreshToken.create({
-        userId: 'user-1',
-        tokenHash: 'hashed-token',
-        familyId: 'family-1',
-        expiresAt: daysFromNow(30),
-      });
       const revokedRefreshToken = refreshToken.revoke();
 
       expect(() => revokedRefreshToken.revoke()).toThrow();
