@@ -3,6 +3,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -162,5 +163,27 @@ export class AuthService {
 
     const revokedRefreshToken = existingRefreshToken.revoke();
     await this.refreshTokenRepository.save(revokedRefreshToken);
+  }
+
+  async getProfile(userId: string): Promise<User> {
+    const user = await this.userRepository.findById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
+  async updateProfile(
+    userId: string,
+    input: { name?: string; avatar?: string },
+  ): Promise<User> {
+    const user = await this.getProfile(userId);
+
+    const updatedUser = user.updateProfile(input);
+    await this.userRepository.save(updatedUser);
+
+    return updatedUser;
   }
 }

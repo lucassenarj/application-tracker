@@ -2,17 +2,21 @@ import {
   Body,
   Controller,
   Get,
+  Patch,
   Post,
   Req,
   Res,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { generateCsrfToken } from '../csrf.config';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserResponse } from './dto/user-response.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -107,5 +111,27 @@ export class AuthController {
     const csrfToken = generateCsrfToken(request, response);
 
     return { csrfToken };
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async getMe(@Req() request: Request): Promise<UserResponse> {
+    const user = await this.authService.getProfile(request.user!.id);
+
+    return UserResponse.fromDomain(user);
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  async updateMe(
+    @Body() dto: UpdateProfileDto,
+    @Req() request: Request,
+  ): Promise<UserResponse> {
+    const user = await this.authService.updateProfile(request.user!.id, {
+      name: dto.name,
+      avatar: dto.avatar,
+    });
+
+    return UserResponse.fromDomain(user);
   }
 }

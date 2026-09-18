@@ -1,6 +1,11 @@
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
+import type { User } from './domain/user';
 import { RefreshToken } from './domain/refresh-token';
 import { hashRefreshToken } from './infrastructure/refresh-token-crypto';
 import { FakePasswordHasher } from './test-utils/fakes/password-hasher.fake';
@@ -257,6 +262,66 @@ describe('AuthService', () => {
     });
     it('does not throw when the refresh token does not exist', async () => {
       await authService.logout('nonexistent-token');
+    });
+  });
+
+  describe('getProfile', () => {
+    let newUser: User;
+
+    beforeEach(async () => {
+      newUser = await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+      });
+    });
+
+    it('returns the User matching the given id', async () => {
+      const profile = await authService.getProfile(newUser.id);
+
+      expect(profile.id).toBe(newUser.id);
+      expect(profile.email).toBe('jane@example.com');
+    });
+
+    it('throws a NotFoundException when no User matches the given id', async () => {
+      await expect(authService.getProfile('nonexistent-id')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('updateProfile', () => {
+    let newUser: User;
+
+    beforeEach(async () => {
+      newUser = await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+      });
+    });
+
+    it("updates the User's name and persists it", async () => {
+      const updatedUser = await authService.updateProfile(newUser.id, {
+        name: 'Jane Doe',
+      });
+
+      expect(updatedUser.name).toBe('Jane Doe');
+
+      const persistedUser = await userRepository.findById(newUser.id);
+      expect(persistedUser?.name).toBe('Jane Doe');
+    });
+
+    it("updates the User's avatar and persists it", async () => {
+      const updatedUser = await authService.updateProfile(newUser.id, {
+        avatar: 'https://example.com/avatar.png',
+      });
+
+      expect(updatedUser.avatar).toBe('https://example.com/avatar.png');
+    });
+
+    it('throws a NotFoundException when no User matches the given id', async () => {
+      await expect(
+        authService.updateProfile('nonexistent-id', { name: 'Jane Doe' }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

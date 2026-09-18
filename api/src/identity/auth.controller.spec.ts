@@ -258,4 +258,47 @@ describe('AuthController', () => {
       expect(result.csrfToken).not.toBe('');
     });
   });
+
+  describe('getMe', () => {
+    it("returns the authenticated User's profile without the password hash", async () => {
+      const newUser = await authController.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+      });
+
+      const mockRequest = {
+        user: { id: newUser.id },
+      } as unknown as Request;
+
+      const userResponse = await authController.getMe(mockRequest);
+
+      expect(userResponse.email).toBe('jane@example.com');
+
+      const serializedUserResponse = instanceToPlain(userResponse);
+      expect(serializedUserResponse.passwordHash).toBeUndefined();
+    });
+  });
+
+  describe('updateMe', () => {
+    it("updates and returns the authenticated User's profile without the password hash", async () => {
+      const newUser = await authController.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+      });
+
+      const mockRequest = {
+        user: { id: newUser.id },
+      } as unknown as Request;
+
+      const userResponse = await authController.updateMe(
+        { name: 'Jane Doe' },
+        mockRequest,
+      );
+
+      expect(userResponse.name).toBe('Jane Doe');
+
+      const serializedUserResponse = instanceToPlain(userResponse);
+      expect(serializedUserResponse.passwordHash).toBeUndefined();
+    });
+  });
 });

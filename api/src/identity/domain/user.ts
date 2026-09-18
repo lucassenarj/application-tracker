@@ -87,4 +87,18 @@ export class User {
   }): User {
     return new User(props);
   }
+
+  updateProfile(input: { name?: string; avatar?: string }): User {
+    return new User({
+      id: this.id,
+      email: this.email,
+      passwordHash: this.passwordHash,
+      authProvider: this.authProvider,
+      name: input.name ?? this.name,
+      avatar: input.avatar ?? this.avatar,
+      role: this.role,
+      isActive: this.isActive,
+      createdAt: this.createdAt,
+    });
+  }
 }

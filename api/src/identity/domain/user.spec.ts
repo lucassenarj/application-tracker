@@ -90,4 +90,51 @@ describe('User', () => {
       expect(user.isActive).toBe(false);
     });
   });
+
+  describe('updateProfile', () => {
+    let user: User;
+
+    beforeAll(() => {
+      user = User.create({
+        email: 'jane@example.com',
+        passwordHash: 'hashed-password',
+        name: 'Original Name',
+        avatar: 'https://example.com/original.png',
+      });
+    });
+
+    it('updates name when provided', () => {
+      const updatedUser = user.updateProfile({ name: 'Jane Doe' });
+
+      expect(updatedUser.name).toBe('Jane Doe');
+    });
+
+    it('updates avatar when provided', () => {
+      const updatedUser = user.updateProfile({
+        avatar: 'https://example.com/new-avatar.png',
+      });
+
+      expect(updatedUser.avatar).toBe('https://example.com/new-avatar.png');
+    });
+
+    it('leaves name unchanged when not provided', () => {
+      const updatedUser = user.updateProfile({
+        avatar: 'https://example.com/new-avatar.png',
+      });
+
+      expect(updatedUser.name).toBe('Original Name');
+    });
+
+    it('leaves avatar unchanged when not provided', () => {
+      const updatedUser = user.updateProfile({ name: 'Jane Doe' });
+
+      expect(updatedUser.avatar).toBe('https://example.com/original.png');
+    });
+
+    it('does not mutate the original User instance', () => {
+      user.updateProfile({ name: 'Jane Doe' });
+
+      expect(user.name).toBe('Original Name');
+    });
+  });
 });
