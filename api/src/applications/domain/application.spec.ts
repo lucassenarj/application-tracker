@@ -108,13 +108,17 @@ describe('Application', () => {
   });
 
   describe('changeStatus', () => {
-    it('changes currentStatus and appends a StatusChange when the transition is valid', () => {
-      const application = Application.create({
+    let application: Application;
+
+    beforeAll(() => {
+      application = Application.create({
         title: 'Senior Backend Engineer',
         companyId: 'company-1',
         userId: 'user-1',
       });
+    });
 
+    it('changes currentStatus and appends a StatusChange when the transition is valid', () => {
       const updatedApplication = application.changeStatus({
         status: 'INTERVIEW_SCHEDULED',
         eventDate: new Date(),
@@ -129,12 +133,6 @@ describe('Application', () => {
     });
 
     it('throws an error when the transition is invalid', () => {
-      const application = Application.create({
-        title: 'Senior Backend Engineer',
-        companyId: 'company-1',
-        userId: 'user-1',
-      });
-
       expect(() =>
         application.changeStatus({
           status: 'OFFER_ACCEPTED',
@@ -144,12 +142,6 @@ describe('Application', () => {
     });
 
     it('throws an error when status is INTERVIEW_SCHEDULED and interviewCategory is missing', () => {
-      const application = Application.create({
-        title: 'Senior Backend Engineer',
-        companyId: 'company-1',
-        userId: 'user-1',
-      });
-
       expect(() =>
         application.changeStatus({
           status: 'INTERVIEW_SCHEDULED',
@@ -159,12 +151,6 @@ describe('Application', () => {
     });
 
     it('does not mutate the original Application when changing status', () => {
-      const application = Application.create({
-        title: 'Senior Backend Engineer',
-        companyId: 'company-1',
-        userId: 'user-1',
-      });
-
       application.changeStatus({
         status: 'WAITING_FEEDBACK',
         eventDate: new Date(),

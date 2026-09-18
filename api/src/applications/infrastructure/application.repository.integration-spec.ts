@@ -23,7 +23,9 @@ describe('PrismaApplicationRepository', () => {
     await prisma.application.deleteMany({
       where: { userId: { in: ['user-1', 'user-2'] } },
     });
-    await prisma.company.deleteMany({ where: { name: 'Acme Corp' } });
+    await prisma.company.deleteMany({
+      where: { name: { in: ['Acme Corp', 'Globex Inc'] } },
+    });
     await prisma.$disconnect();
   });
 
@@ -34,7 +36,9 @@ describe('PrismaApplicationRepository', () => {
     await prisma.application.deleteMany({
       where: { userId: { in: ['user-1', 'user-2'] } },
     });
-    await prisma.company.deleteMany({ where: { name: 'Acme Corp' } });
+    await prisma.company.deleteMany({
+      where: { name: { in: ['Acme Corp', 'Globex Inc'] } },
+    });
   });
 
   describe('save', () => {
@@ -178,21 +182,258 @@ describe('PrismaApplicationRepository', () => {
       });
       await applicationRepository.save(otherUserApplication);
 
-      const foundApplications =
-        await applicationRepository.findAllByUser('user-1');
+      const result = await applicationRepository.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+      });
 
-      expect(foundApplications).toHaveLength(2);
-      expect(foundApplications.map((a) => a.id).sort()).toEqual(
-        [firstApplication.id, secondApplication.id].sort(),
+      expect(result.items).toHaveLength(2);
+      expect(result.items.map((a) => a.id)).toEqual(
+        expect.arrayContaining([firstApplication.id, secondApplication.id]),
       );
     });
 
-    it('returns an empty array when the user has no Applications', async () => {
-      const foundApplications = await applicationRepository.findAllByUser(
+    it('returns Applications ordered by most recently created first', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const olderApplication = Application.create({
+        title: 'Older Application',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(olderApplication);
+      await prisma.application.update({
+        where: { id: olderApplication.id },
+        data: { createdAt: new Date('2026-01-01T00:00:00.000Z') },
+      });
+
+      const newerApplication = Application.create({
+        title: 'Newer Application',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(newerApplication);
+      await prisma.application.update({
+        where: { id: newerApplication.id },
+        data: { createdAt: new Date('2026-01-02T00:00:00.000Z') },
+      });
+
+      const result = await applicationRepository.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+      });
+
+      expect(result.items[0].id).toBe(newerApplication.id);
+      expect(result.items[1].id).toBe(olderApplication.id);
+    });
+
+    it('returns an empty result when the user has no Applications', async () => {
+      const result = await applicationRepository.findAllByUser(
         'user-without-applications',
+        { page: 1, pageSize: 10 },
       );
 
-      expect(foundApplications).toEqual([]);
+      expect(result.items).toEqual([]);
+      expect(result.total).toBe(0);
+    });
+
+    it('returns only the requested page, while total reflects all matching Applications', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      for (let i = 0; i < 3; i++) {
+        const application = Application.create({
+          title: `Application ${i}`,
+          companyId: company.id,
+          userId: 'user-1',
+        });
+        await applicationRepository.save(application);
+      }
+
+      const result = await applicationRepository.findAllByUser('user-1', {
+        page: 2,
+        pageSize: 2,
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.total).toBe(3);
+    });
+
+    it('returns Applications whose title matches the search term', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const matchingApplication = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(matchingApplication);
+
+      const nonMatchingApplication = Application.create({
+        title: 'Frontend Developer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(nonMatchingApplication);
+
+      const result = await applicationRepository.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+        search: 'backend',
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].id).toBe(matchingApplication.id);
+    });
+    it('returns Applications whose company name matches the search term', async () => {
+      const acme = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(acme);
+      const globex = Company.create({ name: 'Globex Inc' });
+      await companyRepository.save(globex);
+
+      const matchingApplication = Application.create({
+        title: 'Software Engineer',
+        companyId: acme.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(matchingApplication);
+
+      const nonMatchingApplication = Application.create({
+        title: 'Software Engineer',
+        companyId: globex.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(nonMatchingApplication);
+
+      const result = await applicationRepository.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+        search: 'acme',
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].id).toBe(matchingApplication.id);
+    });
+    it('matches on a partial/prefix word, for autocomplete-style typing', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const matchingApplication = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(matchingApplication);
+
+      const result = await applicationRepository.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+        search: 'back',
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].id).toBe(matchingApplication.id);
+    });
+    it('returns an empty result when neither title nor company name matches', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const application = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(application);
+
+      const result = await applicationRepository.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+        search: 'nonexistent',
+      });
+
+      expect(result.items).toEqual([]);
+      expect(result.total).toBe(0);
+    });
+
+    it('returns only Applications matching the given status', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const firstApplication = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(firstApplication);
+
+      const secondApplication = Application.create({
+        title: 'Staff Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(secondApplication);
+
+      const updatedFirstApplication = firstApplication.changeStatus({
+        status: 'WAITING_FEEDBACK',
+        eventDate: new Date(),
+      });
+      await applicationRepository.save(updatedFirstApplication);
+
+      const result = await applicationRepository.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+        status: 'WAITING_FEEDBACK',
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].id).toBe(firstApplication.id);
+    });
+    it('combines the status filter with the search filter', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const matchingApplication = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(matchingApplication);
+      const updatedMatchingApplication = matchingApplication.changeStatus({
+        status: 'WAITING_FEEDBACK',
+        eventDate: new Date(),
+      });
+      await applicationRepository.save(updatedMatchingApplication);
+
+      const wrongStatusApplication = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(wrongStatusApplication);
+
+      const wrongTitleApplication = Application.create({
+        title: 'Staff Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(wrongTitleApplication);
+      const updatedWrongTitleApplication = wrongTitleApplication.changeStatus({
+        status: 'WAITING_FEEDBACK',
+        eventDate: new Date(),
+      });
+      await applicationRepository.save(updatedWrongTitleApplication);
+
+      const result = await applicationRepository.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+        search: 'backend',
+        status: 'WAITING_FEEDBACK',
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].id).toBe(matchingApplication.id);
     });
   });
 });
