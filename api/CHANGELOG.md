@@ -1,3 +1,19 @@
+# [api-v1.1.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.0.0...api-v1.1.0) (2026-09-18)
+
+
+### Bug Fixes
+
+* **applications:** sort findAllByUser by most recently created first ([d1888f1](https://github.com/lucassenarj/application-tracker/commit/d1888f1311c8a246946391189ed7bcfb3f1cdf3d))
+* **identity:** stop leaking role/isActive/authProvider in UserResponse ([682eefa](https://github.com/lucassenarj/application-tracker/commit/682eefa2a7522039609b7ff7672cdee5923c4125))
+
+
+### Features
+
+* **applications:** add company search endpoint ([0871f81](https://github.com/lucassenarj/application-tracker/commit/0871f813034b75bd0c88da34280873f2fb39395e))
+* **applications:** full-text search and status filter on findAllByUser ([d5b0429](https://github.com/lucassenarj/application-tracker/commit/d5b04293ea4084f7f938328ee0b47042284afdbf))
+* **applications:** paginate findAllByUser ([9295de4](https://github.com/lucassenarj/application-tracker/commit/9295de4fdc3721349c941be022f5ef036894740e))
+* **identity:** add profile view/update endpoint ([9a52593](https://github.com/lucassenarj/application-tracker/commit/9a52593aea8240f211846f319e03dd43829ec6c6))
+
 # api-v1.0.0 (2026-09-17)
 
 
