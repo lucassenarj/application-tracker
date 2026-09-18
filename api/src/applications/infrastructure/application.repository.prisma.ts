@@ -78,6 +78,7 @@ export class PrismaApplicationRepository implements ApplicationRepository {
   async findAllByUser(userId: string): Promise<Application[]> {
     const rows = await this.prisma.application.findMany({
       where: { userId },
+      orderBy: { createdAt: 'desc' },
       include: { statusChanges: { orderBy: { createdAt: 'asc' } } },
     });
 

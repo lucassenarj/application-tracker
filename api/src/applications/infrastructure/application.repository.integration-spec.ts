@@ -187,6 +187,39 @@ describe('PrismaApplicationRepository', () => {
       );
     });
 
+    it('returns Applications ordered by most recently created first', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const olderApplication = Application.create({
+        title: 'Older Application',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(olderApplication);
+      await prisma.application.update({
+        where: { id: olderApplication.id },
+        data: { createdAt: new Date('2026-01-01T00:00:00.000Z') },
+      });
+
+      const newerApplication = Application.create({
+        title: 'Newer Application',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(newerApplication);
+      await prisma.application.update({
+        where: { id: newerApplication.id },
+        data: { createdAt: new Date('2026-01-02T00:00:00.000Z') },
+      });
+
+      const foundApplications =
+        await applicationRepository.findAllByUser('user-1');
+
+      expect(foundApplications[0].id).toBe(newerApplication.id);
+      expect(foundApplications[1].id).toBe(olderApplication.id);
+    });
+
     it('returns an empty array when the user has no Applications', async () => {
       const foundApplications = await applicationRepository.findAllByUser(
         'user-without-applications',
