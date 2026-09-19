@@ -40,7 +40,7 @@ jobs:
           cache: 'yarn'
           cache-dependency-path: frontend/yarn.lock
       - run: yarn install --immutable
-      - run: npx tsc -b
+      - run: yarn typecheck
 
   test:
     runs-on: ubuntu-latest

@@ -6,7 +6,9 @@
   "packageManager": "yarn@4.18.0",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "routes:generate": "node scripts/generate-routes.mjs",
+    "typecheck": "yarn routes:generate && tsc -b",
+    "build": "yarn routes:generate && tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
