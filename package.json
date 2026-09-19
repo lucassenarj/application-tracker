@@ -11,6 +11,7 @@
     "lint-staged": "lint-staged"
   },
   "lint-staged": {
-    "api/**/*.ts": "bash -c 'cd api && yarn eslint \"{src,apps,libs,test}/**/*.ts\"'"
+    "api/**/*.ts": "bash -c 'cd api && yarn eslint \"{src,apps,libs,test}/**/*.ts\"'",
+    "frontend/**/*.{ts,tsx}": "bash -c 'cd frontend && yarn lint'"
   }
 }
