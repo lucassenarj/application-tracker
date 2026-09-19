@@ -250,6 +250,12 @@ A personal job-application tracker: log an application (title, description, link
 - **Goal:** resolve the CSRF question decision 10 left open — cookie-based auth is exactly the pattern CSRF targets.
 - **Why this way:** `SameSite=Strict`/`Lax` alone would handle most CSRF scenarios but isn't airtight (known edge cases). Chosen instead: an explicit double-submit CSRF token as defense-in-depth on top of `SameSite`, validated on state-changing requests.
 
+### 29. Yarn workspaces (monorepo dependency sharing): deferred, not adopted yet
+
+- **Goal:** avoid installing duplicate copies of tooling shared between `api/` and `frontend/` (e.g. `typescript`, `semantic-release` + plugins) across two independent `node_modules` trees.
+- **Why not now:** `api/Dockerfile.prod` is already live in production with a simple, self-contained install (`api/package.json`+`api/yarn.lock` only) that took two separate failed-deploy cycles to get right. Converting to Yarn workspaces changes that install mechanism (root lockfile, `yarn workspaces focus api` instead of a plain install) for a tooling-convenience benefit, not a bug fix — real regression risk to something already stable, and it would also touch `docker-compose.yml`, CI cache paths, and both projects' lockfiles at once. The actual dependency overlap between the two stacks is smaller than it might seem, too — NestJS-specific deps (`@nestjs/*`, `prisma`, `argon2`) and frontend-specific ones (`react`, `@tanstack/*`, shadcn's ecosystem) don't overlap; the real shared surface is just `typescript` and the `semantic-release` toolchain.
+- **Decision:** keep `api/` and `frontend/` as fully independent npm projects (separate `package.json`/`yarn.lock`/`node_modules` each) for now. Revisit workspaces as its own deliberately-scoped piece of work later, on its own branch, so the Docker/CI implications can be verified in isolation rather than entangled with unrelated feature work.
+
 ## Still open (see README `TO DO` sections for the authoritative list)
 
 - **Domain model:** none — `Application`, `StatusChange`/`Contact`, `Company`, the state machine, and now `User` are all defined (decisions 15–18, 25).
