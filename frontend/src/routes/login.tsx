@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
+import { LoginPage } from '@/pages/login-page'
 import { userQueryOptions } from '@/lib/auth/user-query'
 
 export const Route = createFileRoute('/login')({
@@ -13,7 +14,3 @@ export const Route = createFileRoute('/login')({
   },
   component: LoginPage,
 })
-
-function LoginPage() {
-  return <h1>Login</h1>
-}
