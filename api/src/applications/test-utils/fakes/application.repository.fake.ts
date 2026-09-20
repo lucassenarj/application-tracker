@@ -1,4 +1,8 @@
 import type { Application } from '../../domain/application';
+import {
+  APPLICATION_STATUSES,
+  type ApplicationStatus,
+} from '../../domain/application-status';
 import type {
   ApplicationRepository,
   FindAllByUserOptions,
@@ -38,5 +42,22 @@ export class FakeApplicationRepository implements ApplicationRepository {
     const items = matching.slice(start, start + options.pageSize);
 
     return Promise.resolve({ items, total: matching.length });
+  }
+
+  countByUserGroupedByStatus(
+    userId: string,
+  ): Promise<Record<ApplicationStatus, number>> {
+    const matching = [...this.applications.values()].filter(
+      (a) => a.userId === userId,
+    );
+
+    const counts = Object.fromEntries(
+      APPLICATION_STATUSES.map((status) => [
+        status,
+        matching.filter((a) => a.currentStatus === status).length,
+      ]),
+    ) as Record<ApplicationStatus, number>;
+
+    return Promise.resolve(counts);
   }
 }

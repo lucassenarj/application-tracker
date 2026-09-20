@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Application } from '../domain/application';
+import {
+  APPLICATION_STATUSES,
+  type ApplicationStatus,
+} from '../domain/application-status';
 import type {
   ApplicationRepository,
   FindAllByUserOptions,
@@ -114,6 +118,26 @@ export class PrismaApplicationRepository implements ApplicationRepository {
     ]);
 
     return { items: rows.map(toApplication), total };
+  }
+
+  async countByUserGroupedByStatus(
+    userId: string,
+  ): Promise<Record<ApplicationStatus, number>> {
+    const rows = await this.prisma.application.groupBy({
+      by: ['currentStatus'],
+      where: { userId },
+      _count: { _all: true },
+    });
+
+    const counts = Object.fromEntries(
+      APPLICATION_STATUSES.map((status) => [status, 0]),
+    ) as Record<ApplicationStatus, number>;
+
+    for (const row of rows) {
+      counts[row.currentStatus] = row._count._all;
+    }
+
+    return counts;
   }
 }
 

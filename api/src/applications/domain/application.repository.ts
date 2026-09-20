@@ -20,4 +20,7 @@ export interface ApplicationRepository {
     userId: string,
     options: FindAllByUserOptions,
   ): Promise<PaginatedResult<Application>>;
+  countByUserGroupedByStatus(
+    userId: string,
+  ): Promise<Record<ApplicationStatus, number>>;
 }

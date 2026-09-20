@@ -436,4 +436,83 @@ describe('PrismaApplicationRepository', () => {
       expect(result.items[0].id).toBe(matchingApplication.id);
     });
   });
+
+  describe('countByUserGroupedByStatus', () => {
+    it('returns a count of 0 for every status when the user has no Applications', async () => {
+      const counts =
+        await applicationRepository.countByUserGroupedByStatus('user-1');
+
+      expect(counts).toEqual({
+        APPLIED: 0,
+        WAITING_FEEDBACK: 0,
+        ASSIGNMENT: 0,
+        INTERVIEW_SCHEDULED: 0,
+        OFFER: 0,
+        OFFER_ACCEPTED: 0,
+        OFFER_DECLINED: 0,
+        REJECTED: 0,
+      });
+    });
+    it('returns the correct count for statuses that have Applications, and 0 for the rest', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const firstApplication = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(firstApplication);
+
+      const secondApplication = Application.create({
+        title: 'Staff Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(secondApplication);
+
+      const updatedSecondApplication = secondApplication.changeStatus({
+        status: 'WAITING_FEEDBACK',
+        eventDate: new Date(),
+      });
+      await applicationRepository.save(updatedSecondApplication);
+
+      const counts =
+        await applicationRepository.countByUserGroupedByStatus('user-1');
+
+      expect(counts).toEqual({
+        APPLIED: 1,
+        WAITING_FEEDBACK: 1,
+        ASSIGNMENT: 0,
+        INTERVIEW_SCHEDULED: 0,
+        OFFER: 0,
+        OFFER_ACCEPTED: 0,
+        OFFER_DECLINED: 0,
+        REJECTED: 0,
+      });
+    });
+    it('does not include Applications belonging to a different user', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const ownApplication = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(ownApplication);
+
+      const otherUserApplication = Application.create({
+        title: 'Should not count',
+        companyId: company.id,
+        userId: 'user-2',
+      });
+      await applicationRepository.save(otherUserApplication);
+
+      const counts =
+        await applicationRepository.countByUserGroupedByStatus('user-1');
+
+      expect(counts.APPLIED).toBe(1);
+    });
+  });
 });

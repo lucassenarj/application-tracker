@@ -1,3 +1,10 @@
+# [api-v1.2.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.1.0...api-v1.2.0) (2026-09-20)
+
+
+### Features
+
+* **applications:** add dashboard stats endpoint ([25a01da](https://github.com/lucassenarj/application-tracker/commit/25a01da8e70ef6e9d4fc60c4b7bb44f88a10691c))
+
 # [api-v1.1.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.0.0...api-v1.1.0) (2026-09-18)
 
 
