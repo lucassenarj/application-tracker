@@ -323,4 +323,68 @@ describe('ApplicationsService', () => {
       );
     });
   });
+
+  describe('getStats', () => {
+    it('returns all zeros when the user has no Applications', async () => {
+      const stats = await applicationService.getStats(
+        'user-without-applications',
+      );
+
+      expect(stats).toEqual({
+        total: 0,
+        inProgress: 0,
+        offers: 0,
+        rejections: 0,
+      });
+    });
+    it('returns the correct total and bucketed counts based on the Applications statuses', async () => {
+      await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      const offerApplication = await applicationService.create({
+        title: 'Staff Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+      await applicationService.changeStatus(offerApplication.id, 'user-1', {
+        status: 'WAITING_FEEDBACK',
+        eventDate: new Date(),
+      });
+      await applicationService.changeStatus(offerApplication.id, 'user-1', {
+        status: 'ASSIGNMENT',
+        eventDate: new Date(),
+      });
+      await applicationService.changeStatus(offerApplication.id, 'user-1', {
+        status: 'INTERVIEW_SCHEDULED',
+        eventDate: new Date(),
+        interviewCategory: 'TECHNICAL',
+      });
+      await applicationService.changeStatus(offerApplication.id, 'user-1', {
+        status: 'OFFER',
+        eventDate: new Date(),
+      });
+
+      const rejectedApplication = await applicationService.create({
+        title: 'Platform Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+      await applicationService.changeStatus(rejectedApplication.id, 'user-1', {
+        status: 'REJECTED',
+        eventDate: new Date(),
+      });
+
+      const stats = await applicationService.getStats('user-1');
+
+      expect(stats).toEqual({
+        total: 3,
+        inProgress: 1,
+        offers: 1,
+        rejections: 1,
+      });
+    });
+  });
 });

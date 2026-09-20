@@ -1,5 +1,13 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Application } from './domain/application';
+import {
+  APPLICATION_STATUSES,
+  ApplicationStatus,
+} from './domain/application-status';
+import {
+  categorizeStatus,
+  type ApplicationStatusCategory,
+} from './domain/application-status-category';
 import type {
   ApplicationRepository,
   FindAllByUserOptions,
@@ -7,8 +15,14 @@ import type {
 } from './domain/application.repository';
 import { Company } from './domain/company';
 import type { CompanyRepository } from './domain/company.repository';
-import { ApplicationStatus } from './domain/application-status';
 import { Contact, InterviewCategory } from './domain/status-change';
+
+export interface ApplicationStats {
+  total: number;
+  inProgress: number;
+  offers: number;
+  rejections: number;
+}
 
 interface CreateApplicationInput {
   title: string;
@@ -90,4 +104,27 @@ export class ApplicationsService {
 
     return updatedApplication;
   }
+
+  async getStats(userId: string): Promise<ApplicationStats> {
+    const counts =
+      await this.applicationRepository.countByUserGroupedByStatus(userId);
+
+    const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+
+    return {
+      total,
+      inProgress: sumByCategory(counts, 'IN_PROGRESS'),
+      offers: sumByCategory(counts, 'OFFERS'),
+      rejections: sumByCategory(counts, 'REJECTIONS'),
+    };
+  }
+}
+
+function sumByCategory(
+  counts: Record<ApplicationStatus, number>,
+  category: ApplicationStatusCategory,
+): number {
+  return APPLICATION_STATUSES.filter(
+    (status) => categorizeStatus(status) === category,
+  ).reduce((sum, status) => sum + counts[status], 0);
 }

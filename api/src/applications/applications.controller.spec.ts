@@ -84,4 +84,24 @@ describe('ApplicationsController', () => {
       expect(updatedApplication.currentStatus).toBe('WAITING_FEEDBACK');
     });
   });
+
+  describe('getStats', () => {
+    it('returns the stats for the authenticated user', async () => {
+      const mockRequest = { user: { id: 'user-1' } } as unknown as Request;
+
+      await applicationsController.create(
+        { title: 'Senior Backend Engineer', companyName: 'Acme Corp' },
+        mockRequest,
+      );
+
+      const stats = await applicationsController.getStats(mockRequest);
+
+      expect(stats).toEqual({
+        total: 1,
+        inProgress: 1,
+        offers: 0,
+        rejections: 0,
+      });
+    });
+  });
 });
