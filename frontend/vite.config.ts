@@ -8,7 +8,11 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    tanstackRouter({ target: 'react', autoCodeSplitting: true }),
+    tanstackRouter({
+      target: 'react',
+      autoCodeSplitting: true,
+      routeFileIgnorePattern: '\\.spec\\.tsx$',
+    }),
     react(),
     tailwindcss(),
   ],
@@ -22,7 +26,8 @@ export default defineConfig({
     allowedHosts: ['local.application-tracker.lucassenarj.dev'],
   },
   test: {
-    environment: 'node',
+    environment: 'jsdom',
     globals: true,
+    setupFiles: ['./src/test-setup.ts'],
   },
 })
