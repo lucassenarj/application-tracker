@@ -13,7 +13,10 @@ import type { Request } from 'express';
 import { JwtAuthGuard } from '../identity/guards/jwt-auth.guard';
 import { Application } from './domain/application';
 import type { PaginatedResult } from './domain/application.repository';
-import { ApplicationsService } from './applications.service';
+import {
+  ApplicationsService,
+  type ApplicationStats,
+} from './applications.service';
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { FindAllApplicationsDto } from './dto/find-all-applications.dto';
@@ -49,6 +52,11 @@ export class ApplicationsController {
       search: query.search,
       status: query.status,
     });
+  }
+
+  @Get('stats')
+  getStats(@Req() request: Request): Promise<ApplicationStats> {
+    return this.applicationsService.getStats(request.user!.id);
   }
 
   @Get(':id')
