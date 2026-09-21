@@ -188,8 +188,11 @@ describe('PrismaApplicationRepository', () => {
       });
 
       expect(result.items).toHaveLength(2);
-      expect(result.items.map((a) => a.id)).toEqual(
+      expect(result.items.map((a) => a.application.id)).toEqual(
         expect.arrayContaining([firstApplication.id, secondApplication.id]),
+      );
+      expect(result.items.every((a) => a.companyName === 'Acme Corp')).toBe(
+        true,
       );
     });
 
@@ -224,8 +227,8 @@ describe('PrismaApplicationRepository', () => {
         pageSize: 10,
       });
 
-      expect(result.items[0].id).toBe(newerApplication.id);
-      expect(result.items[1].id).toBe(olderApplication.id);
+      expect(result.items[0].application.id).toBe(newerApplication.id);
+      expect(result.items[1].application.id).toBe(olderApplication.id);
     });
 
     it('returns an empty result when the user has no Applications', async () => {
@@ -285,7 +288,7 @@ describe('PrismaApplicationRepository', () => {
       });
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].id).toBe(matchingApplication.id);
+      expect(result.items[0].application.id).toBe(matchingApplication.id);
     });
     it('returns Applications whose company name matches the search term', async () => {
       const acme = Company.create({ name: 'Acme Corp' });
@@ -314,7 +317,7 @@ describe('PrismaApplicationRepository', () => {
       });
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].id).toBe(matchingApplication.id);
+      expect(result.items[0].application.id).toBe(matchingApplication.id);
     });
     it('matches on a partial/prefix word, for autocomplete-style typing', async () => {
       const company = Company.create({ name: 'Acme Corp' });
@@ -334,7 +337,7 @@ describe('PrismaApplicationRepository', () => {
       });
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].id).toBe(matchingApplication.id);
+      expect(result.items[0].application.id).toBe(matchingApplication.id);
     });
     it('returns an empty result when neither title nor company name matches', async () => {
       const company = Company.create({ name: 'Acme Corp' });
@@ -388,7 +391,7 @@ describe('PrismaApplicationRepository', () => {
       });
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].id).toBe(firstApplication.id);
+      expect(result.items[0].application.id).toBe(firstApplication.id);
     });
     it('combines the status filter with the search filter', async () => {
       const company = Company.create({ name: 'Acme Corp' });
@@ -433,7 +436,7 @@ describe('PrismaApplicationRepository', () => {
       });
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].id).toBe(matchingApplication.id);
+      expect(result.items[0].application.id).toBe(matchingApplication.id);
     });
   });
 

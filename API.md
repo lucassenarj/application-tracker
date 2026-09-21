@@ -25,7 +25,7 @@ All routes require a valid `accessToken` cookie (set by `/auth/login` or `/auth/
 |---|---|---|---|
 | POST | `/applications` | `{ title, companyName, description?, externalUrl?, salary? }` | **CSRF-protected** |
 | GET | `/applications/stats` | — | Returns `{ total, inProgress, offers, rejections }` counts for the authenticated user, bucketed from the raw `ApplicationStatus` values. Backs the dashboard's summary cards |
-| GET | `/applications` | — | Only the authenticated user's applications. Query params: `page` (default 1), `pageSize` (default 10), `search` (full-text, matches title or company name, prefix-matching), `status` (exact match) |
+| GET | `/applications` | — | Only the authenticated user's applications. Query params: `page` (default 1), `pageSize` (default 10), `search` (full-text, matches title or company name, prefix-matching), `status` (exact match). Each item: `{ id, title, companyName, currentStatus, createdAt }` |
 | GET | `/applications/:id` | — | 404 if the application belongs to a different user (not 403 — avoids confirming existence) |
 | PATCH | `/applications/:id/status` | `{ status, eventDate, notes?, contactName?, contactEmail?, interviewCategory? }` | **CSRF-protected** |
 
