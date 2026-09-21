@@ -37,7 +37,6 @@ type PersistedApplication = {
   currentStatus: string;
   statusChanges: PersistedStatusChange[];
   createdAt: Date;
-  company: { name: string };
 };
 
 @Injectable()
