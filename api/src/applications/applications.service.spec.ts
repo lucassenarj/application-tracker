@@ -9,8 +9,8 @@ describe('ApplicationsService', () => {
   let companyRepository: FakeCompanyRepository;
 
   beforeEach(() => {
-    applicationRepository = new FakeApplicationRepository();
     companyRepository = new FakeCompanyRepository();
+    applicationRepository = new FakeApplicationRepository(companyRepository);
     applicationService = new ApplicationsService(
       applicationRepository,
       companyRepository,
@@ -164,8 +164,8 @@ describe('ApplicationsService', () => {
       });
 
       expect(result.items).toHaveLength(2);
-      expect(result.items[0].id).toBe(firstApplication.id);
-      expect(result.items[1].id).toBe(secondApplication.id);
+      expect(result.items[0].application.id).toBe(firstApplication.id);
+      expect(result.items[1].application.id).toBe(secondApplication.id);
     });
 
     it('returns an empty result when the user has no Applications', async () => {
@@ -231,7 +231,7 @@ describe('ApplicationsService', () => {
       });
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].title).toBe('Senior Backend Engineer');
+      expect(result.items[0].application.title).toBe('Senior Backend Engineer');
     });
     it('returns all Applications when no search term is provided', async () => {
       await applicationService.create({
@@ -293,7 +293,7 @@ describe('ApplicationsService', () => {
       });
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].id).toBe(firstApplication.id);
+      expect(result.items[0].application.id).toBe(firstApplication.id);
     });
     it('returns all Applications when no status filter is provided', async () => {
       const firstApplication = await applicationService.create({
@@ -318,7 +318,7 @@ describe('ApplicationsService', () => {
       });
 
       expect(result.items).toHaveLength(2);
-      expect(result.items.map((a) => a.id)).toEqual(
+      expect(result.items.map((a) => a.application.id)).toEqual(
         expect.arrayContaining([firstApplication.id, secondApplication.id]),
       );
     });

@@ -13,13 +13,18 @@ export interface PaginatedResult<T> {
   total: number;
 }
 
+export interface ApplicationWithCompanyName {
+  application: Application;
+  companyName: string;
+}
+
 export interface ApplicationRepository {
   save(application: Application): Promise<void>;
   findById(id: string): Promise<Application | null>;
   findAllByUser(
     userId: string,
     options: FindAllByUserOptions,
-  ): Promise<PaginatedResult<Application>>;
+  ): Promise<PaginatedResult<ApplicationWithCompanyName>>;
   countByUserGroupedByStatus(
     userId: string,
   ): Promise<Record<ApplicationStatus, number>>;

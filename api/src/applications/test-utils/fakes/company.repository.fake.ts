@@ -24,4 +24,8 @@ export class FakeCompanyRepository implements CompanyRepository {
 
     return Promise.resolve(matching.slice(0, 10));
   }
+
+  findById(id: string): Company | undefined {
+    return this.companies.get(id);
+  }
 }

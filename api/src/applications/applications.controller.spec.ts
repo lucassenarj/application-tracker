@@ -9,9 +9,10 @@ describe('ApplicationsController', () => {
   let applicationsService: ApplicationsService;
 
   beforeEach(() => {
+    const companyRepository = new FakeCompanyRepository();
     applicationsService = new ApplicationsService(
-      new FakeApplicationRepository(),
-      new FakeCompanyRepository(),
+      new FakeApplicationRepository(companyRepository),
+      companyRepository,
     );
     applicationsController = new ApplicationsController(applicationsService);
   });
@@ -44,7 +45,8 @@ describe('ApplicationsController', () => {
       );
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].userId).toBe('user-1');
+      expect(result.items[0].title).toBe('Senior Backend Engineer');
+      expect(result.items[0].companyName).toBe('Acme Corp');
     });
   });
 
