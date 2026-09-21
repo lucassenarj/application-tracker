@@ -5,12 +5,16 @@ import {
 } from '../../domain/application-status';
 import type {
   ApplicationRepository,
+  ApplicationWithCompanyName,
   FindAllByUserOptions,
   PaginatedResult,
 } from '../../domain/application.repository';
+import type { FakeCompanyRepository } from './company.repository.fake';
 
 export class FakeApplicationRepository implements ApplicationRepository {
   private readonly applications = new Map<string, Application>();
+
+  constructor(private readonly companyRepository: FakeCompanyRepository) {}
 
   save(application: Application): Promise<void> {
     this.applications.set(application.id, application);
@@ -24,7 +28,7 @@ export class FakeApplicationRepository implements ApplicationRepository {
   findAllByUser(
     userId: string,
     options: FindAllByUserOptions,
-  ): Promise<PaginatedResult<Application>> {
+  ): Promise<PaginatedResult<ApplicationWithCompanyName>> {
     let matching = [...this.applications.values()].filter(
       (a) => a.userId === userId,
     );
@@ -39,7 +43,19 @@ export class FakeApplicationRepository implements ApplicationRepository {
     }
 
     const start = (options.page - 1) * options.pageSize;
-    const items = matching.slice(start, start + options.pageSize);
+    const items = matching
+      .slice(start, start + options.pageSize)
+      .map((application): ApplicationWithCompanyName => {
+        const company = this.companyRepository.findById(application.companyId);
+
+        if (!company) {
+          throw new Error(
+            `No company found for id ${application.companyId} — test setup likely forgot to save it`,
+          );
+        }
+
+        return { application, companyName: company.name };
+      });
 
     return Promise.resolve({ items, total: matching.length });
   }

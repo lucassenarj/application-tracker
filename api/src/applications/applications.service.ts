@@ -10,6 +10,7 @@ import {
 } from './domain/application-status-category';
 import type {
   ApplicationRepository,
+  ApplicationWithCompanyName,
   FindAllByUserOptions,
   PaginatedResult,
 } from './domain/application.repository';
@@ -87,7 +88,7 @@ export class ApplicationsService {
   findAllByUser(
     userId: string,
     options: FindAllByUserOptions,
-  ): Promise<PaginatedResult<Application>> {
+  ): Promise<PaginatedResult<ApplicationWithCompanyName>> {
     return this.applicationRepository.findAllByUser(userId, options);
   }
 

@@ -1,3 +1,15 @@
+# [api-v1.3.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.2.0...api-v1.3.0) (2026-09-21)
+
+
+### Bug Fixes
+
+* **applications:** remove unnecessary company field from PersistedApplication type ([fb7f889](https://github.com/lucassenarj/application-tracker/commit/fb7f889b5b8e77deeda0fa456549aea67f3cfd25))
+
+
+### Features
+
+* **applications:** include company name in the applications list response ([245d788](https://github.com/lucassenarj/application-tracker/commit/245d788ced2f083d3b01b982fad6ab3a77081608))
+
 # [api-v1.2.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.1.0...api-v1.2.0) (2026-09-20)
 
 

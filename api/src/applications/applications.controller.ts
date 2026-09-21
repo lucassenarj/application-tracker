@@ -12,7 +12,11 @@ import {
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../identity/guards/jwt-auth.guard';
 import { Application } from './domain/application';
-import type { PaginatedResult } from './domain/application.repository';
+import type { ApplicationStatus } from './domain/application-status';
+import type {
+  ApplicationWithCompanyName,
+  PaginatedResult,
+} from './domain/application.repository';
 import {
   ApplicationsService,
   type ApplicationStats,
@@ -20,6 +24,27 @@ import {
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { FindAllApplicationsDto } from './dto/find-all-applications.dto';
+
+export interface ApplicationListItemResponse {
+  id: string;
+  title: string;
+  companyName: string;
+  currentStatus: ApplicationStatus;
+  createdAt: Date;
+}
+
+function toListItemResponse({
+  application,
+  companyName,
+}: ApplicationWithCompanyName): ApplicationListItemResponse {
+  return {
+    id: application.id,
+    title: application.title,
+    companyName,
+    currentStatus: application.currentStatus,
+    createdAt: application.createdAt,
+  };
+}
 
 @Controller('applications')
 @UseGuards(JwtAuthGuard)
@@ -42,16 +67,21 @@ export class ApplicationsController {
   }
 
   @Get()
-  findAll(
+  async findAll(
     @Query() query: FindAllApplicationsDto,
     @Req() request: Request,
-  ): Promise<PaginatedResult<Application>> {
-    return this.applicationsService.findAllByUser(request.user!.id, {
-      page: query.page ?? 1,
-      pageSize: query.pageSize ?? 10,
-      search: query.search,
-      status: query.status,
-    });
+  ): Promise<PaginatedResult<ApplicationListItemResponse>> {
+    const result = await this.applicationsService.findAllByUser(
+      request.user!.id,
+      {
+        page: query.page ?? 1,
+        pageSize: query.pageSize ?? 10,
+        search: query.search,
+        status: query.status,
+      },
+    );
+
+    return { items: result.items.map(toListItemResponse), total: result.total };
   }
 
   @Get('stats')

@@ -7,6 +7,7 @@ import {
 } from '../domain/application-status';
 import type {
   ApplicationRepository,
+  ApplicationWithCompanyName,
   FindAllByUserOptions,
   PaginatedResult,
 } from '../domain/application.repository';
@@ -87,7 +88,7 @@ export class PrismaApplicationRepository implements ApplicationRepository {
   async findAllByUser(
     userId: string,
     options: FindAllByUserOptions,
-  ): Promise<PaginatedResult<Application>> {
+  ): Promise<PaginatedResult<ApplicationWithCompanyName>> {
     const skip = (options.page - 1) * options.pageSize;
     const searchQuery = options.search
       ? toPrefixTsQuery(options.search)
@@ -112,12 +113,21 @@ export class PrismaApplicationRepository implements ApplicationRepository {
         orderBy: { createdAt: 'desc' },
         skip,
         take: options.pageSize,
-        include: { statusChanges: { orderBy: { createdAt: 'asc' } } },
+        include: {
+          statusChanges: { orderBy: { createdAt: 'asc' } },
+          company: { select: { name: true } },
+        },
       }),
       this.prisma.application.count({ where }),
     ]);
 
-    return { items: rows.map(toApplication), total };
+    return {
+      items: rows.map((row) => ({
+        application: toApplication(row),
+        companyName: row.company.name,
+      })),
+      total,
+    };
   }
 
   async countByUserGroupedByStatus(
