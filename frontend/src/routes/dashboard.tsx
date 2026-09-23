@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
+import { DashboardPage } from '@/pages/dashboard-page'
 import { userQueryOptions } from '@/lib/auth/user-query'
 
 export const Route = createFileRoute('/dashboard')({
@@ -13,7 +14,3 @@ export const Route = createFileRoute('/dashboard')({
   },
   component: DashboardPage,
 })
-
-function DashboardPage() {
-  return <h1>Dashboard</h1>
-}

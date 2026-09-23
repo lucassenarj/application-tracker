@@ -1,0 +1,112 @@
+import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  formatStatus,
+  latestApplicationsQueryOptions,
+} from '@/lib/dashboard/applications-list'
+import { applicationStatsQueryOptions } from '@/lib/dashboard/stats'
+
+const SUMMARY_CARDS = [
+  { key: 'total', label: 'Total' },
+  { key: 'inProgress', label: 'In Progress' },
+  { key: 'offers', label: 'Offers' },
+  { key: 'rejections', label: 'Rejections' },
+] as const
+
+export function DashboardPage() {
+  const statsQuery = useQuery(applicationStatsQueryOptions)
+  const applicationsQuery = useQuery(latestApplicationsQueryOptions)
+
+  return (
+    <div className="flex flex-col gap-6 p-6">
+      <h1 className="text-2xl font-heading font-medium">Dashboard</h1>
+
+      {statsQuery.isError && (
+        <p className="text-sm text-destructive">
+          Couldn't load your stats. Try refreshing the page.
+        </p>
+      )}
+
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {statsQuery.isPending
+          ? SUMMARY_CARDS.map(({ key }) => (
+              <Card key={key}>
+                <CardHeader>
+                  <Skeleton className="h-4 w-20" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-12" />
+                </CardContent>
+              </Card>
+            ))
+          : statsQuery.isSuccess &&
+            SUMMARY_CARDS.map(({ key, label }) => (
+              <Card key={key}>
+                <CardHeader>
+                  <CardTitle>{label}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <span className="text-3xl font-heading font-medium">
+                    {statsQuery.data[key]}
+                  </span>
+                </CardContent>
+              </Card>
+            ))}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Latest Applications</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          {applicationsQuery.isPending &&
+            Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+
+          {applicationsQuery.isError && (
+            <p className="text-sm text-destructive">
+              Couldn't load your applications. Try refreshing the page.
+            </p>
+          )}
+
+          {applicationsQuery.isSuccess &&
+            (applicationsQuery.data.items.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No applications yet.</p>
+            ) : (
+              applicationsQuery.data.items.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between border-b pb-2 last:border-b-0 last:pb-0"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-medium">{item.title}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {item.companyName}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-sm">
+                      {formatStatus(item.currentStatus)}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {new Date(item.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ))}
+        </CardContent>
+      </Card>
+
+      <Link
+        to="/applications"
+        className="self-center text-sm underline underline-offset-4"
+      >
+        See more
+      </Link>
+    </div>
+  )
+}
