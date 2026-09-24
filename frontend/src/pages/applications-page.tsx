@@ -39,11 +39,16 @@ export function ApplicationsPage() {
         page: 1,
         status: value === 'ALL' ? undefined : (value as ApplicationStatus),
       },
+      replace: true,
     })
   }
 
   const goToPage = (nextPage: number) => {
-    navigate({ to: '/applications', search: { page: nextPage, status } })
+    navigate({
+      to: '/applications',
+      search: { page: nextPage, status },
+      replace: true,
+    })
   }
 
   const totalPages = query.data

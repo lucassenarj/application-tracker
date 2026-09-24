@@ -177,6 +177,26 @@ describe('ApplicationsPage', () => {
       expect(lastCallUrl).toContain('page=1')
       expect(lastCallUrl).toContain('status=OFFER')
     })
+
+    it('replaces the history entry instead of pushing a new one when filtering', async () => {
+      const user = userEvent.setup()
+
+      const { router } = renderWithRouter(
+        routeTree,
+        queryClient,
+        '/applications?page=1',
+      )
+
+      await user.click(await screen.findByRole('combobox'))
+      await user.click(await screen.findByRole('option', { name: 'Offer' }))
+      await screen.findByText('No applications yet.')
+
+      await user.click(await screen.findByRole('combobox'))
+      await user.click(await screen.findByRole('option', { name: 'Rejected' }))
+      await screen.findByText('No applications yet.')
+
+      expect(router.history.length).toBe(1)
+    })
   })
 
   describe('pagination', () => {
