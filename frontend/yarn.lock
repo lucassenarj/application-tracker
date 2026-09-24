@@ -2271,6 +2271,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tanstack/zod-adapter@npm:^1.167.0":
+  version: 1.167.0
+  resolution: "@tanstack/zod-adapter@npm:1.167.0"
+  peerDependencies:
+    "@tanstack/react-router": ">=1.43.2"
+    zod: ^3.23.8
+  checksum: 10c0/cb5892274238255e20ce36d651d64835bc72a2e910a8e79c5c6133c9ede91338e3a8f8ab4b9f9056df54da4f7e0ea7c5a0bf6792104e2ffe1174cf818892323f
+  languageName: node
+  linkType: hard
+
 "@testing-library/dom@npm:^10.4.2":
   version: 10.4.2
   resolution: "@testing-library/dom@npm:10.4.2"
@@ -4215,6 +4225,7 @@ __metadata:
     "@tanstack/react-query-devtools": "npm:^5.103.1"
     "@tanstack/react-router": "npm:^1.170.38"
     "@tanstack/router-plugin": "npm:^1.168.40"
+    "@tanstack/zod-adapter": "npm:^1.167.0"
     "@testing-library/dom": "npm:^10.4.2"
     "@testing-library/jest-dom": "npm:^7.0.1"
     "@testing-library/react": "npm:^16.3.3"
