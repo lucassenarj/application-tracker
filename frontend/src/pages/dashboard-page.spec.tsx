@@ -228,6 +228,6 @@ describe('DashboardPage', () => {
     renderWithRouter(routeTree, queryClient, '/dashboard')
 
     const link = await screen.findByRole('link', { name: 'See more' })
-    expect(link).toHaveAttribute('href', '/applications')
+    expect(link).toHaveAttribute('href', '/applications?page=1')
   })
 })

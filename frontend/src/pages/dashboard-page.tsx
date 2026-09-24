@@ -103,6 +103,7 @@ export function DashboardPage() {
 
       <Link
         to="/applications"
+        search={{ page: 1 }}
         className="self-center text-sm underline underline-offset-4"
       >
         See more

@@ -1,28 +1,16 @@
 import { queryOptions } from '@tanstack/react-query'
 import { apiFetch } from '../api-client'
+import type {
+  ApplicationListItem,
+  ApplicationStatus,
+  PaginatedResult,
+} from '../applications/applications-list'
 
-export type ApplicationStatus =
-  | 'APPLIED'
-  | 'WAITING_FEEDBACK'
-  | 'ASSIGNMENT'
-  | 'INTERVIEW_SCHEDULED'
-  | 'OFFER'
-  | 'OFFER_ACCEPTED'
-  | 'OFFER_DECLINED'
-  | 'REJECTED'
-
-export interface ApplicationListItem {
-  id: string
-  title: string
-  companyName: string
-  currentStatus: ApplicationStatus
-  createdAt: string
-}
-
-export interface PaginatedResult<T> {
-  items: T[]
-  total: number
-}
+export type {
+  ApplicationListItem,
+  ApplicationStatus,
+  PaginatedResult,
+} from '../applications/applications-list'
 
 export const latestApplicationsQueryOptions = queryOptions({
   queryKey: ['applications', 'list', { page: 1, pageSize: 10 }],
