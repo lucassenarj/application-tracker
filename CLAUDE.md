@@ -17,8 +17,9 @@ A personal job application tracker:
 - register an application with a title, description, external link, company, and relevant details;
 - move the application through several stages throughout the recruitment process;
 - capture context at each transition (interviewer, date, notes, rejection reason, interview category);
-- visualize pipeline statistics;
-- initially work in anonymous client-side mode, with useful functionality without requiring sign-up.
+- visualize pipeline statistics.
+
+Requires an account — there is no anonymous/local-only mode. An earlier version of this doc described a client-side-first, bulk-upload-on-registration model; that was never implemented and is dropped here rather than kept as stale intent.
 
 ### Current technical stack
 - Runtime: Node.js 22
@@ -30,12 +31,11 @@ A personal job application tracker:
 - Containerization: Docker Compose for the local development environment only
 - Frontend: React + Vite, TypeScript, Tailwind CSS
 - Deploy: Vercel (frontend), Render (API + Postgres) — no self-hosted reverse proxy; each platform handles its own routing/TLS (see `DECISIONS.md` #22)
-- Authentication: JWT in an `httpOnly` cookie, scoped to the parent domain (`.domain.com`) for API usage
+- Authentication: access + refresh JWT split with rotation and reuse detection, both in `httpOnly`/`Secure`/`SameSite` cookies scoped to `.application-tracker.lucassenarj.dev`; Argon2id password hashing; explicit double-submit CSRF token on state-changing requests (`DECISIONS.md` #26–28)
 
 ### Usage model
-- An anonymous user can use the tracker locally on the client.
-- When the user registers, the frontend bulk uploads local applications to the API.
-- The backend data layer only receives applications from authenticated users.
+- Register or log in to use the app — every route requires an authenticated session.
+- All application data is scoped to the authenticated user (`userId`); `Company` is the one shared/global entity (see decision 17).
 
 ---
 
@@ -49,7 +49,7 @@ The project follows a single deployable service architecture, not microservices.
 There is no deploy-level separation into multiple services; the goal is to keep operational complexity low while practicing DDD and good internal boundaries.
 
 ### C4 container summary
-- Frontend: React + Vite SPA, Tailwind CSS, stores data locally until registration. Deployed to Vercel.
+- Frontend: React + Vite SPA, Tailwind CSS. Deployed to Vercel.
 - Backend API: NestJS, TypeScript, REST. Deployed to Render.
 - Database: PostgreSQL, hosted on Render.
 - No reverse proxy container — Vercel and Render each terminate TLS/routing for their own service (see decision 22; `C4-MODEL.md` updated to match).
@@ -60,7 +60,7 @@ There is no deploy-level separation into multiple services; the goal is to keep 
 - `Application domain`: aggregate and state machine for transitions
 - `ApplicationRepository`: adapter from the aggregate to Prisma
 - `CompanyRepository`: find/create by normalized company name
-- `IdentityController` / `IdentityService`: authentication and registration
+- `AuthController` / `AuthService`: register/login/refresh/logout, access+refresh token rotation and reuse detection, CSRF token issuance
 - `UserRepository`: adapter from the user aggregate to persistence
 - `PrismaService`: manual Prisma client wrapper
 
@@ -69,7 +69,7 @@ There is no deploy-level separation into multiple services; the goal is to keep 
 - `Company` (entity): shared/global entity to avoid duplication
 - `StatusChange` (append-only entity): immutable transition history
 - `Contact` (value object): name/email embedded in `StatusChange`
-- `User`: outside the applications context; lives in the Identity bounded context
+- `User` (aggregate root, Identity context): `email`, `passwordHash` (nullable, for future social login), `authProvider`, `name`/`avatar` (optional), `role` (`USER`/`ADMIN`), `isActive` — see `DECISIONS.md` #25
 
 ### Critical domain rules
 - The current application state is not updated arbitrarily; it is derived from the latest valid `StatusChange`.
@@ -143,10 +143,12 @@ The interview category is `interviewCategory` on `StatusChange`, not a separate 
 - `Company.name` must be normalized before being saved.
 
 ### 3.6. Security and authentication
-- Authentication via JWT in an `httpOnly` cookie.
+- Access token (~15 min) + refresh token (~30 days), both `httpOnly`/`Secure`/`SameSite` cookies — the refresh cookie scoped to the refresh endpoint's path only (`DECISIONS.md` #27).
+- Every refresh rotates the token; reuse of an already-rotated-away token revokes the whole token family (theft signal).
+- Passwords hashed with Argon2id (`DECISIONS.md` #26), never bcrypt/scrypt/PBKDF2 for new code.
+- CSRF: explicit double-submit token (`DECISIONS.md` #28) on top of `SameSite`, required on state-changing requests (`x-csrf-token` header, fetched via `GET /auth/csrf-token`).
 - Do not use `localStorage` for session tokens.
-- The current approach is a simple authentication model; the split between access/refresh tokens and the CSRF strategy have not yet been decided.
-- Any production-relevant adjustment must consider rate limiting and CSRF protection.
+- Rate limiting is still not implemented — tracked as `BACKLOG.md`/issue #28, needed before any real production traffic.
 
 ### 3.7. Non-negotiable conventions for AI
 - Keep the code simple and explicit, without unnecessary “extra architecture”.
@@ -164,37 +166,14 @@ The interview category is `interviewCategory` on `StatusChange`, not a separate 
 ## 4. Current State and Next Steps
 
 ### What is already done
-- Clear product definition and context.
-- Architecture decisions consolidated in `DECISIONS.md`.
-- C4 model with context, container, component, and domain diagrams.
-- Domain model and transition rules defined.
-- NestJS backend scaffold in `api/`.
-- Dev-container and Docker setup configured in `docker-compose.yml`.
-- Runtime updated to Node.js 22 and Yarn Berry.
+- **Backend: done for the MVP.** Applications + Identity domains fully implemented under TDD, real Prisma persistence, full CI/CD with automated releases, deployed to production (Render + Neon). See `API.md` for the endpoint reference.
+- **Frontend: in progress.** Foundation, Login, Register, Dashboard, and the Applications List page are built, tested, and deployed (Vercel). See `FRONTEND.md`.
 
 ### What is still open
-- Frontend build-out (framework/CSS/deploy target decided — decision 22; the actual UI is not built yet).
-- Deployment: concrete CI/CD pipeline, FE/BE optimization.
-- Observability — when tackled, decide on a real logging service (structured logs, persisted/shipped somewhere), distinct from Nest's default console `Logger`. Also revisit whether uncaught domain errors (e.g. invalid status transitions) should stay as plain `Error`s relying on Nest's default global exception handling (logs full detail server-side, returns a generic 500 to the client — already safe as-is) or get explicit handling for more specific/curated client-facing messages.
-- Identity module implementation. `User` attributes and the full auth strategy (Argon2id password hashing, access/refresh tokens with rotation + reuse detection, CSRF double-submit token) are now decided — see `DECISIONS.md` #25–28 — but no code exists yet (`User` domain entity, Prisma schema, `UserRepository`, `AuthService`/`AuthController`). `ApplicationsController` currently uses a hardcoded `PLACEHOLDER_USER_ID` constant in place of an authenticated user's id — replace with the real session/JWT-derived user id once this lands.
-- HTTP e2e tests for `applications` — the controller is wired (create/findAll/findOne/changeStatus all delegate to the now-fully-implemented `ApplicationsService`) but has no dedicated tests of its own yet, deliberately deferred per the test pyramid (tier 3, and the controller itself has no real logic beyond DTO-to-service mapping).
-- Rate limiting.
+See `BACKLOG.md` for the full, current list of open work (mirrors the GitHub issues + project board) — don't re-derive "what's left" from this file, it goes stale fast. As of this doc's last update: remaining frontend pages (Applications search, New Application modal, Application Detail, Profile, persistent nav/logout), backend rate limiting and observability, and a handful of deferred/second-phase items.
 
-### Immediate functionality to develop
-The immediate priority is the implementation of the applications module with TDD for the state machine:
-1. write unit tests for `Application` transitions / state machine behavior;
-2. validate transition rules and terminal states;
-3. implement domain logic without coupling it to the persistence layer;
-4. connect Prisma repositories and REST endpoints for the `applications` module;
-5. only then move on to authentication and more complete identity work.
-
-### Concrete next step recommended
-- Start with the `Application` domain and state machine.
-- Do not start the frontend or auth before the status logic is covered by tests.
-- Once the rules are stable, move on to Prisma schema creation and repository implementation.
-
-### Project status (executive summary)
-The project is in the domain and backend foundation phase, with architecture defined and the codebase scaffolded. The next relevant technical milestone is the TDD cycle for application status transitions, which is the backbone of the core product behavior.
+### Concrete next step
+Check `BACKLOG.md` (or the live GitHub issues) for current priority — don't assume a specific next step from this file.
 
 ---
 
@@ -212,10 +191,5 @@ This file is intentionally strict: prefer correctness, domain clarity, and incre
 
 ---
 
-## 6. Known gaps (as of 2026-08-18)
-- No CI gate yet: nothing automatically runs lint/typecheck/tests before a commit lands.
-  Until a pre-commit hook or CI workflow exists, manually run `yarn lint`, `npx tsc --noEmit`,
-  and `yarn test` before considering work commit-ready.
-- `tsconfig.json` has `isolatedModules: true`, so `yarn test` (ts-jest) never runs the
-  TypeScript type checker — a typo in a `.spec.ts` file's typed literals can silently pass
-  as if it were valid. Run `npx tsc --noEmit` separately to catch this class of bug.
+## 6. Known gaps
+Both gaps previously listed here are resolved: CI now runs lint/typecheck/test on every PR (`api-ci.yml`/`frontend-ci.yml`), and `api/`'s `isolatedModules` gap is covered by a separate `yarn typecheck` script (`tsc --noEmit`) that CI runs independently of `yarn test`. Current gaps are tracked in `BACKLOG.md`, not here.

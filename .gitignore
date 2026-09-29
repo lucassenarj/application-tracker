@@ -10,3 +10,7 @@ node_modules/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+WORKING-NOTES.md
+FRONTEND-NOTES.md
+BACKLOG.md

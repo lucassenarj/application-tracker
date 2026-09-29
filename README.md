@@ -29,7 +29,7 @@ Project should have a dashboard with statistics about the applications,
     - Total Offers
     - Total interviews (technical and non-technical)
 
-Users should be able to use the application without logging in, however, the data will only persist after registration
+Users must register/log in to use the application — there is no anonymous mode
 
 If the user is logged in, they can see a profile page
 
@@ -65,8 +65,7 @@ One deployable service, not microservices - a Go-style gateway-plus-services spl
 - **State machine:** encapsulated in the domain layer (State pattern / guarded transition value object) — a direct application of the "implement design patterns" goal, rather than ad hoc checks in a controller/service. Statuses: `APPLIED` → `WAITING_FEEDBACK` / `ASSIGNMENT` / `INTERVIEW_SCHEDULED` / `OFFER` (freely, including self-loops) or `REJECTED`; `OFFER` also → `OFFER_ACCEPTED` / `OFFER_DECLINED` (terminal). `APPLIED` is never re-entered. Full transition table and rationale: see `DECISIONS.md` #18.
 - **Domain events (optional/stretch, not required for v1):** NestJS's built-in `EventEmitter`, e.g. an `ApplicationStatusChanged` event decoupling dashboard-stat recalculation from the write path (Observer pattern).
 - **Listing/filtering:** query params + DB indexes on `status`/`company`, paginated.
-- **Auth:** JWT in an httpOnly cookie scoped to `.domain.com`, so it's sent automatically to `api.domain.com`. CORS configured for credentials plus the explicit frontend origin. Chosen over a bearer-token-in-header approach for XSS resistance. Access + refresh token split with rotation/reuse detection, Argon2id password hashing, and an explicit double-submit CSRF token: see `DECISIONS.md` #26–28.
-- **Anonymous usage:** fully client-side (IndexedDB/localStorage), no backend calls at all until the user registers. On registration, the frontend bulk-uploads the local applications to the API once, then switches to API-backed mode. Chosen over a backend "guest session" concept to avoid orphaned-guest-data cleanup and account-linking complexity.
+- **Auth:** JWT in an httpOnly cookie scoped to `.application-tracker.lucassenarj.dev`, so it's sent automatically to `api.application-tracker.lucassenarj.dev`. CORS configured for credentials plus the explicit frontend origin. Chosen over a bearer-token-in-header approach for XSS resistance. Access + refresh token split with rotation/reuse detection, Argon2id password hashing, and an explicit double-submit CSRF token: see `DECISIONS.md` #26–28.
 - **Test pyramid:** unit tests on the domain layer (state machine, aggregates - no DB), integration tests on repositories (real Postgres), e2e tests on the HTTP layer.
 
 ### Infrastructure
