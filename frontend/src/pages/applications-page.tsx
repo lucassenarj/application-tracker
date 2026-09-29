@@ -26,7 +26,7 @@ import {
 import { formatStatus } from '@/lib/dashboard/applications-list'
 
 export function ApplicationsPage() {
-  const { page, status } = useSearch({ from: '/applications' })
+  const { page, status } = useSearch({ from: '/_authenticated/applications' })
   const navigate = useNavigate()
   const query = useQuery(applicationsListQueryOptions(page, status))
 
