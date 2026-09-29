@@ -82,6 +82,25 @@ describe('apiFetch', () => {
         message: 'Application not found',
       })
     })
+    it('returns undefined when the response body is empty', async () => {
+      fetchMock.mockImplementation((url: string) => {
+        if (url.endsWith('/auth/csrf-token')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
+          })
+        }
+
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.reject(new SyntaxError('Unexpected end of JSON input')),
+        })
+      })
+
+      const result = await apiFetch('/auth/logout', { method: 'POST' })
+
+      expect(result).toBeUndefined()
+    })
   })
 
   describe('CSRF handling', () => {

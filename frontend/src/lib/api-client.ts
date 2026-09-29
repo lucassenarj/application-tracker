@@ -50,10 +50,18 @@ export async function apiFetch<T>(
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   })
 
-  const data = await response.json()
+  let data: unknown
+  try {
+    data = await response.json()
+  } catch {
+    data = undefined
+  }
 
   if (!response.ok) {
-    throw new ApiError(response.status, data.message)
+    throw new ApiError(
+      response.status,
+      (data as { message?: string })?.message ?? 'Unknown error',
+    )
   }
 
   return data as T
