@@ -74,6 +74,24 @@ describe('PrismaCompanyRepository', () => {
     });
   });
 
+  describe('findById', () => {
+    it('returns the Company when one exists for the given id', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const foundCompany = await companyRepository.findById(company.id);
+
+      expect(foundCompany?.id).toBe(company.id);
+      expect(foundCompany?.name).toBe('Acme Corp');
+    });
+
+    it('returns null when no Company matches the given id', async () => {
+      const foundCompany = await companyRepository.findById('nonexistent-id');
+
+      expect(foundCompany).toBeNull();
+    });
+  });
+
   describe('search', () => {
     let acme: Company;
 

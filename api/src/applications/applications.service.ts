@@ -31,6 +31,7 @@ interface CreateApplicationInput {
   externalUrl?: string;
   salary?: number;
   companyName: string;
+  companyId?: string;
   userId: string;
 }
 
@@ -51,15 +52,38 @@ export class ApplicationsService {
     private readonly companyRepository: CompanyRepository,
   ) {}
 
-  async create(input: CreateApplicationInput): Promise<Application> {
+  private async resolveCompany(input: {
+    companyId?: string;
+    companyName: string;
+  }): Promise<Company> {
+    if (input.companyId) {
+      const existingCompany = await this.companyRepository.findById(
+        input.companyId,
+      );
+
+      if (!existingCompany) {
+        throw new NotFoundException('Company not found');
+      }
+
+      return existingCompany;
+    }
+
     const normalizedName = Company.normalizeName(input.companyName);
-    let company =
+    const existingCompany =
       await this.companyRepository.findByNormalizedName(normalizedName);
 
-    if (!company) {
-      company = Company.create({ name: input.companyName });
-      await this.companyRepository.save(company);
+    if (existingCompany) {
+      return existingCompany;
     }
+
+    const newCompany = Company.create({ name: input.companyName });
+    await this.companyRepository.save(newCompany);
+
+    return newCompany;
+  }
+
+  async create(input: CreateApplicationInput): Promise<Application> {
+    const company = await this.resolveCompany(input);
 
     const application = Application.create({
       title: input.title,

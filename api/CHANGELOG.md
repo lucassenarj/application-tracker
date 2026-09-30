@@ -1,3 +1,10 @@
+# [api-v1.4.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.3.0...api-v1.4.0) (2026-09-30)
+
+
+### Features
+
+* **application:** resolve company by id when creating an application ([9064188](https://github.com/lucassenarj/application-tracker/commit/906418879df42a2ad66e53208df0b0449f5743e6))
+
 # [api-v1.3.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.2.0...api-v1.3.0) (2026-09-21)
 
 

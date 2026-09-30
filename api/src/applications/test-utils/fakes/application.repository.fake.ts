@@ -25,7 +25,7 @@ export class FakeApplicationRepository implements ApplicationRepository {
     return Promise.resolve(this.applications.get(id) ?? null);
   }
 
-  findAllByUser(
+  async findAllByUser(
     userId: string,
     options: FindAllByUserOptions,
   ): Promise<PaginatedResult<ApplicationWithCompanyName>> {
@@ -43,21 +43,25 @@ export class FakeApplicationRepository implements ApplicationRepository {
     }
 
     const start = (options.page - 1) * options.pageSize;
-    const items = matching
-      .slice(start, start + options.pageSize)
-      .map((application): ApplicationWithCompanyName => {
-        const company = this.companyRepository.findById(application.companyId);
-
-        if (!company) {
-          throw new Error(
-            `No company found for id ${application.companyId} — test setup likely forgot to save it`,
+    const items = await Promise.all(
+      matching
+        .slice(start, start + options.pageSize)
+        .map(async (application): Promise<ApplicationWithCompanyName> => {
+          const company = await this.companyRepository.findById(
+            application.companyId,
           );
-        }
 
-        return { application, companyName: company.name };
-      });
+          if (!company) {
+            throw new Error(
+              `No company found for id ${application.companyId} — test setup likely forgot to save it`,
+            );
+          }
 
-    return Promise.resolve({ items, total: matching.length });
+          return { application, companyName: company.name };
+        }),
+    );
+
+    return { items, total: matching.length };
   }
 
   countByUserGroupedByStatus(

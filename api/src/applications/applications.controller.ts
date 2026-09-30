@@ -62,6 +62,7 @@ export class ApplicationsController {
       externalUrl: dto.externalUrl,
       salary: dto.salary,
       companyName: dto.companyName,
+      companyId: dto.companyId,
       userId: request.user!.id,
     });
   }
