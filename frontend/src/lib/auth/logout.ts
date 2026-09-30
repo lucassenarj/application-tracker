@@ -10,7 +10,7 @@ export function useLogoutMutation() {
   return useMutation({
     mutationFn: () => apiFetch<void>('/auth/logout', { method: 'POST' }),
     onSuccess: () => {
-      queryClient.setQueryData(userQueryOptions.queryKey, undefined)
+      queryClient.removeQueries({ queryKey: userQueryOptions.queryKey })
       navigate({ to: '/login' })
     },
   })
