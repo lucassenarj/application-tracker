@@ -7,14 +7,14 @@ import { CompanyAutocomplete } from '@/components/company-autocomplete'
 function ControlledWrapper({
   onChange,
 }: {
-  onChange: (value: string) => void
+  onChange: (company: { name: string; companyId?: string }) => void
 }) {
   const [value, setValue] = useState('')
   return (
     <CompanyAutocomplete
       value={value}
       onChange={(next) => {
-        setValue(next)
+        setValue(next.name)
         onChange(next)
       }}
     />
@@ -91,7 +91,10 @@ describe('CompanyAutocomplete', () => {
     await user.type(screen.getByRole('textbox'), 'Acme')
     await user.click(await screen.findByRole('button', { name: 'Acme Corp' }))
 
-    expect(onChange).toHaveBeenLastCalledWith('Acme Corp')
+    expect(onChange).toHaveBeenLastCalledWith({
+      name: 'Acme Corp',
+      companyId: '1',
+    })
     expect(
       screen.queryByRole('button', { name: 'Acme Corp' }),
     ).not.toBeInTheDocument()

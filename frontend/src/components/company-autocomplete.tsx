@@ -6,7 +6,7 @@ import { companySearchQueryOptions } from '@/lib/companies/company-search'
 interface CompanyAutocompleteProps {
   id?: string
   value: string
-  onChange: (value: string) => void
+  onChange: (company: { name: string; companyId?: string }) => void
 }
 
 export function CompanyAutocomplete({
@@ -23,7 +23,7 @@ export function CompanyAutocomplete({
         id={id}
         value={value}
         onChange={(e) => {
-          onChange(e.target.value)
+          onChange({ name: e.target.value, companyId: undefined })
           setIsOpen(true)
         }}
         onBlur={() => setIsOpen(false)}
@@ -38,7 +38,7 @@ export function CompanyAutocomplete({
                 className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
-                  onChange(company.name)
+                  onChange({ name: company.name, companyId: company.id })
                   setIsOpen(false)
                 }}
               >

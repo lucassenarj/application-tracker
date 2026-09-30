@@ -4,6 +4,7 @@ import { apiFetch } from '../api-client'
 interface CreateApplicationInput {
   title: string
   companyName: string
+  companyId?: string
   description?: string
   externalUrl?: string
   salary?: number

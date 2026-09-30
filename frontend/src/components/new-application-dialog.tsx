@@ -22,6 +22,7 @@ import {
 
 export function NewApplicationDialog() {
   const [open, setOpen] = useState(false)
+  const [companyId, setCompanyId] = useState<string | undefined>(undefined)
   const createApplicationMutation = useCreateApplicationMutation()
   const {
     register,
@@ -45,6 +46,7 @@ export function NewApplicationDialog() {
       {
         title: values.title,
         companyName: values.companyName,
+        companyId,
         description: values.description || undefined,
         externalUrl: values.externalUrl || undefined,
         salary: values.salary ? Number(values.salary) : undefined,
@@ -52,6 +54,7 @@ export function NewApplicationDialog() {
       {
         onSuccess: () => {
           reset()
+          setCompanyId(undefined)
           setOpen(false)
         },
       },
@@ -95,7 +98,10 @@ export function NewApplicationDialog() {
                 <CompanyAutocomplete
                   id="companyName"
                   value={field.value ?? ''}
-                  onChange={field.onChange}
+                  onChange={({ name, companyId: selectedId }) => {
+                    field.onChange(name)
+                    setCompanyId(selectedId)
+                  }}
                 />
               )}
             />
