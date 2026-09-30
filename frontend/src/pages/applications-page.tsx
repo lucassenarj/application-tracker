@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { NewApplicationDialog } from '@/components/new-application-dialog'
 import {
   APPLICATION_STATUSES,
   APPLICATIONS_PAGE_SIZE,
@@ -57,7 +58,10 @@ export function ApplicationsPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <h1 className="text-2xl font-heading font-medium">Applications</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-heading font-medium">Applications</h1>
+        <NewApplicationDialog />
+      </div>
 
       <Select value={status ?? 'ALL'} onValueChange={setStatus}>
         <SelectTrigger className="w-56">

@@ -1,0 +1,152 @@
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
+import { Button } from '@/components/ui/button'
+import { CompanyAutocomplete } from '@/components/company-autocomplete'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { useCreateApplicationMutation } from '@/lib/applications/create-application'
+import {
+  createApplicationSchema,
+  type CreateApplicationFormValues,
+} from '@/lib/applications/create-application-schema'
+
+export function NewApplicationDialog() {
+  const [open, setOpen] = useState(false)
+  const [companyId, setCompanyId] = useState<string | undefined>(undefined)
+  const createApplicationMutation = useCreateApplicationMutation()
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<CreateApplicationFormValues>({
+    resolver: zodResolver(createApplicationSchema),
+    defaultValues: {
+      title: '',
+      companyName: '',
+      description: '',
+      externalUrl: '',
+      salary: '',
+    },
+  })
+
+  const onSubmit = (values: CreateApplicationFormValues) => {
+    createApplicationMutation.mutate(
+      {
+        title: values.title,
+        companyName: values.companyName,
+        companyId,
+        description: values.description || undefined,
+        externalUrl: values.externalUrl || undefined,
+        salary: values.salary ? Number(values.salary) : undefined,
+      },
+      {
+        onSuccess: () => {
+          reset()
+          setCompanyId(undefined)
+          setOpen(false)
+        },
+      },
+    )
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={<Button>New Application</Button>} />
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>New Application</DialogTitle>
+        </DialogHeader>
+        <form
+          className="flex flex-col gap-4"
+          noValidate
+          onSubmit={handleSubmit(onSubmit)}
+        >
+          {createApplicationMutation.isError && (
+            <p className="text-sm text-destructive">
+              {createApplicationMutation.error.message}
+            </p>
+          )}
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="title">Title</Label>
+            <Input id="title" {...register('title')} />
+            {errors.title && (
+              <span className="text-sm text-destructive">
+                {errors.title.message}
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="companyName">Company</Label>
+            <Controller
+              name="companyName"
+              control={control}
+              render={({ field }) => (
+                <CompanyAutocomplete
+                  id="companyName"
+                  value={field.value ?? ''}
+                  onChange={({ name, companyId: selectedId }) => {
+                    field.onChange(name)
+                    setCompanyId(selectedId)
+                  }}
+                />
+              )}
+            />
+            {errors.companyName && (
+              <span className="text-sm text-destructive">
+                {errors.companyName.message}
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="description">Description</Label>
+            <Textarea id="description" {...register('description')} />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="externalUrl">Job posting URL</Label>
+            <Input id="externalUrl" {...register('externalUrl')} />
+            {errors.externalUrl && (
+              <span className="text-sm text-destructive">
+                {errors.externalUrl.message}
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="salary">Salary</Label>
+            <Input id="salary" type="number" {...register('salary')} />
+            {errors.salary && (
+              <span className="text-sm text-destructive">
+                {errors.salary.message}
+              </span>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="submit"
+              disabled={createApplicationMutation.isPending}
+            >
+              {createApplicationMutation.isPending ? 'Creating...' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
