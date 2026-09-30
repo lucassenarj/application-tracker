@@ -1,8 +1,8 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { DashboardPage } from '@/pages/dashboard-page'
+import { AuthenticatedLayout } from '@/components/authenticated-layout'
 import { userQueryOptions } from '@/lib/auth/user-query'
 
-export const Route = createFileRoute('/dashboard')({
+export const Route = createFileRoute('/_authenticated')({
   beforeLoad: async ({ context }) => {
     const user = await context.queryClient
       .ensureQueryData(userQueryOptions)
@@ -12,5 +12,5 @@ export const Route = createFileRoute('/dashboard')({
       throw redirect({ to: '/login' })
     }
   },
-  component: DashboardPage,
+  component: AuthenticatedLayout,
 })

@@ -4,24 +4,27 @@ import userEvent from '@testing-library/user-event'
 import { createRootRoute, createRoute } from '@tanstack/react-router'
 import { zodValidator } from '@tanstack/zod-adapter'
 import { ApplicationsPage } from '@/pages/applications-page'
-import { applicationsSearchSchema } from '@/routes/applications'
+import { applicationsSearchSchema } from '@/routes/_authenticated.applications'
 import { renderWithRouter } from '@/test-utils/render-with-router'
 
 const rootRoute = createRootRoute()
-const applicationsRoute = createRoute({
+const authenticatedRoute = createRoute({
   getParentRoute: () => rootRoute,
+  id: '/_authenticated',
+})
+const applicationsRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
   path: '/applications',
   validateSearch: zodValidator(applicationsSearchSchema),
   component: ApplicationsPage,
 })
 const applicationDetailRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => authenticatedRoute,
   path: '/applications/$id',
   component: () => <div>Application Detail page</div>,
 })
 const routeTree = rootRoute.addChildren([
-  applicationsRoute,
-  applicationDetailRoute,
+  authenticatedRoute.addChildren([applicationsRoute, applicationDetailRoute]),
 ])
 
 describe('ApplicationsPage', () => {
