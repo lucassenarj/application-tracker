@@ -32,6 +32,12 @@ export class PrismaCompanyRepository implements CompanyRepository {
     return row ? toCompany(row) : null;
   }
 
+  async findById(id: string): Promise<Company | null> {
+    const row = await this.prisma.company.findUnique({ where: { id } });
+
+    return row ? toCompany(row) : null;
+  }
+
   async search(query: string): Promise<Company[]> {
     const searchQuery = toPrefixTsQuery(query);
 

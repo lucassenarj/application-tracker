@@ -53,6 +53,37 @@ describe('ApplicationsService', () => {
 
       expect(secondApplication.companyId).toBe(firstApplication.companyId);
     });
+
+    it('uses the existing Company for the given companyId, without creating a new Company', async () => {
+      const existingCompany = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      const secondApplication = await applicationService.create({
+        title: 'Staff Engineer',
+        companyName: 'Should be ignored',
+        companyId: existingCompany.companyId,
+        userId: 'user-1',
+      });
+
+      expect(secondApplication.companyId).toBe(existingCompany.companyId);
+      const savedCompany =
+        await companyRepository.findByNormalizedName('Should Be Ignored');
+      expect(savedCompany).toBeNull();
+    });
+
+    it('throws a NotFoundException when the given companyId does not match any existing Company', async () => {
+      await expect(
+        applicationService.create({
+          title: 'Senior Backend Engineer',
+          companyName: 'Acme Corp',
+          companyId: 'nonexistent-company-id',
+          userId: 'user-1',
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
   });
 
   describe('findById', () => {
