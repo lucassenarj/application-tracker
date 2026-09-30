@@ -23,7 +23,7 @@ All routes require a valid `accessToken` cookie (set by `/auth/login` or `/auth/
 
 | Method | Path | Body | Notes |
 |---|---|---|---|
-| POST | `/applications` | `{ title, companyName, description?, externalUrl?, salary? }` | **CSRF-protected** |
+| POST | `/applications` | `{ title, companyName, companyId?, description?, externalUrl?, salary? }` | **CSRF-protected**. If `companyId` is given, it takes priority over `companyName` (404 if it doesn't match a real company); otherwise the company is found-or-created by normalized `companyName` |
 | GET | `/applications/stats` | — | Returns `{ total, inProgress, offers, rejections }` counts for the authenticated user, bucketed from the raw `ApplicationStatus` values. Backs the dashboard's summary cards |
 | GET | `/applications` | — | Only the authenticated user's applications. Query params: `page` (default 1), `pageSize` (default 10), `search` (full-text, matches title or company name, prefix-matching), `status` (exact match). Each item: `{ id, title, companyName, currentStatus, createdAt }` |
 | GET | `/applications/:id` | — | 404 if the application belongs to a different user (not 403 — avoids confirming existence) |

@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  IsUUID,
   MaxLength,
 } from 'class-validator';
 
@@ -28,4 +29,8 @@ export class CreateApplicationDto {
   @IsString()
   @IsNotEmpty()
   companyName: string;
+
+  @IsOptional()
+  @IsUUID()
+  companyId?: string;
 }
