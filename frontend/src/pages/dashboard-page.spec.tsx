@@ -1,5 +1,6 @@
 import { QueryClient } from '@tanstack/react-query'
 import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { buildRouteTree } from '@/test-utils/build-route-tree'
 import { renderWithRouter } from '@/test-utils/render-with-router'
 import { DashboardPage } from '@/pages/dashboard-page'
@@ -7,6 +8,7 @@ import { DashboardPage } from '@/pages/dashboard-page'
 const routeTree = buildRouteTree({
   '/dashboard': DashboardPage,
   '/applications': () => <div>Applications page</div>,
+  '/applications/$id': () => <div>Application Detail page</div>,
 })
 
 describe('DashboardPage', () => {
@@ -222,6 +224,40 @@ describe('DashboardPage', () => {
         ),
       ).toBeInTheDocument()
     })
+  })
+
+  it("clicking an application row navigates to its detail page", async () => {
+    const user = userEvent.setup()
+    const items = [
+      {
+        id: 'abc123',
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        currentStatus: 'APPLIED',
+        createdAt: '2026-01-15T10:00:00.000Z',
+      },
+    ]
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/applications/stats')) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({ total: 0, inProgress: 0, offers: 0, rejections: 0 }),
+        })
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ items, total: items.length }),
+      })
+    })
+
+    renderWithRouter(routeTree, queryClient, '/dashboard')
+
+    await user.click(await screen.findByText('Senior Backend Engineer'))
+
+    expect(
+      await screen.findByText('Application Detail page'),
+    ).toBeInTheDocument()
   })
 
   it('renders a "See more" link pointing to /applications', async () => {

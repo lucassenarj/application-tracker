@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -16,6 +16,7 @@ const SUMMARY_CARDS = [
 ] as const
 
 export function DashboardPage() {
+  const navigate = useNavigate()
   const statsQuery = useQuery(applicationStatsQueryOptions)
   const applicationsQuery = useQuery(latestApplicationsQueryOptions)
 
@@ -79,7 +80,13 @@ export function DashboardPage() {
               applicationsQuery.data.items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between border-b pb-2 last:border-b-0 last:pb-0"
+                  className="flex items-center justify-between border-b pb-2 cursor-pointer last:border-b-0 last:pb-0"
+                  onClick={() =>
+                    navigate({
+                      to: '/applications/$id',
+                      params: { id: item.id },
+                    })
+                  }
                 >
                   <div className="flex flex-col">
                     <span className="font-medium">{item.title}</span>
