@@ -1,3 +1,10 @@
+# [api-v1.6.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.5.0...api-v1.6.0) (2026-10-01)
+
+
+### Features
+
+* **application:** expose available status transitions and fix Swagger response schemas ([9965391](https://github.com/lucassenarj/application-tracker/commit/99653915934ae0f9c5372592d264645b3aea6253))
+
 # [api-v1.5.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.4.0...api-v1.5.0) (2026-10-01)
 
 
