@@ -19,15 +19,9 @@ describe('RegisterPage', () => {
     queryClient = new QueryClient()
     vi.stubEnv('VITE_API_URL', 'https://api.example.com')
     fetchMock.mockReset()
-    fetchMock.mockImplementation((url: string) => {
-      if (url.endsWith('/auth/csrf-token')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
-        })
-      }
-      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
-    })
+    fetchMock.mockImplementation(() =>
+      Promise.resolve({ ok: true, json: () => Promise.resolve({}) }),
+    )
     vi.stubGlobal('fetch', fetchMock)
   })
 
@@ -78,20 +72,14 @@ describe('RegisterPage', () => {
     ).toBeInTheDocument()
   })
   it('shows an error alert when the register request fails', async () => {
-    fetchMock.mockImplementation((url: string) => {
-      if (url.endsWith('/auth/csrf-token')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
-        })
-      }
-      return Promise.resolve({
+    fetchMock.mockImplementation(() =>
+      Promise.resolve({
         ok: false,
         status: 409,
         json: () =>
           Promise.resolve({ message: 'a User with this email already exists' }),
-      })
-    })
+      }),
+    )
 
     const user = userEvent.setup()
     renderWithRouter(routeTree, queryClient, '/register')
@@ -108,14 +96,8 @@ describe('RegisterPage', () => {
     ).toBeInTheDocument()
   })
   it('logs in automatically and navigates to /dashboard when registration succeeds', async () => {
-    fetchMock.mockImplementation((url: string) => {
-      if (url.endsWith('/auth/csrf-token')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
-        })
-      }
-      return Promise.resolve({
+    fetchMock.mockImplementation(() =>
+      Promise.resolve({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -123,8 +105,8 @@ describe('RegisterPage', () => {
             email: 'jane@example.com',
             createdAt: new Date().toISOString(),
           }),
-      })
-    })
+      }),
+    )
 
     const user = userEvent.setup()
     renderWithRouter(routeTree, queryClient, '/register')

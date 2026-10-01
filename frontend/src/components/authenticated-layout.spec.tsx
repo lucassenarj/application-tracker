@@ -61,12 +61,6 @@ describe('AuthenticatedLayout', () => {
     vi.stubEnv('VITE_API_URL', 'https://api.example.com')
     fetchMock.mockReset()
     fetchMock.mockImplementation((url: string) => {
-      if (url.endsWith('/auth/csrf-token')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
-        })
-      }
       if (url.endsWith('/auth/logout')) {
         return Promise.resolve({
           ok: true,
@@ -97,6 +91,10 @@ describe('AuthenticatedLayout', () => {
     expect(screen.getByRole('link', { name: 'Applications' })).toHaveAttribute(
       'href',
       '/applications?page=1',
+    )
+    expect(screen.getByRole('link', { name: 'Profile' })).toHaveAttribute(
+      'href',
+      '/profile',
     )
   })
 

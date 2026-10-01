@@ -19,15 +19,9 @@ describe('LoginPage', () => {
     queryClient = new QueryClient()
     vi.stubEnv('VITE_API_URL', 'https://api.example.com')
     fetchMock.mockReset()
-    fetchMock.mockImplementation((url: string) => {
-      if (url.endsWith('/auth/csrf-token')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
-        })
-      }
-      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
-    })
+    fetchMock.mockImplementation(() =>
+      Promise.resolve({ ok: true, json: () => Promise.resolve({}) }),
+    )
     vi.stubGlobal('fetch', fetchMock)
   })
 
@@ -65,19 +59,13 @@ describe('LoginPage', () => {
     expect(await screen.findByText('Password is required')).toBeInTheDocument()
   })
   it('shows an error alert when the login request fails', async () => {
-    fetchMock.mockImplementation((url: string) => {
-      if (url.endsWith('/auth/csrf-token')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
-        })
-      }
-      return Promise.resolve({
+    fetchMock.mockImplementation(() =>
+      Promise.resolve({
         ok: false,
         status: 401,
         json: () => Promise.resolve({ message: 'invalid credentials' }),
-      })
-    })
+      }),
+    )
 
     const user = userEvent.setup()
     renderWithRouter(routeTree, queryClient, '/login')
@@ -89,14 +77,8 @@ describe('LoginPage', () => {
     expect(await screen.findByText('invalid credentials')).toBeInTheDocument()
   })
   it('navigates to /dashboard when login succeeds', async () => {
-    fetchMock.mockImplementation((url: string) => {
-      if (url.endsWith('/auth/csrf-token')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
-        })
-      }
-      return Promise.resolve({
+    fetchMock.mockImplementation(() =>
+      Promise.resolve({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -104,8 +86,8 @@ describe('LoginPage', () => {
             email: 'jane@example.com',
             createdAt: new Date().toISOString(),
           }),
-      })
-    })
+      }),
+    )
 
     const user = userEvent.setup()
     renderWithRouter(routeTree, queryClient, '/login')
