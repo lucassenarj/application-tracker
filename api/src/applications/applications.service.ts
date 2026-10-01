@@ -109,6 +109,22 @@ export class ApplicationsService {
     return application;
   }
 
+  async getDetailById(
+    id: string,
+    userId: string,
+  ): Promise<ApplicationWithCompanyName> {
+    const application = await this.findById(id, userId);
+    const company = await this.companyRepository.findById(
+      application.companyId,
+    );
+
+    if (!company) {
+      throw new NotFoundException('Company not found');
+    }
+
+    return { application, companyName: company.name };
+  }
+
   findAllByUser(
     userId: string,
     options: FindAllByUserOptions,

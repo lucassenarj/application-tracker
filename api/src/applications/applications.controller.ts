@@ -17,6 +17,7 @@ import type {
   ApplicationWithCompanyName,
   PaginatedResult,
 } from './domain/application.repository';
+import type { Contact, InterviewCategory } from './domain/status-change';
 import {
   ApplicationsService,
   type ApplicationStats,
@@ -42,6 +43,53 @@ function toListItemResponse({
     title: application.title,
     companyName,
     currentStatus: application.currentStatus,
+    createdAt: application.createdAt,
+  };
+}
+
+export interface StatusChangeResponse {
+  id: string;
+  status: ApplicationStatus;
+  eventDate: Date;
+  notes?: string;
+  contact?: Contact;
+  interviewCategory?: InterviewCategory;
+  createdAt: Date;
+}
+
+export interface ApplicationDetailResponse {
+  id: string;
+  title: string;
+  description?: string;
+  externalUrl?: string;
+  salary?: number;
+  companyName: string;
+  currentStatus: ApplicationStatus;
+  statusHistory: StatusChangeResponse[];
+  createdAt: Date;
+}
+
+function toDetailResponse({
+  application,
+  companyName,
+}: ApplicationWithCompanyName): ApplicationDetailResponse {
+  return {
+    id: application.id,
+    title: application.title,
+    description: application.description,
+    externalUrl: application.externalUrl,
+    salary: application.salary,
+    companyName,
+    currentStatus: application.currentStatus,
+    statusHistory: application.statusHistory.map((change) => ({
+      id: change.id,
+      status: change.status,
+      eventDate: change.eventDate,
+      notes: change.notes,
+      contact: change.contact,
+      interviewCategory: change.interviewCategory,
+      createdAt: change.createdAt,
+    })),
     createdAt: application.createdAt,
   };
 }
@@ -91,11 +139,15 @@ export class ApplicationsController {
   }
 
   @Get(':id')
-  findOne(
+  async findOne(
     @Param('id') id: string,
     @Req() request: Request,
-  ): Promise<Application> {
-    return this.applicationsService.findById(id, request.user!.id);
+  ): Promise<ApplicationDetailResponse> {
+    const detail = await this.applicationsService.getDetailById(
+      id,
+      request.user!.id,
+    );
+    return toDetailResponse(detail);
   }
 
   @Patch(':id/status')
