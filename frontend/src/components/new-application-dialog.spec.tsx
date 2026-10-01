@@ -22,12 +22,6 @@ describe('NewApplicationDialog', () => {
     vi.stubEnv('VITE_API_URL', 'https://api.example.com')
     fetchMock.mockReset()
     fetchMock.mockImplementation((url: string) => {
-      if (url.endsWith('/auth/csrf-token')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
-        })
-      }
       if (url.includes('/companies/search')) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
       }
@@ -140,19 +134,13 @@ describe('NewApplicationDialog', () => {
   })
   it('shows an error message when the create request fails', async () => {
     const user = userEvent.setup()
-    fetchMock.mockImplementation((url: string) => {
-      if (url.endsWith('/auth/csrf-token')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
-        })
-      }
-      return Promise.resolve({
+    fetchMock.mockImplementation(() =>
+      Promise.resolve({
         ok: false,
         status: 500,
         json: () => Promise.resolve({ message: 'Internal server error' }),
-      })
-    })
+      }),
+    )
 
     renderDialog(queryClient)
 
@@ -175,12 +163,6 @@ describe('NewApplicationDialog', () => {
   it('sends the selected company id when an existing company is chosen', async () => {
     const user = userEvent.setup()
     fetchMock.mockImplementation((url: string) => {
-      if (url.endsWith('/auth/csrf-token')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
-        })
-      }
       if (url.includes('/companies/search')) {
         return Promise.resolve({
           ok: true,

@@ -22,6 +22,12 @@ export function AuthenticatedLayout() {
           >
             Applications
           </Link>
+          <Link
+            to="/profile"
+            className="text-sm font-medium underline-offset-4 hover:underline"
+          >
+            Profile
+          </Link>
         </div>
         <Button
           variant="outline"

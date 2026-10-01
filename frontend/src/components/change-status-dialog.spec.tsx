@@ -28,15 +28,9 @@ describe('ChangeStatusDialog', () => {
     })
     vi.stubEnv('VITE_API_URL', 'https://api.example.com')
     fetchMock.mockReset()
-    fetchMock.mockImplementation((url: string) => {
-      if (url.endsWith('/auth/csrf-token')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
-        })
-      }
-      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
-    })
+    fetchMock.mockImplementation(() =>
+      Promise.resolve({ ok: true, json: () => Promise.resolve({}) }),
+    )
     vi.stubGlobal('fetch', fetchMock)
   })
 
