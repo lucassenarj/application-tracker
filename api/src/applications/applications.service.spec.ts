@@ -122,6 +122,42 @@ describe('ApplicationsService', () => {
     });
   });
 
+  describe('getDetailById', () => {
+    it('returns the Application and its company name for the given id', async () => {
+      const newApplication = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      const detail = await applicationService.getDetailById(
+        newApplication.id,
+        'user-1',
+      );
+
+      expect(detail.application.id).toBe(newApplication.id);
+      expect(detail.companyName).toBe('Acme Corp');
+    });
+
+    it('throws a NotFoundException when no Application matches the given id', async () => {
+      await expect(
+        applicationService.getDetailById('nonexistent-id', 'user-1'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws a NotFoundException when the Application belongs to a different user', async () => {
+      const newApplication = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      await expect(
+        applicationService.getDetailById(newApplication.id, 'user-2'),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
   describe('changeStatus', () => {
     it('changes the status of an existing Application and persists the update', async () => {
       const newApplication = await applicationService.create({
