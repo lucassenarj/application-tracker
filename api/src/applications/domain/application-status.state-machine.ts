@@ -1,4 +1,4 @@
-import { ApplicationStatus } from './application-status';
+import { APPLICATION_STATUSES, ApplicationStatus } from './application-status';
 
 const TERMINAL_STATUS: ApplicationStatus[] = [
   'OFFER_ACCEPTED',
@@ -29,5 +29,11 @@ export class ApplicationStatusStateMachine {
     }
 
     return true;
+  }
+
+  static getAvailableTransitions(from: ApplicationStatus): ApplicationStatus[] {
+    return APPLICATION_STATUSES.filter((to) =>
+      ApplicationStatusStateMachine.canTransition(from, to),
+    );
   }
 }

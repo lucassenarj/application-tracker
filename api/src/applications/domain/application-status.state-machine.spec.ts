@@ -69,4 +69,42 @@ describe('ApplicationStatusStateMachine', () => {
       );
     },
   );
+
+  describe('getAvailableTransitions', () => {
+    it('returns all statuses reachable from APPLIED', () => {
+      expect(
+        ApplicationStatusStateMachine.getAvailableTransitions('APPLIED'),
+      ).toEqual([
+        'WAITING_FEEDBACK',
+        'ASSIGNMENT',
+        'INTERVIEW_SCHEDULED',
+        'OFFER',
+        'REJECTED',
+      ]);
+    });
+
+    it('includes OFFER_ACCEPTED and OFFER_DECLINED only when the current status is OFFER', () => {
+      expect(
+        ApplicationStatusStateMachine.getAvailableTransitions('OFFER'),
+      ).toEqual([
+        'WAITING_FEEDBACK',
+        'ASSIGNMENT',
+        'INTERVIEW_SCHEDULED',
+        'OFFER',
+        'OFFER_ACCEPTED',
+        'OFFER_DECLINED',
+        'REJECTED',
+      ]);
+    });
+
+    it.each<ApplicationStatus>([
+      'OFFER_ACCEPTED',
+      'OFFER_DECLINED',
+      'REJECTED',
+    ])('returns an empty array for the terminal status %s', (status) => {
+      expect(
+        ApplicationStatusStateMachine.getAvailableTransitions(status),
+      ).toEqual([]);
+    });
+  });
 });
