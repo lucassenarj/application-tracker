@@ -9,15 +9,20 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { ApiProperty } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../identity/guards/jwt-auth.guard';
 import { Application } from './domain/application';
-import type { ApplicationStatus } from './domain/application-status';
+import {
+  APPLICATION_STATUSES,
+  type ApplicationStatus,
+} from './domain/application-status';
+import { ApplicationStatusStateMachine } from './domain/application-status.state-machine';
 import type {
   ApplicationWithCompanyName,
   PaginatedResult,
 } from './domain/application.repository';
-import type { Contact, InterviewCategory } from './domain/status-change';
+import type { InterviewCategory, StatusChange } from './domain/status-change';
 import {
   ApplicationsService,
   type ApplicationStats,
@@ -26,11 +31,20 @@ import { ChangeStatusDto } from './dto/change-status.dto';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { FindAllApplicationsDto } from './dto/find-all-applications.dto';
 
-export interface ApplicationListItemResponse {
+export class ApplicationListItemResponse {
+  @ApiProperty()
   id: string;
+
+  @ApiProperty()
   title: string;
+
+  @ApiProperty()
   companyName: string;
+
+  @ApiProperty({ enum: APPLICATION_STATUSES })
   currentStatus: ApplicationStatus;
+
+  @ApiProperty()
   createdAt: Date;
 }
 
@@ -47,25 +61,125 @@ function toListItemResponse({
   };
 }
 
-export interface StatusChangeResponse {
+export class ContactResponse {
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty()
+  email: string;
+}
+
+export class StatusChangeResponse {
+  @ApiProperty()
   id: string;
+
+  @ApiProperty({ enum: APPLICATION_STATUSES })
   status: ApplicationStatus;
+
+  @ApiProperty()
   eventDate: Date;
+
+  @ApiProperty({ required: false })
   notes?: string;
-  contact?: Contact;
+
+  @ApiProperty({ type: ContactResponse, required: false })
+  contact?: ContactResponse;
+
+  @ApiProperty({ enum: ['TECHNICAL', 'NON_TECHNICAL'], required: false })
   interviewCategory?: InterviewCategory;
+
+  @ApiProperty()
   createdAt: Date;
 }
 
-export interface ApplicationDetailResponse {
+function toStatusChangeResponse(change: StatusChange): StatusChangeResponse {
+  return {
+    id: change.id,
+    status: change.status,
+    eventDate: change.eventDate,
+    notes: change.notes,
+    contact: change.contact,
+    interviewCategory: change.interviewCategory,
+    createdAt: change.createdAt,
+  };
+}
+
+export class ApplicationResponse {
+  @ApiProperty()
   id: string;
+
+  @ApiProperty()
   title: string;
+
+  @ApiProperty({ required: false })
   description?: string;
+
+  @ApiProperty({ required: false })
   externalUrl?: string;
+
+  @ApiProperty({ required: false })
   salary?: number;
-  companyName: string;
+
+  @ApiProperty()
+  companyId: string;
+
+  @ApiProperty()
+  userId: string;
+
+  @ApiProperty({ enum: APPLICATION_STATUSES })
   currentStatus: ApplicationStatus;
+
+  @ApiProperty({ type: StatusChangeResponse, isArray: true })
   statusHistory: StatusChangeResponse[];
+
+  @ApiProperty()
+  createdAt: Date;
+}
+
+function toApplicationResponse(application: Application): ApplicationResponse {
+  return {
+    id: application.id,
+    title: application.title,
+    description: application.description,
+    externalUrl: application.externalUrl,
+    salary: application.salary,
+    companyId: application.companyId,
+    userId: application.userId,
+    currentStatus: application.currentStatus,
+    statusHistory: application.statusHistory.map(toStatusChangeResponse),
+    createdAt: application.createdAt,
+  };
+}
+
+export class ApplicationDetailResponse {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  title: string;
+
+  @ApiProperty({ required: false })
+  description?: string;
+
+  @ApiProperty({ required: false })
+  externalUrl?: string;
+
+  @ApiProperty({ required: false })
+  salary?: number;
+
+  @ApiProperty()
+  companyName: string;
+
+  @ApiProperty({ enum: APPLICATION_STATUSES })
+  currentStatus: ApplicationStatus;
+
+  @ApiProperty({ enum: APPLICATION_STATUSES, isArray: true })
+  availableTransitions: ApplicationStatus[];
+
+  @ApiProperty({ type: StatusChangeResponse, isArray: true })
+  statusHistory: StatusChangeResponse[];
+
+  @ApiProperty()
   createdAt: Date;
 }
 
@@ -81,15 +195,10 @@ function toDetailResponse({
     salary: application.salary,
     companyName,
     currentStatus: application.currentStatus,
-    statusHistory: application.statusHistory.map((change) => ({
-      id: change.id,
-      status: change.status,
-      eventDate: change.eventDate,
-      notes: change.notes,
-      contact: change.contact,
-      interviewCategory: change.interviewCategory,
-      createdAt: change.createdAt,
-    })),
+    availableTransitions: ApplicationStatusStateMachine.getAvailableTransitions(
+      application.currentStatus,
+    ),
+    statusHistory: application.statusHistory.map(toStatusChangeResponse),
     createdAt: application.createdAt,
   };
 }
@@ -100,11 +209,11 @@ export class ApplicationsController {
   constructor(private readonly applicationsService: ApplicationsService) {}
 
   @Post()
-  create(
+  async create(
     @Body() dto: CreateApplicationDto,
     @Req() request: Request,
-  ): Promise<Application> {
-    return this.applicationsService.create({
+  ): Promise<ApplicationResponse> {
+    const application = await this.applicationsService.create({
       title: dto.title,
       description: dto.description,
       externalUrl: dto.externalUrl,
@@ -113,6 +222,7 @@ export class ApplicationsController {
       companyId: dto.companyId,
       userId: request.user!.id,
     });
+    return toApplicationResponse(application);
   }
 
   @Get()
@@ -151,22 +261,27 @@ export class ApplicationsController {
   }
 
   @Patch(':id/status')
-  changeStatus(
+  async changeStatus(
     @Param('id') id: string,
     @Body() dto: ChangeStatusDto,
     @Req() request: Request,
-  ): Promise<Application> {
+  ): Promise<ApplicationResponse> {
     const contact =
       dto.contactName || dto.contactEmail
         ? { name: dto.contactName ?? '', email: dto.contactEmail ?? '' }
         : undefined;
 
-    return this.applicationsService.changeStatus(id, request.user!.id, {
-      status: dto.status,
-      eventDate: new Date(dto.eventDate),
-      notes: dto.notes,
-      contact,
-      interviewCategory: dto.interviewCategory,
-    });
+    const application = await this.applicationsService.changeStatus(
+      id,
+      request.user!.id,
+      {
+        status: dto.status,
+        eventDate: new Date(dto.eventDate),
+        notes: dto.notes,
+        contact,
+        interviewCategory: dto.interviewCategory,
+      },
+    );
+    return toApplicationResponse(application);
   }
 }
