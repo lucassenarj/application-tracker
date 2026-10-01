@@ -1,3 +1,10 @@
+# [api-v1.5.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.4.0...api-v1.5.0) (2026-10-01)
+
+
+### Features
+
+* **application:** include company name and status history in GET /applications/:id ([28a6445](https://github.com/lucassenarj/application-tracker/commit/28a6445992a77a7979b2a10a84bd2900e89cb49c))
+
 # [api-v1.4.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.3.0...api-v1.4.0) (2026-09-30)
 
 
