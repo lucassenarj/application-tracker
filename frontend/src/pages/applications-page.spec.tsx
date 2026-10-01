@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query'
-import { screen } from '@testing-library/react'
+import { act, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createRootRoute, createRoute } from '@tanstack/react-router'
 import { zodValidator } from '@tanstack/zod-adapter'
@@ -278,5 +278,248 @@ describe('ApplicationsPage', () => {
     expect(
       await screen.findByText('Application Detail page'),
     ).toBeInTheDocument()
+  })
+
+  describe('search', () => {
+    it("renders a search input, pre-filled from the URL's search param if present", async () => {
+      renderWithRouter(
+        routeTree,
+        queryClient,
+        '/applications?page=1&search=backend',
+      )
+
+      expect(
+        await screen.findByRole('textbox', {
+          name: 'Search by title or company',
+        }),
+      ).toHaveValue('backend')
+    })
+
+    it('does not fetch immediately when typing — only the initial load has happened before the debounce delay elapses', async () => {
+      const user = userEvent.setup()
+      renderWithRouter(routeTree, queryClient, '/applications?page=1')
+
+      await screen.findByText('No applications yet.')
+      const callCountBeforeTyping = fetchMock.mock.calls.length
+
+      await user.type(
+        screen.getByRole('textbox', { name: 'Search by title or company' }),
+        'backend',
+      )
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 390))
+      })
+
+      expect(fetchMock.mock.calls.length).toBe(callCountBeforeTyping)
+    })
+
+    it('fetches with the typed search term after the debounce delay, resetting to page 1', async () => {
+      const user = userEvent.setup()
+      renderWithRouter(routeTree, queryClient, '/applications?page=2')
+
+      await screen.findByText('No applications yet.')
+
+      await user.type(
+        screen.getByRole('textbox', { name: 'Search by title or company' }),
+        'backend',
+      )
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 410))
+      })
+
+      const lastCallUrl = fetchMock.mock.calls.at(-1)?.[0] as string
+      expect(lastCallUrl).toContain('search=backend')
+      expect(lastCallUrl).toContain('page=1')
+    })
+
+    it('shows a loading indicator while a search request is in flight', async () => {
+      const user = userEvent.setup()
+      let callCount = 0
+      let resolveSearchFetch: (() => void) | undefined
+      fetchMock.mockImplementation(() => {
+        callCount += 1
+        if (callCount === 1) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ items: [], total: 0 }),
+          })
+        }
+        return new Promise((resolve) => {
+          resolveSearchFetch = () =>
+            resolve({
+              ok: true,
+              json: () => Promise.resolve({ items: [], total: 0 }),
+            })
+        })
+      })
+
+      renderWithRouter(routeTree, queryClient, '/applications?page=1')
+
+      await screen.findByText('No applications yet.')
+
+      await user.type(
+        screen.getByRole('textbox', { name: 'Search by title or company' }),
+        'backend',
+      )
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 410))
+      })
+
+      expect(await screen.findByText('Searching...')).toBeInTheDocument()
+
+      resolveSearchFetch?.()
+
+      await waitFor(() => {
+        expect(screen.queryByText('Searching...')).not.toBeInTheDocument()
+      })
+    })
+
+    it('clearing the search input returns to the unfiltered list', async () => {
+      const user = userEvent.setup()
+      fetchMock.mockImplementation((url: string) => {
+        const hasSearch = url.includes('search=')
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve(
+              hasSearch
+                ? { items: [], total: 0 }
+                : {
+                    items: [
+                      {
+                        id: '1',
+                        title: 'Senior Backend Engineer',
+                        companyName: 'Acme Corp',
+                        currentStatus: 'APPLIED',
+                        createdAt: '2026-01-15T10:00:00.000Z',
+                      },
+                    ],
+                    total: 1,
+                  },
+            ),
+        })
+      })
+
+      renderWithRouter(
+        routeTree,
+        queryClient,
+        '/applications?page=1&search=backend',
+      )
+
+      await screen.findByText('No applications yet.')
+
+      const searchInput = screen.getByRole('textbox', {
+        name: 'Search by title or company',
+      })
+      await user.clear(searchInput)
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 410))
+      })
+
+      expect(
+        await screen.findByText('Senior Backend Engineer'),
+      ).toBeInTheDocument()
+    })
+
+    it('changing the status filter while a search term is active preserves the search term', async () => {
+      const user = userEvent.setup()
+
+      renderWithRouter(
+        routeTree,
+        queryClient,
+        '/applications?page=1&search=backend',
+      )
+
+      await screen.findByText('No applications yet.')
+
+      await user.click(screen.getByRole('combobox'))
+      await user.click(await screen.findByRole('option', { name: 'Offer' }))
+
+      await waitFor(() => {
+        const lastCallUrl = fetchMock.mock.calls.at(-1)?.[0] as string
+        expect(lastCallUrl).toContain('search=backend')
+        expect(lastCallUrl).toContain('status=OFFER')
+      })
+    })
+
+    it("shows the result matching the latest search term even if an earlier search's response resolves after a later one's", async () => {
+      const user = userEvent.setup()
+      const pendingResolvers: Record<string, () => void> = {}
+
+      fetchMock.mockImplementation((url: string) => {
+        if (url.includes('search=foo')) {
+          return new Promise((resolve) => {
+            pendingResolvers.foo = () =>
+              resolve({
+                ok: true,
+                json: () =>
+                  Promise.resolve({
+                    items: [
+                      {
+                        id: 'foo-1',
+                        title: 'Foo Result',
+                        companyName: 'Foo Co',
+                        currentStatus: 'APPLIED',
+                        createdAt: '2026-01-15T10:00:00.000Z',
+                      },
+                    ],
+                    total: 1,
+                  }),
+              })
+          })
+        }
+        if (url.includes('search=bar')) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                items: [
+                  {
+                    id: 'bar-1',
+                    title: 'Bar Result',
+                    companyName: 'Bar Co',
+                    currentStatus: 'APPLIED',
+                    createdAt: '2026-01-15T10:00:00.000Z',
+                  },
+                ],
+                total: 1,
+              }),
+          })
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ items: [], total: 0 }),
+        })
+      })
+
+      renderWithRouter(routeTree, queryClient, '/applications?page=1')
+
+      await screen.findByText('No applications yet.')
+
+      const searchInput = screen.getByRole('textbox', {
+        name: 'Search by title or company',
+      })
+
+      await user.type(searchInput, 'foo')
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 410))
+      })
+
+      await user.clear(searchInput)
+      await user.type(searchInput, 'bar')
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 410))
+      })
+
+      expect(await screen.findByText('Bar Result')).toBeInTheDocument()
+
+      pendingResolvers.foo?.()
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10))
+      })
+
+      expect(screen.getByText('Bar Result')).toBeInTheDocument()
+      expect(screen.queryByText('Foo Result')).not.toBeInTheDocument()
+    })
   })
 })

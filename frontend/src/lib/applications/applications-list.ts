@@ -32,6 +32,7 @@ export interface PaginatedResult<T> {
 export function applicationsListQueryOptions(
   page: number,
   status?: ApplicationStatus,
+  search?: string,
 ) {
   const params = new URLSearchParams({
     page: String(page),
@@ -40,9 +41,12 @@ export function applicationsListQueryOptions(
   if (status) {
     params.set('status', status)
   }
+  if (search) {
+    params.set('search', search)
+  }
 
   return queryOptions({
-    queryKey: ['applications', 'list', { page, status }],
+    queryKey: ['applications', 'list', { page, status, search }],
     queryFn: () =>
       apiFetch<PaginatedResult<ApplicationListItem>>(
         `/applications?${params.toString()}`,

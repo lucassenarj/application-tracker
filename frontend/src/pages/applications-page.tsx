@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import {
   Select,
   SelectContent,
@@ -27,9 +30,24 @@ import {
 import { formatStatus } from '@/lib/dashboard/applications-list'
 
 export function ApplicationsPage() {
-  const { page, status } = useSearch({ from: '/_authenticated/applications' })
+  const { page, status, search } = useSearch({
+    from: '/_authenticated/applications',
+  })
   const navigate = useNavigate()
-  const query = useQuery(applicationsListQueryOptions(page, status))
+  const [searchInput, setSearchInput] = useState(search ?? '')
+  const debouncedSearchInput = useDebouncedValue(searchInput, 400)
+  const query = useQuery(applicationsListQueryOptions(page, status, search))
+
+  useEffect(() => {
+    const nextSearch = debouncedSearchInput || undefined
+    if (nextSearch === search) return
+
+    navigate({
+      to: '/applications',
+      search: { page: 1, status, search: nextSearch },
+      replace: true,
+    })
+  }, [debouncedSearchInput, status, search, navigate])
 
   const setStatus = (value: string | null) => {
     if (value === null) return
@@ -39,6 +57,7 @@ export function ApplicationsPage() {
       search: {
         page: 1,
         status: value === 'ALL' ? undefined : (value as ApplicationStatus),
+        search,
       },
       replace: true,
     })
@@ -47,7 +66,7 @@ export function ApplicationsPage() {
   const goToPage = (nextPage: number) => {
     navigate({
       to: '/applications',
-      search: { page: nextPage, status },
+      search: { page: nextPage, status, search },
       replace: true,
     })
   }
@@ -76,6 +95,17 @@ export function ApplicationsPage() {
           ))}
         </SelectContent>
       </Select>
+
+      <Input
+        aria-label="Search by title or company"
+        placeholder="Search by title or company"
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+      />
+
+      {query.isFetching && (
+        <p className="text-sm text-muted-foreground">Searching...</p>
+      )}
 
       {query.isPending && (
         <div className="flex flex-col gap-2">
