@@ -1,5 +1,6 @@
 import { Link, Outlet } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { useLogoutMutation } from '@/lib/auth/logout'
 
 export function AuthenticatedLayout() {
@@ -29,6 +30,7 @@ export function AuthenticatedLayout() {
             Profile
           </Link>
         </div>
+        <ThemeToggle />
         <Button
           variant="outline"
           size="sm"

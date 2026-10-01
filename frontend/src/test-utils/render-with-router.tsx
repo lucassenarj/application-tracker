@@ -7,6 +7,7 @@ import {
   createRouter,
 } from '@tanstack/react-router'
 import { render } from '@testing-library/react'
+import { ThemeProvider } from '@/components/theme-provider'
 
 export function renderWithRouter(
   routeTree: AnyRoute,
@@ -21,9 +22,11 @@ export function renderWithRouter(
 
   return {
     ...render(
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>,
+      <ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      </ThemeProvider>,
     ),
     router,
   }
