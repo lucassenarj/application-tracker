@@ -82,6 +82,32 @@ export function ApplicationDetailPage() {
             <span>{formatStatus(query.data.currentStatus)}</span>
           </p>
 
+          {(query.data.salary !== undefined || query.data.externalUrl) && (
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+              {query.data.salary !== undefined && (
+                <span className="text-muted-foreground">
+                  Salary: €{query.data.salary.toLocaleString()}
+                </span>
+              )}
+              {query.data.externalUrl && (
+                <a
+                  href={query.data.externalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline underline-offset-4"
+                >
+                  View job posting
+                </a>
+              )}
+            </div>
+          )}
+
+          {query.data.description && (
+            <p className="w-full text-sm whitespace-pre-wrap break-words text-muted-foreground">
+              {query.data.description}
+            </p>
+          )}
+
           <ul data-testid="status-timeline" className="flex w-full flex-col">
             {query.data.statusHistory.map((change, index) => {
               const badgeStyle = getStatusBadgeStyle(change.status)

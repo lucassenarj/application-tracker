@@ -81,6 +81,37 @@ describe('ApplicationDetailPage', () => {
     })
   })
 
+  it('renders the salary, a link to the job posting, and the description when present', async () => {
+    mockDetailResponse({
+      salary: 90000,
+      externalUrl: 'https://example.com/jobs/123',
+      description: 'A great role.\nRemote friendly.',
+    })
+
+    renderWithRouter(routeTree, queryClient, '/applications/abc123')
+
+    expect(await screen.findByText('Salary: €90,000')).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'View job posting' }),
+    ).toHaveAttribute('href', 'https://example.com/jobs/123')
+    expect(
+      screen.getByText('A great role. Remote friendly.'),
+    ).toBeInTheDocument()
+  })
+
+  it('does not render salary, job posting link, or description when absent', async () => {
+    mockDetailResponse()
+
+    renderWithRouter(routeTree, queryClient, '/applications/abc123')
+
+    await screen.findByText('Senior Backend Engineer')
+
+    expect(screen.queryByText(/Salary:/)).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: 'View job posting' }),
+    ).not.toBeInTheDocument()
+  })
+
   it("renders the application's title, company name, and formatted current status", async () => {
     mockDetailResponse({ currentStatus: 'INTERVIEW_SCHEDULED' })
 
