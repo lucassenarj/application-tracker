@@ -1,3 +1,10 @@
+# [api-v1.8.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.7.0...api-v1.8.0) (2026-10-02)
+
+
+### Features
+
+* **application:** add availableTransitions to the applications list response ([a258600](https://github.com/lucassenarj/application-tracker/commit/a2586005ace4d17010151c81eec15b710a19fb5c))
+
 # [api-v1.7.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.6.0...api-v1.7.0) (2026-10-02)
 
 
