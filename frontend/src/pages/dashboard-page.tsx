@@ -3,6 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { Pencil } from 'lucide-react'
 import { useState } from 'react'
 import { ChangeStatusDialog } from '@/components/change-status-dialog'
+import { NewApplicationDialog } from '@/components/new-application-dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -34,7 +35,10 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <h1 className="text-2xl font-heading font-medium">Dashboard</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-heading font-medium">Dashboard</h1>
+        <NewApplicationDialog />
+      </div>
 
       {statsQuery.isError && (
         <p className="text-sm text-destructive">
