@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
+import { ChangeStatusDialog } from '@/components/change-status-dialog'
+import { NewApplicationDialog } from '@/components/new-application-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import {
   Select,
   SelectContent,
@@ -20,23 +21,32 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { NewApplicationDialog } from '@/components/new-application-dialog'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import {
-  APPLICATION_STATUSES,
   APPLICATIONS_PAGE_SIZE,
   applicationsListQueryOptions,
   type ApplicationStatus,
+  type ApplicationStatusCategory,
 } from '@/lib/applications/applications-list'
 import { formatStatus } from '@/lib/dashboard/applications-list'
 
+interface ChangeStatusTarget {
+  applicationId: string
+  availableTransitions: ApplicationStatus[]
+  initialStatus: ApplicationStatus
+}
+
 export function ApplicationsPage() {
-  const { page, status, search } = useSearch({
+  const { page, category, search } = useSearch({
     from: '/_authenticated/applications',
   })
   const navigate = useNavigate()
   const [searchInput, setSearchInput] = useState(search ?? '')
   const debouncedSearchInput = useDebouncedValue(searchInput, 400)
-  const query = useQuery(applicationsListQueryOptions(page, status, search))
+  const [changeStatusTarget, setChangeStatusTarget] =
+    useState<ChangeStatusTarget | null>(null)
+  const query = useQuery(applicationsListQueryOptions(page, category, search))
 
   useEffect(() => {
     const nextSearch = debouncedSearchInput || undefined
@@ -44,19 +54,18 @@ export function ApplicationsPage() {
 
     navigate({
       to: '/applications',
-      search: { page: 1, status, search: nextSearch },
+      search: { page: 1, category, search: nextSearch },
       replace: true,
     })
-  }, [debouncedSearchInput, status, search, navigate])
+  }, [debouncedSearchInput, category, search, navigate])
 
-  const setStatus = (value: string | null) => {
-    if (value === null) return
-
+  const setCategory = (value: string) => {
     navigate({
       to: '/applications',
       search: {
         page: 1,
-        status: value === 'ALL' ? undefined : (value as ApplicationStatus),
+        category:
+          value === 'ALL' ? undefined : (value as ApplicationStatusCategory),
         search,
       },
       replace: true,
@@ -66,7 +75,7 @@ export function ApplicationsPage() {
   const goToPage = (nextPage: number) => {
     navigate({
       to: '/applications',
-      search: { page: nextPage, status, search },
+      search: { page: nextPage, category, search },
       replace: true,
     })
   }
@@ -82,19 +91,14 @@ export function ApplicationsPage() {
         <NewApplicationDialog />
       </div>
 
-      <Select value={status ?? 'ALL'} onValueChange={setStatus}>
-        <SelectTrigger className="w-56">
-          <SelectValue placeholder="Filter by status" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="ALL">All statuses</SelectItem>
-          {APPLICATION_STATUSES.map((s) => (
-            <SelectItem key={s} value={s}>
-              {formatStatus(s)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Tabs value={category ?? 'ALL'} onValueChange={setCategory}>
+        <TabsList>
+          <TabsTrigger value="ALL">All</TabsTrigger>
+          <TabsTrigger value="IN_PROGRESS">In Progress</TabsTrigger>
+          <TabsTrigger value="OFFERS">Offers</TabsTrigger>
+          <TabsTrigger value="REJECTIONS">Rejections</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <Input
         aria-label="Search by title or company"
@@ -150,7 +154,38 @@ export function ApplicationsPage() {
                 >
                   <TableCell>{item.title}</TableCell>
                   <TableCell>{item.companyName}</TableCell>
-                  <TableCell>{formatStatus(item.currentStatus)}</TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    {item.availableTransitions.length > 0 ? (
+                      <Select
+                        value={item.currentStatus}
+                        onValueChange={(value) => {
+                          if (!value || value === item.currentStatus) return
+                          setChangeStatusTarget({
+                            applicationId: item.id,
+                            availableTransitions: item.availableTransitions,
+                            initialStatus: value as ApplicationStatus,
+                          })
+                        }}
+                      >
+                        <SelectTrigger
+                          aria-label={`Change status for ${item.title}`}
+                        >
+                          <SelectValue>
+                            {() => formatStatus(item.currentStatus)}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {item.availableTransitions.map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {formatStatus(s)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      formatStatus(item.currentStatus)
+                    )}
+                  </TableCell>
                   <TableCell>
                     {new Date(item.createdAt).toLocaleDateString()}
                   </TableCell>
@@ -179,6 +214,24 @@ export function ApplicationsPage() {
             </Button>
           </div>
         </>
+      )}
+
+      {changeStatusTarget && (
+        <ChangeStatusDialog
+          applicationId={changeStatusTarget.applicationId}
+          availableTransitions={changeStatusTarget.availableTransitions}
+          initialStatus={changeStatusTarget.initialStatus}
+          open={changeStatusTarget !== null}
+          onOpenChange={(open) => {
+            if (!open) setChangeStatusTarget(null)
+          }}
+          onSuccess={() => {
+            navigate({
+              to: '/applications/$id',
+              params: { id: changeStatusTarget.applicationId },
+            })
+          }}
+        />
       )}
     </div>
   )

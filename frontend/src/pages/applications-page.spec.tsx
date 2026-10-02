@@ -6,6 +6,7 @@ import { zodValidator } from '@tanstack/zod-adapter'
 import { ApplicationsPage } from '@/pages/applications-page'
 import { applicationsSearchSchema } from '@/routes/_authenticated.applications'
 import { renderWithRouter } from '@/test-utils/render-with-router'
+import type { ApplicationListItem } from '@/lib/applications/applications-list'
 
 const rootRoute = createRootRoute()
 const authenticatedRoute = createRoute({
@@ -26,6 +27,20 @@ const applicationDetailRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   authenticatedRoute.addChildren([applicationsRoute, applicationDetailRoute]),
 ])
+
+function buildApplicationListItem(
+  overrides: Partial<ApplicationListItem> = {},
+): ApplicationListItem {
+  return {
+    id: '1',
+    title: 'Senior Backend Engineer',
+    companyName: 'Acme Corp',
+    currentStatus: 'APPLIED',
+    availableTransitions: [],
+    createdAt: '2026-01-15T10:00:00.000Z',
+    ...overrides,
+  }
+}
 
 describe('ApplicationsPage', () => {
   let queryClient: QueryClient
@@ -69,20 +84,14 @@ describe('ApplicationsPage', () => {
 
     it("renders each application's title, company name, formatted status, and date", async () => {
       const items = [
-        {
-          id: '1',
-          title: 'Senior Backend Engineer',
-          companyName: 'Acme Corp',
-          currentStatus: 'INTERVIEW_SCHEDULED',
-          createdAt: '2026-01-15T10:00:00.000Z',
-        },
-        {
+        buildApplicationListItem({ currentStatus: 'INTERVIEW_SCHEDULED' }),
+        buildApplicationListItem({
           id: '2',
           title: 'Frontend Developer',
           companyName: 'Globex',
           currentStatus: 'APPLIED',
           createdAt: '2026-02-01T10:00:00.000Z',
-        },
+        }),
       ]
       fetchMock.mockImplementation(() =>
         Promise.resolve({
@@ -135,50 +144,34 @@ describe('ApplicationsPage', () => {
     })
   })
 
-  describe('status filter', () => {
-    it('renders all status options plus an "All statuses" option', async () => {
-      const user = userEvent.setup()
+  describe('category filter', () => {
+    it('renders All, In Progress, Offers, and Rejections tabs', async () => {
       renderWithRouter(routeTree, queryClient, '/applications?page=1')
 
-      await user.click(await screen.findByRole('combobox'))
+      await screen.findByText('Applications')
 
+      expect(screen.getByRole('tab', { name: 'All' })).toBeInTheDocument()
       expect(
-        await screen.findByRole('option', { name: 'All statuses' }),
+        screen.getByRole('tab', { name: 'In Progress' }),
       ).toBeInTheDocument()
-      expect(screen.getByRole('option', { name: 'Applied' })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: 'Offers' })).toBeInTheDocument()
       expect(
-        screen.getByRole('option', { name: 'Waiting Feedback' }),
-      ).toBeInTheDocument()
-      expect(
-        screen.getByRole('option', { name: 'Assignment' }),
-      ).toBeInTheDocument()
-      expect(
-        screen.getByRole('option', { name: 'Interview Scheduled' }),
-      ).toBeInTheDocument()
-      expect(screen.getByRole('option', { name: 'Offer' })).toBeInTheDocument()
-      expect(
-        screen.getByRole('option', { name: 'Offer Accepted' }),
-      ).toBeInTheDocument()
-      expect(
-        screen.getByRole('option', { name: 'Offer Declined' }),
-      ).toBeInTheDocument()
-      expect(
-        screen.getByRole('option', { name: 'Rejected' }),
+        screen.getByRole('tab', { name: 'Rejections' }),
       ).toBeInTheDocument()
     })
-    it('selecting a status filters the list and resets to page 1', async () => {
+
+    it('selecting a tab filters the list and resets to page 1', async () => {
       const user = userEvent.setup()
 
       renderWithRouter(routeTree, queryClient, '/applications?page=2')
 
-      await user.click(await screen.findByRole('combobox'))
-      await user.click(await screen.findByRole('option', { name: 'Offer' }))
+      await user.click(await screen.findByRole('tab', { name: 'Offers' }))
 
       await screen.findByText('No applications yet.')
 
       const lastCallUrl = fetchMock.mock.calls.at(-1)?.[0] as string
       expect(lastCallUrl).toContain('page=1')
-      expect(lastCallUrl).toContain('status=OFFER')
+      expect(lastCallUrl).toContain('category=OFFERS')
     })
 
     it('replaces the history entry instead of pushing a new one when filtering', async () => {
@@ -190,12 +183,10 @@ describe('ApplicationsPage', () => {
         '/applications?page=1',
       )
 
-      await user.click(await screen.findByRole('combobox'))
-      await user.click(await screen.findByRole('option', { name: 'Offer' }))
+      await user.click(await screen.findByRole('tab', { name: 'Offers' }))
       await screen.findByText('No applications yet.')
 
-      await user.click(await screen.findByRole('combobox'))
-      await user.click(await screen.findByRole('option', { name: 'Rejected' }))
+      await user.click(await screen.findByRole('tab', { name: 'Rejections' }))
       await screen.findByText('No applications yet.')
 
       expect(router.history.length).toBe(1)
@@ -209,15 +200,7 @@ describe('ApplicationsPage', () => {
           ok: true,
           json: () =>
             Promise.resolve({
-              items: [
-                {
-                  id: '1',
-                  title: 'Senior Backend Engineer',
-                  companyName: 'Acme Corp',
-                  currentStatus: 'APPLIED',
-                  createdAt: '2026-01-15T10:00:00.000Z',
-                },
-              ],
+              items: [buildApplicationListItem()],
               total: 25,
             }),
         }),
@@ -257,15 +240,7 @@ describe('ApplicationsPage', () => {
         ok: true,
         json: () =>
           Promise.resolve({
-            items: [
-              {
-                id: 'abc123',
-                title: 'Senior Backend Engineer',
-                companyName: 'Acme Corp',
-                currentStatus: 'APPLIED',
-                createdAt: '2026-01-15T10:00:00.000Z',
-              },
-            ],
+            items: [buildApplicationListItem({ id: 'abc123' })],
             total: 1,
           }),
       }),
@@ -278,6 +253,109 @@ describe('ApplicationsPage', () => {
     expect(
       await screen.findByText('Application Detail page'),
     ).toBeInTheDocument()
+  })
+
+  describe('inline status editing', () => {
+    it('shows a status select for an application with available transitions, and plain text for a terminal one', async () => {
+      const items = [
+        buildApplicationListItem({
+          availableTransitions: ['WAITING_FEEDBACK', 'OFFER', 'REJECTED'],
+        }),
+        buildApplicationListItem({
+          id: '2',
+          title: 'Frontend Developer',
+          companyName: 'Globex',
+          currentStatus: 'REJECTED',
+          createdAt: '2026-02-01T10:00:00.000Z',
+        }),
+      ]
+      fetchMock.mockImplementation(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ items, total: items.length }),
+        }),
+      )
+
+      renderWithRouter(routeTree, queryClient, '/applications?page=1')
+
+      expect(
+        await screen.findByRole('combobox', {
+          name: 'Change status for Senior Backend Engineer',
+        }),
+      ).toHaveTextContent('Applied')
+      expect(
+        screen.queryByRole('combobox', {
+          name: 'Change status for Frontend Developer',
+        }),
+      ).not.toBeInTheDocument()
+      expect(screen.getByText('Rejected')).toBeInTheDocument()
+    })
+
+    it('selecting a new status opens the Change Status dialog pre-filled with that status', async () => {
+      const user = userEvent.setup()
+      const items = [
+        buildApplicationListItem({
+          availableTransitions: ['WAITING_FEEDBACK', 'OFFER', 'REJECTED'],
+        }),
+      ]
+      fetchMock.mockImplementation(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ items, total: items.length }),
+        }),
+      )
+
+      renderWithRouter(routeTree, queryClient, '/applications?page=1')
+
+      await user.click(
+        await screen.findByRole('combobox', {
+          name: 'Change status for Senior Backend Engineer',
+        }),
+      )
+      await user.click(await screen.findByRole('option', { name: 'Offer' }))
+
+      expect(
+        screen.getByRole('combobox', { name: 'Status' }),
+      ).toHaveTextContent('Offer')
+    })
+
+    it("navigates to the application's detail page after a successful status change", async () => {
+      const user = userEvent.setup()
+      const items = [
+        buildApplicationListItem({
+          id: 'abc123',
+          availableTransitions: ['WAITING_FEEDBACK', 'OFFER', 'REJECTED'],
+        }),
+      ]
+      fetchMock.mockImplementation((url: string) => {
+        if (url.includes('/applications/abc123/status')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({}),
+          })
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ items, total: items.length }),
+        })
+      })
+
+      renderWithRouter(routeTree, queryClient, '/applications?page=1')
+
+      await user.click(
+        await screen.findByRole('combobox', {
+          name: 'Change status for Senior Backend Engineer',
+        }),
+      )
+      await user.click(await screen.findByRole('option', { name: 'Offer' }))
+      await user.click(
+        await screen.findByRole('button', { name: 'Update Status' }),
+      )
+
+      expect(
+        await screen.findByText('Application Detail page'),
+      ).toBeInTheDocument()
+    })
   })
 
   describe('search', () => {
@@ -384,18 +462,7 @@ describe('ApplicationsPage', () => {
             Promise.resolve(
               hasSearch
                 ? { items: [], total: 0 }
-                : {
-                    items: [
-                      {
-                        id: '1',
-                        title: 'Senior Backend Engineer',
-                        companyName: 'Acme Corp',
-                        currentStatus: 'APPLIED',
-                        createdAt: '2026-01-15T10:00:00.000Z',
-                      },
-                    ],
-                    total: 1,
-                  },
+                : { items: [buildApplicationListItem()], total: 1 },
             ),
         })
       })
@@ -421,7 +488,7 @@ describe('ApplicationsPage', () => {
       ).toBeInTheDocument()
     })
 
-    it('changing the status filter while a search term is active preserves the search term', async () => {
+    it('changing the category filter while a search term is active preserves the search term', async () => {
       const user = userEvent.setup()
 
       renderWithRouter(
@@ -432,13 +499,12 @@ describe('ApplicationsPage', () => {
 
       await screen.findByText('No applications yet.')
 
-      await user.click(screen.getByRole('combobox'))
-      await user.click(await screen.findByRole('option', { name: 'Offer' }))
+      await user.click(screen.getByRole('tab', { name: 'Offers' }))
 
       await waitFor(() => {
         const lastCallUrl = fetchMock.mock.calls.at(-1)?.[0] as string
         expect(lastCallUrl).toContain('search=backend')
-        expect(lastCallUrl).toContain('status=OFFER')
+        expect(lastCallUrl).toContain('category=OFFERS')
       })
     })
 
@@ -455,13 +521,11 @@ describe('ApplicationsPage', () => {
                 json: () =>
                   Promise.resolve({
                     items: [
-                      {
+                      buildApplicationListItem({
                         id: 'foo-1',
                         title: 'Foo Result',
                         companyName: 'Foo Co',
-                        currentStatus: 'APPLIED',
-                        createdAt: '2026-01-15T10:00:00.000Z',
-                      },
+                      }),
                     ],
                     total: 1,
                   }),
@@ -474,13 +538,11 @@ describe('ApplicationsPage', () => {
             json: () =>
               Promise.resolve({
                 items: [
-                  {
+                  buildApplicationListItem({
                     id: 'bar-1',
                     title: 'Bar Result',
                     companyName: 'Bar Co',
-                    currentStatus: 'APPLIED',
-                    createdAt: '2026-01-15T10:00:00.000Z',
-                  },
+                  }),
                 ],
                 total: 1,
               }),
