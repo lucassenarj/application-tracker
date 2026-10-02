@@ -44,6 +44,9 @@ export class ApplicationListItemResponse {
   @ApiProperty({ enum: APPLICATION_STATUSES })
   currentStatus: ApplicationStatus;
 
+  @ApiProperty({ enum: APPLICATION_STATUSES, isArray: true })
+  availableTransitions: ApplicationStatus[];
+
   @ApiProperty()
   createdAt: Date;
 }
@@ -57,6 +60,9 @@ function toListItemResponse({
     title: application.title,
     companyName,
     currentStatus: application.currentStatus,
+    availableTransitions: ApplicationStatusStateMachine.getAvailableTransitions(
+      application.currentStatus,
+    ),
     createdAt: application.createdAt,
   };
 }

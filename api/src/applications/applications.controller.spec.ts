@@ -47,6 +47,13 @@ describe('ApplicationsController', () => {
       expect(result.items).toHaveLength(1);
       expect(result.items[0].title).toBe('Senior Backend Engineer');
       expect(result.items[0].companyName).toBe('Acme Corp');
+      expect(result.items[0].availableTransitions).toEqual([
+        'WAITING_FEEDBACK',
+        'ASSIGNMENT',
+        'INTERVIEW_SCHEDULED',
+        'OFFER',
+        'REJECTED',
+      ]);
     });
   });
 
