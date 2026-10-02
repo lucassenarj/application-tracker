@@ -130,6 +130,35 @@ describe('ApplicationDetailPage', () => {
     ).toBeInTheDocument()
   })
 
+  it('shows interview category, contact, and notes on a status change entry when present', async () => {
+    mockDetailResponse({
+      currentStatus: 'INTERVIEW_SCHEDULED',
+      statusHistory: [
+        {
+          id: 'sc1',
+          status: 'INTERVIEW_SCHEDULED',
+          eventDate: '2026-01-20T00:00:00.000Z',
+          createdAt: '2026-01-20T00:00:00.000Z',
+          interviewCategory: 'TECHNICAL',
+          contact: { name: 'Jane Recruiter', email: 'jane@example.com' },
+          notes: 'Went well,\nsecond round next week.',
+        },
+      ],
+    })
+
+    renderWithRouter(routeTree, queryClient, '/applications/abc123')
+
+    const timeline = within(await screen.findByTestId('status-timeline'))
+
+    expect(timeline.getByText(/Technical/)).toBeInTheDocument()
+    expect(
+      timeline.getByText('Jane Recruiter · jane@example.com'),
+    ).toBeInTheDocument()
+    expect(
+      timeline.getByText('Went well, second round next week.'),
+    ).toBeInTheDocument()
+  })
+
   it('shows an error message when the request fails', async () => {
     fetchMock.mockImplementation(() =>
       Promise.resolve({
