@@ -438,6 +438,44 @@ describe('PrismaApplicationRepository', () => {
       expect(result.items).toHaveLength(1);
       expect(result.items[0].application.id).toBe(matchingApplication.id);
     });
+
+    it('returns only Applications matching the given category', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const inProgressApplication = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(inProgressApplication);
+      const updatedInProgressApplication = inProgressApplication.changeStatus({
+        status: 'WAITING_FEEDBACK',
+        eventDate: new Date(),
+      });
+      await applicationRepository.save(updatedInProgressApplication);
+
+      const offerApplication = Application.create({
+        title: 'Staff Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(offerApplication);
+      const updatedOfferApplication = offerApplication.changeStatus({
+        status: 'OFFER',
+        eventDate: new Date(),
+      });
+      await applicationRepository.save(updatedOfferApplication);
+
+      const result = await applicationRepository.findAllByUser('user-1', {
+        page: 1,
+        pageSize: 10,
+        category: 'IN_PROGRESS',
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].application.id).toBe(inProgressApplication.id);
+    });
   });
 
   describe('countByUserGroupedByStatus', () => {

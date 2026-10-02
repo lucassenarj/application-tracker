@@ -237,6 +237,7 @@ export class ApplicationsController {
         pageSize: query.pageSize ?? 10,
         search: query.search,
         status: query.status,
+        category: query.category,
       },
     );
 

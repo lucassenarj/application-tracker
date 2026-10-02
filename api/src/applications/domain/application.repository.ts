@@ -1,11 +1,13 @@
 import { Application } from './application';
 import { ApplicationStatus } from './application-status';
+import { ApplicationStatusCategory } from './application-status-category';
 
 export interface FindAllByUserOptions {
   page: number;
   pageSize: number;
   search?: string;
   status?: ApplicationStatus;
+  category?: ApplicationStatusCategory;
 }
 
 export interface PaginatedResult<T> {
