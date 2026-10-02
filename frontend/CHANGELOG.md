@@ -1,3 +1,12 @@
+# [frontend-v1.1.1](https://github.com/lucassenarj/application-tracker/compare/frontend-v1.1.0...frontend-v1.1.1) (2026-10-02)
+
+
+### Bug Fixes
+
+* **application:** add a dynamic per-page document title ([6c4ee3d](https://github.com/lucassenarj/application-tracker/commit/6c4ee3d9182b781612dbfa288daebe68b5956e9c))
+* **application:** fix show/hide password toggle and a minimal header to the login and register pages ([945198a](https://github.com/lucassenarj/application-tracker/commit/945198ac0c3bb41cbdb21dfeda4ec6fa0441e65d))
+* **application:** make dashboard summary cards link to the filtered applications list ([04f2855](https://github.com/lucassenarj/application-tracker/commit/04f2855cb43976b3b60a5f015babe25a22cebb94))
+
 # [frontend-v1.1.0](https://github.com/lucassenarj/application-tracker/compare/frontend-v1.0.0...frontend-v1.1.0) (2026-10-02)
 
 
