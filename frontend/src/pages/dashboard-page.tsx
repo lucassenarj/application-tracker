@@ -1,10 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
+import { Pencil } from 'lucide-react'
+import { useState } from 'react'
+import { ChangeStatusDialog } from '@/components/change-status-dialog'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   formatStatus,
   latestApplicationsQueryOptions,
+  type ApplicationStatus,
 } from '@/lib/dashboard/applications-list'
 import { applicationStatsQueryOptions } from '@/lib/dashboard/stats'
 
@@ -15,10 +20,17 @@ const SUMMARY_CARDS = [
   { key: 'rejections', label: 'Rejections' },
 ] as const
 
+interface ChangeStatusTarget {
+  applicationId: string
+  availableTransitions: ApplicationStatus[]
+}
+
 export function DashboardPage() {
   const navigate = useNavigate()
   const statsQuery = useQuery(applicationStatsQueryOptions)
   const applicationsQuery = useQuery(latestApplicationsQueryOptions)
+  const [changeStatusTarget, setChangeStatusTarget] =
+    useState<ChangeStatusTarget | null>(null)
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -94,13 +106,31 @@ export function DashboardPage() {
                       {item.companyName}
                     </span>
                   </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-sm">
-                      {formatStatus(item.currentStatus)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {new Date(item.createdAt).toLocaleDateString()}
-                    </span>
+                  <div className="flex items-center gap-2">
+                    {item.availableTransitions.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        aria-label={`Change status for ${item.title}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setChangeStatusTarget({
+                            applicationId: item.id,
+                            availableTransitions: item.availableTransitions,
+                          })
+                        }}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                    )}
+                    <div className="flex flex-col items-end">
+                      <span className="text-sm">
+                        {formatStatus(item.currentStatus)}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(item.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))
@@ -115,6 +145,23 @@ export function DashboardPage() {
       >
         See more
       </Link>
+
+      {changeStatusTarget && (
+        <ChangeStatusDialog
+          applicationId={changeStatusTarget.applicationId}
+          availableTransitions={changeStatusTarget.availableTransitions}
+          open={changeStatusTarget !== null}
+          onOpenChange={(open) => {
+            if (!open) setChangeStatusTarget(null)
+          }}
+          onSuccess={() => {
+            navigate({
+              to: '/applications/$id',
+              params: { id: changeStatusTarget.applicationId },
+            })
+          }}
+        />
+      )}
     </div>
   )
 }
