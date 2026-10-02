@@ -25,6 +25,11 @@ const applicationsRoute = createRoute({
   path: '/applications',
   component: () => <div>Applications page</div>,
 })
+const profileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/profile',
+  component: () => <div>Profile page</div>,
+})
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
@@ -42,6 +47,7 @@ const loginRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   dashboardRoute,
   applicationsRoute,
+  profileRoute,
   loginRoute,
 ])
 
@@ -82,7 +88,7 @@ describe('AuthenticatedLayout', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renders links to Dashboard and Applications', async () => {
+  it('renders the sidebar nav and the header', async () => {
     renderWithRouter(routeTree, queryClient, '/dashboard')
 
     expect(
@@ -96,13 +102,19 @@ describe('AuthenticatedLayout', () => {
       'href',
       '/profile',
     )
+    expect(
+      screen.getByRole('link', { name: 'Application Tracker' }),
+    ).toHaveAttribute('href', '/dashboard')
   })
 
   it('logs out and navigates to /login when Logout is clicked', async () => {
     const user = userEvent.setup()
     renderWithRouter(routeTree, queryClient, '/dashboard')
 
-    await user.click(await screen.findByRole('button', { name: 'Logout' }))
+    await user.click(
+      await screen.findByRole('button', { name: 'Account menu' }),
+    )
+    await user.click(await screen.findByRole('menuitem', { name: 'Logout' }))
 
     expect(await screen.findByText('Login page')).toBeInTheDocument()
   })

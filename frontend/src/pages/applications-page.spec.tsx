@@ -307,7 +307,7 @@ describe('ApplicationsPage', () => {
         'backend',
       )
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 390))
+        await new Promise((resolve) => setTimeout(resolve, 350))
       })
 
       expect(fetchMock.mock.calls.length).toBe(callCountBeforeTyping)

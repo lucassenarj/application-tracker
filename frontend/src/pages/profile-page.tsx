@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
+import { UserAvatar } from '@/components/user-avatar'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useUpdateProfileMutation } from '@/lib/auth/update-profile'
@@ -68,17 +69,7 @@ export function ProfilePage() {
             <p className="text-sm text-muted-foreground">Profile updated.</p>
           )}
 
-          {user.avatar ? (
-            <img
-              src={user.avatar}
-              alt={`${user.name || user.email}'s avatar`}
-              className="h-16 w-16 rounded-full object-cover"
-            />
-          ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted text-xl font-medium">
-              <p>{(user.name ?? user.email).charAt(0).toUpperCase()}</p>
-            </div>
-          )}
+          <UserAvatar user={user} className="h-16 w-16 text-xl" />
 
           <div className="flex flex-col gap-1">
             <span className="font-medium">{user.name || 'No name set'}</span>

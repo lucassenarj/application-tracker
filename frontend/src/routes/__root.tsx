@@ -13,10 +13,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 function RootLayout() {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b px-4 py-3">
-        <span className="font-semibold">Application Tracker</span>
-      </header>
-      <main className="flex-1 p-4">
+      <main className="flex-1">
         <Outlet />
       </main>
       <ReactQueryDevtools initialIsOpen={false} />
