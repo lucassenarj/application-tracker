@@ -12,12 +12,14 @@ import { ThemeProvider } from '@/components/theme-provider'
 export function renderWithRouter(
   routeTree: AnyRoute,
   queryClient: QueryClient,
-  initialPath: string,
+  initialPath: string | string[],
 ) {
   const router = createRouter({
     routeTree,
     context: { queryClient },
-    history: createMemoryHistory({ initialEntries: [initialPath] }),
+    history: createMemoryHistory({
+      initialEntries: Array.isArray(initialPath) ? initialPath : [initialPath],
+    }),
   })
 
   return {

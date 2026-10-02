@@ -16,8 +16,16 @@ const applicationDetailRoute = createRoute({
   path: '/applications/$id',
   component: ApplicationDetailPage,
 }).update({ id: '/applications_/$id' } as any)
+const applicationsListRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/applications',
+  component: () => <div>Applications List page</div>,
+})
 const routeTree = rootRoute.addChildren([
-  authenticatedRoute.addChildren([applicationDetailRoute]),
+  authenticatedRoute.addChildren([
+    applicationsListRoute,
+    applicationDetailRoute,
+  ]),
 ])
 
 describe('ApplicationDetailPage', () => {
@@ -210,5 +218,34 @@ describe('ApplicationDetailPage', () => {
     })
     const timeline = within(await screen.findByTestId('status-timeline'))
     expect(timeline.getByText('Offer')).toBeInTheDocument()
+  })
+
+  it('navigates to the Applications list when there is no previous page to go back to', async () => {
+    const user = userEvent.setup()
+    mockDetailResponse()
+
+    renderWithRouter(routeTree, queryClient, '/applications/abc123')
+
+    await user.click(await screen.findByRole('button', { name: 'Back' }))
+
+    expect(
+      await screen.findByText('Applications List page'),
+    ).toBeInTheDocument()
+  })
+
+  it('returns to the previous page when one exists in history', async () => {
+    const user = userEvent.setup()
+    mockDetailResponse()
+
+    renderWithRouter(routeTree, queryClient, [
+      '/applications',
+      '/applications/abc123',
+    ])
+
+    await user.click(await screen.findByRole('button', { name: 'Back' }))
+
+    expect(
+      await screen.findByText('Applications List page'),
+    ).toBeInTheDocument()
   })
 })
