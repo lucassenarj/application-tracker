@@ -5,6 +5,7 @@ import {
   APPLICATION_STATUSES,
   type ApplicationStatus,
 } from '../domain/application-status';
+import { getStatusesForCategory } from '../domain/application-status-category';
 import type {
   ApplicationRepository,
   ApplicationWithCompanyName,
@@ -97,6 +98,9 @@ export class PrismaApplicationRepository implements ApplicationRepository {
     const where = {
       userId,
       ...(options.status ? { currentStatus: options.status } : {}),
+      ...(options.category
+        ? { currentStatus: { in: getStatusesForCategory(options.category) } }
+        : {}),
       ...(searchQuery
         ? {
             OR: [

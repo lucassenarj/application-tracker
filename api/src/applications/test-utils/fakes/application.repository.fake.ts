@@ -3,6 +3,7 @@ import {
   APPLICATION_STATUSES,
   type ApplicationStatus,
 } from '../../domain/application-status';
+import { categorizeStatus } from '../../domain/application-status-category';
 import type {
   ApplicationRepository,
   ApplicationWithCompanyName,
@@ -40,6 +41,12 @@ export class FakeApplicationRepository implements ApplicationRepository {
 
     if (options.status) {
       matching = matching.filter((a) => a.currentStatus === options.status);
+    }
+
+    if (options.category) {
+      matching = matching.filter(
+        (a) => categorizeStatus(a.currentStatus) === options.category,
+      );
     }
 
     const start = (options.page - 1) * options.pageSize;
