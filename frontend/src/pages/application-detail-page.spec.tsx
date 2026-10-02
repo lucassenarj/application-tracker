@@ -99,6 +99,19 @@ describe('ApplicationDetailPage', () => {
     ).toBeInTheDocument()
   })
 
+  it('toggles the description between collapsed and expanded view', async () => {
+    const user = userEvent.setup()
+    mockDetailResponse({ description: 'A long job description.' })
+
+    renderWithRouter(routeTree, queryClient, '/applications/abc123')
+
+    await user.click(await screen.findByRole('button', { name: 'Show more' }))
+
+    expect(
+      screen.getByRole('button', { name: 'Show less' }),
+    ).toBeInTheDocument()
+  })
+
   it('does not render salary, job posting link, or description when absent', async () => {
     mockDetailResponse()
 
