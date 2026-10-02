@@ -105,6 +105,57 @@ describe('DashboardPage', () => {
       expect(screen.getByText('3')).toBeInTheDocument()
     })
 
+    it('clicking a category card navigates to the Applications list filtered by that category', async () => {
+      const user = userEvent.setup()
+      fetchMock.mockImplementation((url: string) => {
+        if (url.endsWith('/applications/stats')) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({ total: 12, inProgress: 5, offers: 2, rejections: 3 }),
+          })
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ items: [], total: 0 }),
+        })
+      })
+
+      const { router } = renderWithRouter(routeTree, queryClient, '/dashboard')
+
+      await user.click(await screen.findByText('In Progress'))
+
+      expect(await screen.findByText('Applications page')).toBeInTheDocument()
+      expect(router.state.location.search).toMatchObject({
+        page: 1,
+        category: 'IN_PROGRESS',
+      })
+    })
+
+    it('clicking the Total card navigates to the Applications list with no category filter', async () => {
+      const user = userEvent.setup()
+      fetchMock.mockImplementation((url: string) => {
+        if (url.endsWith('/applications/stats')) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({ total: 12, inProgress: 5, offers: 2, rejections: 3 }),
+          })
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ items: [], total: 0 }),
+        })
+      })
+
+      const { router } = renderWithRouter(routeTree, queryClient, '/dashboard')
+
+      await user.click(await screen.findByText('Total'))
+
+      expect(await screen.findByText('Applications page')).toBeInTheDocument()
+      expect(router.state.location.search).not.toHaveProperty('category')
+    })
+
     it('shows an error message when the stats request fails', async () => {
       fetchMock.mockImplementation((url: string) => {
         if (url.endsWith('/applications/stats')) {
