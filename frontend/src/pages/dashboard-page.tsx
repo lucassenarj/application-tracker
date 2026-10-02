@@ -7,6 +7,7 @@ import { NewApplicationDialog } from '@/components/new-application-dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import type { ApplicationStatusCategory } from '@/lib/applications/applications-list'
 import {
   formatStatus,
   latestApplicationsQueryOptions,
@@ -15,11 +16,15 @@ import {
 import { applicationStatsQueryOptions } from '@/lib/dashboard/stats'
 
 const SUMMARY_CARDS = [
-  { key: 'total', label: 'Total' },
-  { key: 'inProgress', label: 'In Progress' },
-  { key: 'offers', label: 'Offers' },
-  { key: 'rejections', label: 'Rejections' },
-] as const
+  { key: 'total', label: 'Total', category: undefined },
+  { key: 'inProgress', label: 'In Progress', category: 'IN_PROGRESS' },
+  { key: 'offers', label: 'Offers', category: 'OFFERS' },
+  { key: 'rejections', label: 'Rejections', category: 'REJECTIONS' },
+] as const satisfies ReadonlyArray<{
+  key: 'total' | 'inProgress' | 'offers' | 'rejections'
+  label: string
+  category?: ApplicationStatusCategory
+}>
 
 interface ChangeStatusTarget {
   applicationId: string
@@ -59,8 +64,17 @@ export function DashboardPage() {
               </Card>
             ))
           : statsQuery.isSuccess &&
-            SUMMARY_CARDS.map(({ key, label }) => (
-              <Card key={key}>
+            SUMMARY_CARDS.map(({ key, label, category }) => (
+              <Card
+                key={key}
+                className="cursor-pointer"
+                onClick={() =>
+                  navigate({
+                    to: '/applications',
+                    search: { page: 1, category },
+                  })
+                }
+              >
                 <CardHeader>
                   <CardTitle>{label}</CardTitle>
                 </CardHeader>
@@ -73,10 +87,9 @@ export function DashboardPage() {
             ))}
       </div>
 
+      <h2 className="text-xl font-heading font-medium">Latest Applications</h2>
+
       <Card>
-        <CardHeader>
-          <CardTitle>Latest Applications</CardTitle>
-        </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {applicationsQuery.isPending &&
             Array.from({ length: 5 }).map((_, i) => (

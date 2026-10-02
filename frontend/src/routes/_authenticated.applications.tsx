@@ -11,6 +11,9 @@ export const applicationsSearchSchema = z.object({
 })
 
 export const Route = createFileRoute('/_authenticated/applications')({
+  head: () => ({
+    meta: [{ title: 'Applications - Application Tracker' }],
+  }),
   validateSearch: zodValidator(applicationsSearchSchema),
   component: ApplicationsPage,
 })

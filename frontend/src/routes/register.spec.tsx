@@ -41,6 +41,19 @@ describe('RegisterPage', () => {
       screen.getByRole('button', { name: 'Register' }),
     ).toBeInTheDocument()
   })
+  it('toggles the password field between hidden and visible', async () => {
+    const user = userEvent.setup()
+    renderWithRouter(routeTree, queryClient, '/register')
+
+    expect(await screen.findByLabelText('Password')).toHaveAttribute(
+      'type',
+      'password',
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Show password' }))
+
+    expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'text')
+  })
   it('shows a validation error when submitting with an invalid email', async () => {
     const user = userEvent.setup()
     renderWithRouter(routeTree, queryClient, '/register')
