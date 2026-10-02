@@ -75,6 +75,7 @@ export function ApplicationDetailPage() {
 
       {query.isSuccess && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start">
+          <title>{`${query.data.title} - ${query.data.companyName} - Application Tracker`}</title>
           <div className="flex flex-col items-start gap-4 lg:col-span-2">
             <h1 className="text-2xl font-heading font-medium">
               {query.data.title}
