@@ -28,13 +28,8 @@
 - Forms: React Hook Form + Zod (matches shadcn/ui's own `Form` component, which is built assuming this pairing)
 - Applications list layout: table (dense, fits the rule-based status state machine as a badge + action rather than a draggable card)
 - Theme: shadcn/ui components (copied in as needed, not a template) + tweakcn for theming — https://tweakcn.com/
-  - Shortlist of presets to check first, leaning toward a muted/professional feel rather than bright/playful (verified these slugs exist in tweakcn's own preset catalog, but pick visually via the site's own theme picker before committing — a static fetch can't confirm what actually renders):
-    - Modern Minimal — https://tweakcn.com/r/themes/modern-minimal.json
-    - Graphite — https://tweakcn.com/r/themes/graphite.json
-    - Clean Slate — https://tweakcn.com/r/themes/clean-slate.json
-    - Cosmic Night — https://tweakcn.com/r/themes/cosmic-night.json
-    - Perpetuity — https://tweakcn.com/r/themes/perpetuity.json
-  - These `.json` links are tweakcn's registry format — the same URL the shadcn CLI installs a theme from directly (e.g. `npx shadcn add <url>`), useful again once a theme is picked
+  - **Chosen (2026-10-01): Clean Slate** — https://tweakcn.com/r/themes/clean-slate.json. Picked over the other shortlisted options (Modern Minimal, Graphite, Cosmic Night, Perpetuity) for its cool blue-gray background with a vivid indigo/purple-blue primary accent — more distinctive than Modern Minimal's conventional SaaS blue or Graphite's fully monochrome look, without leaning as saturated/violet as Cosmic Night. Applied by hand-copying the preset's CSS variables (`:root`/`.dark` blocks) into `src/index.css`, including `destructive-foreground` (a variable this app's base theme didn't have at all) — not via `npx shadcn add <url>`, since that would have overwritten already-customized component files. Also swapped the font from Geist Variable to Inter Variable (`@fontsource-variable/inter`), since Clean Slate bundles its own font choice; skipped importing the preset's Merriweather/JetBrains Mono (serif/mono) and shadow/tracking/spacing custom properties, since nothing in this app's `@theme inline` block references them — they'd be inert dead CSS with zero visual effect.
+  - Other shortlisted presets, kept for reference: Modern Minimal — https://tweakcn.com/r/themes/modern-minimal.json · Graphite — https://tweakcn.com/r/themes/graphite.json · Cosmic Night — https://tweakcn.com/r/themes/cosmic-night.json · Perpetuity — https://tweakcn.com/r/themes/perpetuity.json
 - CI/CD: `frontend/` has its own GitHub Actions pipeline (lint/typecheck/test/build) and `semantic-release` for versioning/changelog, mirroring `api/`. First release landed as `frontend-v1.0.0` rather than the originally-planned `0.1.0` — the manual seed-tag step got missed before the first release ran, so semantic-release fell back to its own default (same thing that produced `api-v1.0.0`). Accepted as a harmless cosmetic outcome rather than rewriting shared `main` history to "fix" it; versions continue normally from here.
 
 ## Testing conventions

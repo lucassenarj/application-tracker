@@ -4,12 +4,27 @@ import userEvent from '@testing-library/user-event'
 import { buildRouteTree } from '@/test-utils/build-route-tree'
 import { renderWithRouter } from '@/test-utils/render-with-router'
 import { DashboardPage } from '@/pages/dashboard-page'
+import type { ApplicationListItem } from '@/lib/dashboard/applications-list'
 
 const routeTree = buildRouteTree({
   '/dashboard': DashboardPage,
   '/applications': () => <div>Applications page</div>,
   '/applications/$id': () => <div>Application Detail page</div>,
 })
+
+function buildApplicationListItem(
+  overrides: Partial<ApplicationListItem> = {},
+): ApplicationListItem {
+  return {
+    id: '1',
+    title: 'Senior Backend Engineer',
+    companyName: 'Acme Corp',
+    currentStatus: 'APPLIED',
+    availableTransitions: [],
+    createdAt: '2026-01-15T10:00:00.000Z',
+    ...overrides,
+  }
+}
 
 describe('DashboardPage', () => {
   let queryClient: QueryClient
@@ -136,20 +151,14 @@ describe('DashboardPage', () => {
     })
     it("renders each application's title, company name, formatted status, and date", async () => {
       const items = [
-        {
-          id: '1',
-          title: 'Senior Backend Engineer',
-          companyName: 'Acme Corp',
-          currentStatus: 'INTERVIEW_SCHEDULED',
-          createdAt: '2026-01-15T10:00:00.000Z',
-        },
-        {
+        buildApplicationListItem({ currentStatus: 'INTERVIEW_SCHEDULED' }),
+        buildApplicationListItem({
           id: '2',
           title: 'Frontend Developer',
           companyName: 'Globex',
           currentStatus: 'APPLIED',
           createdAt: '2026-02-01T10:00:00.000Z',
-        },
+        }),
       ]
       fetchMock.mockImplementation((url: string) => {
         if (url.endsWith('/applications/stats')) {
@@ -228,15 +237,7 @@ describe('DashboardPage', () => {
 
   it("clicking an application row navigates to its detail page", async () => {
     const user = userEvent.setup()
-    const items = [
-      {
-        id: 'abc123',
-        title: 'Senior Backend Engineer',
-        companyName: 'Acme Corp',
-        currentStatus: 'APPLIED',
-        createdAt: '2026-01-15T10:00:00.000Z',
-      },
-    ]
+    const items = [buildApplicationListItem({ id: 'abc123' })]
     fetchMock.mockImplementation((url: string) => {
       if (url.endsWith('/applications/stats')) {
         return Promise.resolve({
@@ -265,5 +266,105 @@ describe('DashboardPage', () => {
 
     const link = await screen.findByRole('link', { name: 'See more' })
     expect(link).toHaveAttribute('href', '/applications?page=1')
+  })
+
+  describe('inline status editing', () => {
+    function mockApplicationsResponse(items: ApplicationListItem[]) {
+      fetchMock.mockImplementation((url: string) => {
+        if (url.endsWith('/applications/stats')) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({ total: 0, inProgress: 0, offers: 0, rejections: 0 }),
+          })
+        }
+        if (url.includes('/applications/abc123/status')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ items, total: items.length }),
+        })
+      })
+    }
+
+    it('shows a change-status icon next to the status text for an application with available transitions, and none for a terminal one', async () => {
+      mockApplicationsResponse([
+        buildApplicationListItem({
+          availableTransitions: ['WAITING_FEEDBACK', 'OFFER', 'REJECTED'],
+        }),
+        buildApplicationListItem({
+          id: '2',
+          title: 'Frontend Developer',
+          companyName: 'Globex',
+          currentStatus: 'REJECTED',
+          createdAt: '2026-02-01T10:00:00.000Z',
+        }),
+      ])
+
+      renderWithRouter(routeTree, queryClient, '/dashboard')
+
+      expect(await screen.findByText('Applied')).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', {
+          name: 'Change status for Senior Backend Engineer',
+        }),
+      ).toBeInTheDocument()
+
+      expect(screen.getByText('Rejected')).toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', {
+          name: 'Change status for Frontend Developer',
+        }),
+      ).not.toBeInTheDocument()
+    })
+
+    it('clicking the change-status icon opens the Change Status dialog', async () => {
+      const user = userEvent.setup()
+      mockApplicationsResponse([
+        buildApplicationListItem({
+          availableTransitions: ['WAITING_FEEDBACK', 'OFFER', 'REJECTED'],
+        }),
+      ])
+
+      renderWithRouter(routeTree, queryClient, '/dashboard')
+
+      await user.click(
+        await screen.findByRole('button', {
+          name: 'Change status for Senior Backend Engineer',
+        }),
+      )
+
+      expect(
+        await screen.findByRole('combobox', { name: 'Status' }),
+      ).toBeInTheDocument()
+    })
+
+    it("navigates to the application's detail page after a successful status change", async () => {
+      const user = userEvent.setup()
+      mockApplicationsResponse([
+        buildApplicationListItem({
+          id: 'abc123',
+          availableTransitions: ['WAITING_FEEDBACK', 'OFFER', 'REJECTED'],
+        }),
+      ])
+
+      renderWithRouter(routeTree, queryClient, '/dashboard')
+
+      await user.click(
+        await screen.findByRole('button', {
+          name: 'Change status for Senior Backend Engineer',
+        }),
+      )
+      await user.click(screen.getByRole('combobox', { name: 'Status' }))
+      await user.click(await screen.findByRole('option', { name: 'Offer' }))
+      await user.click(
+        await screen.findByRole('button', { name: 'Update Status' }),
+      )
+
+      expect(
+        await screen.findByText('Application Detail page'),
+      ).toBeInTheDocument()
+    })
   })
 })

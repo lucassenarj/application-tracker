@@ -1,44 +1,27 @@
-import { Link, Outlet } from '@tanstack/react-router'
-import { Button } from '@/components/ui/button'
-import { useLogoutMutation } from '@/lib/auth/logout'
+import { useQuery } from '@tanstack/react-query'
+import { Outlet } from '@tanstack/react-router'
+import { AppHeader } from '@/components/app-header'
+import { AppSidebar } from '@/components/app-sidebar'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { userQueryOptions } from '@/lib/auth/user-query'
 
 export function AuthenticatedLayout() {
-  const logoutMutation = useLogoutMutation()
+  const userQuery = useQuery(userQueryOptions)
+  const user = userQuery.data
+
+  if (!user) {
+    return null
+  }
 
   return (
-    <div className="flex flex-col gap-4">
-      <nav className="flex items-center justify-between border-b pb-4">
-        <div className="flex gap-4">
-          <Link
-            to="/dashboard"
-            className="text-sm font-medium underline-offset-4 hover:underline"
-          >
-            Dashboard
-          </Link>
-          <Link
-            to="/applications"
-            search={{ page: 1 }}
-            className="text-sm font-medium underline-offset-4 hover:underline"
-          >
-            Applications
-          </Link>
-          <Link
-            to="/profile"
-            className="text-sm font-medium underline-offset-4 hover:underline"
-          >
-            Profile
-          </Link>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <AppHeader user={user} />
+        <div className="flex flex-1 flex-col p-4">
+          <Outlet />
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => logoutMutation.mutate()}
-          disabled={logoutMutation.isPending}
-        >
-          {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
-        </Button>
-      </nav>
-      <Outlet />
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

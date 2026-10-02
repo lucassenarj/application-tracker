@@ -16,8 +16,16 @@ const applicationDetailRoute = createRoute({
   path: '/applications/$id',
   component: ApplicationDetailPage,
 }).update({ id: '/applications_/$id' } as any)
+const applicationsListRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/applications',
+  component: () => <div>Applications List page</div>,
+})
 const routeTree = rootRoute.addChildren([
-  authenticatedRoute.addChildren([applicationDetailRoute]),
+  authenticatedRoute.addChildren([
+    applicationsListRoute,
+    applicationDetailRoute,
+  ]),
 ])
 
 describe('ApplicationDetailPage', () => {
@@ -73,6 +81,50 @@ describe('ApplicationDetailPage', () => {
     })
   })
 
+  it('renders the salary, a link to the job posting, and the description when present', async () => {
+    mockDetailResponse({
+      salary: 90000,
+      externalUrl: 'https://example.com/jobs/123',
+      description: 'A great role.\nRemote friendly.',
+    })
+
+    renderWithRouter(routeTree, queryClient, '/applications/abc123')
+
+    expect(await screen.findByText('Salary: €90,000')).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'View job posting' }),
+    ).toHaveAttribute('href', 'https://example.com/jobs/123')
+    expect(
+      screen.getByText('A great role. Remote friendly.'),
+    ).toBeInTheDocument()
+  })
+
+  it('toggles the description between collapsed and expanded view', async () => {
+    const user = userEvent.setup()
+    mockDetailResponse({ description: 'A long job description.' })
+
+    renderWithRouter(routeTree, queryClient, '/applications/abc123')
+
+    await user.click(await screen.findByRole('button', { name: 'Show more' }))
+
+    expect(
+      screen.getByRole('button', { name: 'Show less' }),
+    ).toBeInTheDocument()
+  })
+
+  it('does not render salary, job posting link, or description when absent', async () => {
+    mockDetailResponse()
+
+    renderWithRouter(routeTree, queryClient, '/applications/abc123')
+
+    await screen.findByText('Senior Backend Engineer')
+
+    expect(screen.queryByText(/Salary:/)).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: 'View job posting' }),
+    ).not.toBeInTheDocument()
+  })
+
   it("renders the application's title, company name, and formatted current status", async () => {
     mockDetailResponse({ currentStatus: 'INTERVIEW_SCHEDULED' })
 
@@ -119,6 +171,35 @@ describe('ApplicationDetailPage', () => {
       timeline.getByText(
         new Date('2026-01-20T00:00:00.000Z').toLocaleDateString(),
       ),
+    ).toBeInTheDocument()
+  })
+
+  it('shows interview category, contact, and notes on a status change entry when present', async () => {
+    mockDetailResponse({
+      currentStatus: 'INTERVIEW_SCHEDULED',
+      statusHistory: [
+        {
+          id: 'sc1',
+          status: 'INTERVIEW_SCHEDULED',
+          eventDate: '2026-01-20T00:00:00.000Z',
+          createdAt: '2026-01-20T00:00:00.000Z',
+          interviewCategory: 'TECHNICAL',
+          contact: { name: 'Jane Recruiter', email: 'jane@example.com' },
+          notes: 'Went well,\nsecond round next week.',
+        },
+      ],
+    })
+
+    renderWithRouter(routeTree, queryClient, '/applications/abc123')
+
+    const timeline = within(await screen.findByTestId('status-timeline'))
+
+    expect(timeline.getByText(/Technical/)).toBeInTheDocument()
+    expect(
+      timeline.getByText('Jane Recruiter · jane@example.com'),
+    ).toBeInTheDocument()
+    expect(
+      timeline.getByText('Went well, second round next week.'),
     ).toBeInTheDocument()
   })
 
@@ -210,5 +291,34 @@ describe('ApplicationDetailPage', () => {
     })
     const timeline = within(await screen.findByTestId('status-timeline'))
     expect(timeline.getByText('Offer')).toBeInTheDocument()
+  })
+
+  it('navigates to the Applications list when there is no previous page to go back to', async () => {
+    const user = userEvent.setup()
+    mockDetailResponse()
+
+    renderWithRouter(routeTree, queryClient, '/applications/abc123')
+
+    await user.click(await screen.findByRole('button', { name: 'Back' }))
+
+    expect(
+      await screen.findByText('Applications List page'),
+    ).toBeInTheDocument()
+  })
+
+  it('returns to the previous page when one exists in history', async () => {
+    const user = userEvent.setup()
+    mockDetailResponse()
+
+    renderWithRouter(routeTree, queryClient, [
+      '/applications',
+      '/applications/abc123',
+    ])
+
+    await user.click(await screen.findByRole('button', { name: 'Back' }))
+
+    expect(
+      await screen.findByText('Applications List page'),
+    ).toBeInTheDocument()
   })
 })

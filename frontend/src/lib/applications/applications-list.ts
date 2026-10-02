@@ -14,6 +14,15 @@ export const APPLICATION_STATUSES = [
 
 export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number]
 
+export const APPLICATION_STATUS_CATEGORIES = [
+  'IN_PROGRESS',
+  'OFFERS',
+  'REJECTIONS',
+] as const
+
+export type ApplicationStatusCategory =
+  (typeof APPLICATION_STATUS_CATEGORIES)[number]
+
 export const APPLICATIONS_PAGE_SIZE = 10
 
 export interface ApplicationListItem {
@@ -21,6 +30,7 @@ export interface ApplicationListItem {
   title: string
   companyName: string
   currentStatus: ApplicationStatus
+  availableTransitions: ApplicationStatus[]
   createdAt: string
 }
 
@@ -31,22 +41,22 @@ export interface PaginatedResult<T> {
 
 export function applicationsListQueryOptions(
   page: number,
-  status?: ApplicationStatus,
+  category?: ApplicationStatusCategory,
   search?: string,
 ) {
   const params = new URLSearchParams({
     page: String(page),
     pageSize: String(APPLICATIONS_PAGE_SIZE),
   })
-  if (status) {
-    params.set('status', status)
+  if (category) {
+    params.set('category', category)
   }
   if (search) {
     params.set('search', search)
   }
 
   return queryOptions({
-    queryKey: ['applications', 'list', { page, status, search }],
+    queryKey: ['applications', 'list', { page, category, search }],
     queryFn: () =>
       apiFetch<PaginatedResult<ApplicationListItem>>(
         `/applications?${params.toString()}`,

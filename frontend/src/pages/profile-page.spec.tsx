@@ -146,6 +146,25 @@ describe('ProfilePage', () => {
     expect(screen.getByRole('textbox', { name: 'Name' })).toBeInTheDocument()
   })
 
+  it('shows the total number of applications tracked', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/applications/stats')) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({ total: 3, inProgress: 1, offers: 1, rejections: 1 }),
+        })
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(fakeUser) })
+    })
+
+    renderWithRouter(routeTree, queryClient, '/profile')
+
+    expect(
+      await screen.findByText('3 applications tracked'),
+    ).toBeInTheDocument()
+  })
+
   it('clicking Cancel while editing discards changes and returns to view mode', async () => {
     const user = userEvent.setup()
     renderWithRouter(routeTree, queryClient, '/profile')

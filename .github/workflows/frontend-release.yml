@@ -1,7 +1,10 @@
 name: frontend-release
 
 on:
-  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
 
 defaults:
   run:
