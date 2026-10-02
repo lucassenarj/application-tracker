@@ -1,3 +1,4 @@
+import type { ComponentProps } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -7,12 +8,19 @@ import type { ApplicationStatus } from '@/lib/applications/applications-list'
 function renderDialog(
   queryClient: QueryClient,
   availableTransitions: ApplicationStatus[] = ['OFFER', 'REJECTED'],
+  extraProps: Partial<
+    Omit<
+      ComponentProps<typeof ChangeStatusDialog>,
+      'applicationId' | 'availableTransitions'
+    >
+  > = {},
 ) {
   return render(
     <QueryClientProvider client={queryClient}>
       <ChangeStatusDialog
         applicationId="abc123"
         availableTransitions={availableTransitions}
+        {...extraProps}
       />
     </QueryClientProvider>,
   )
@@ -63,14 +71,12 @@ describe('ChangeStatusDialog', () => {
     expect(screen.getAllByRole('option')).toHaveLength(2)
   })
 
-  it('shows no status options to pick when availableTransitions is empty (terminal status)', async () => {
-    const user = userEvent.setup()
+  it('does not render a trigger when there are no available transitions (terminal status) and open is uncontrolled', () => {
     renderDialog(queryClient, [])
 
-    await user.click(screen.getByRole('button', { name: 'Change Status' }))
-    await user.click(await screen.findByRole('combobox'))
-
-    expect(screen.queryAllByRole('option')).toHaveLength(0)
+    expect(
+      screen.queryByRole('button', { name: 'Change Status' }),
+    ).not.toBeInTheDocument()
   })
 
   it('does not show the interview category choice when no status, or a non-interview status, is selected', async () => {
@@ -258,5 +264,46 @@ describe('ChangeStatusDialog', () => {
     expect(
       await screen.findByText('Internal server error'),
     ).toBeInTheDocument()
+  })
+
+  describe('controlled mode', () => {
+    it('does not render its own trigger button when open is controlled externally', () => {
+      renderDialog(queryClient, ['OFFER'], { open: true, onOpenChange: vi.fn() })
+
+      expect(
+        screen.queryByRole('button', { name: 'Change Status' }),
+      ).not.toBeInTheDocument()
+    })
+
+    it('pre-fills the status select from initialStatus when opened', async () => {
+      renderDialog(queryClient, ['OFFER', 'REJECTED'], {
+        open: true,
+        onOpenChange: vi.fn(),
+        initialStatus: 'OFFER',
+      })
+
+      expect(
+        await screen.findByRole('combobox', { name: 'Status' }),
+      ).toHaveTextContent('Offer')
+    })
+
+    it('calls onSuccess after a successful save', async () => {
+      const user = userEvent.setup()
+      const onSuccess = vi.fn()
+      renderDialog(queryClient, ['OFFER'], {
+        open: true,
+        onOpenChange: vi.fn(),
+        initialStatus: 'OFFER',
+        onSuccess,
+      })
+
+      await user.click(
+        await screen.findByRole('button', { name: 'Update Status' }),
+      )
+
+      await waitFor(() => {
+        expect(onSuccess).toHaveBeenCalled()
+      })
+    })
   })
 })

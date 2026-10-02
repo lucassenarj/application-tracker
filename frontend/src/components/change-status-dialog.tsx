@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import {
@@ -31,6 +31,10 @@ import { formatStatus } from '@/lib/dashboard/applications-list'
 interface ChangeStatusDialogProps {
   applicationId: string
   availableTransitions: ApplicationStatus[]
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  initialStatus?: ApplicationStatus
+  onSuccess?: () => void
 }
 
 function todayIso(): string {
@@ -40,8 +44,17 @@ function todayIso(): string {
 export function ChangeStatusDialog({
   applicationId,
   availableTransitions,
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
+  initialStatus,
+  onSuccess,
 }: ChangeStatusDialogProps) {
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isControlled = openProp !== undefined
+  const open = isControlled ? openProp : internalOpen
+  const setOpen = isControlled
+    ? onOpenChangeProp ?? (() => {})
+    : setInternalOpen
   const changeStatusMutation = useChangeStatusMutation(applicationId)
   const {
     register,
@@ -53,7 +66,7 @@ export function ChangeStatusDialog({
   } = useForm<ChangeStatusFormValues>({
     resolver: zodResolver(changeStatusSchema),
     defaultValues: {
-      status: '',
+      status: initialStatus ?? '',
       eventDate: todayIso(),
       contactName: '',
       contactEmail: '',
@@ -62,6 +75,18 @@ export function ChangeStatusDialog({
   })
 
   const selectedStatus = watch('status')
+
+  useEffect(() => {
+    if (open) {
+      reset({
+        status: initialStatus ?? '',
+        eventDate: todayIso(),
+        contactName: '',
+        contactEmail: '',
+        notes: '',
+      })
+    }
+  }, [open, initialStatus, reset])
 
   const onSubmit = (values: ChangeStatusFormValues) => {
     changeStatusMutation.mutate(
@@ -77,6 +102,7 @@ export function ChangeStatusDialog({
         onSuccess: () => {
           reset()
           setOpen(false)
+          onSuccess?.()
         },
       },
     )
@@ -84,7 +110,9 @@ export function ChangeStatusDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button>Change Status</Button>} />
+      {!isControlled && availableTransitions.length > 0 && (
+        <DialogTrigger render={<Button>Change Status</Button>} />
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Change Status</DialogTitle>
@@ -110,7 +138,13 @@ export function ChangeStatusDialog({
                 onValueChange={field.onChange}
               >
                 <SelectTrigger aria-label="Status">
-                  <SelectValue placeholder="Select a status" />
+                  <SelectValue placeholder="Select a status">
+                    {(value: string | null) =>
+                      value
+                        ? formatStatus(value as ApplicationStatus)
+                        : 'Select a status'
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {availableTransitions.map((status) => (
@@ -133,7 +167,15 @@ export function ChangeStatusDialog({
                   onValueChange={field.onChange}
                 >
                   <SelectTrigger aria-label="Interview Category">
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder="Select a category">
+                      {(value: string | null) =>
+                        value === 'TECHNICAL'
+                          ? 'Technical'
+                          : value === 'NON_TECHNICAL'
+                            ? 'Non-technical'
+                            : 'Select a category'
+                      }
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="TECHNICAL">Technical</SelectItem>
