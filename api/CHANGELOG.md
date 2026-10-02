@@ -1,3 +1,10 @@
+# [api-v1.7.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.6.0...api-v1.7.0) (2026-10-02)
+
+
+### Features
+
+* **application:** add category filter to GET /applications ([0920a63](https://github.com/lucassenarj/application-tracker/commit/0920a636aa39e37236effa25766b4c22474f9fc8))
+
 # [api-v1.6.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.5.0...api-v1.6.0) (2026-10-01)
 
 
