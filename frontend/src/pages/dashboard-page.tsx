@@ -13,6 +13,7 @@ import { CategoryProgressBars } from '@/components/category-progress-bars'
 import { ChangeStatusDialog } from '@/components/change-status-dialog'
 import { NewApplicationDialog } from '@/components/new-application-dialog'
 import { StatusDonutChart } from '@/components/status-donut-chart'
+import { TiltCard } from '@/components/tilt-card'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -80,9 +81,9 @@ export function DashboardPage() {
     useState<ChangeStatusTarget | null>(null)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-[30px]">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-heading font-medium">Dashboard</h1>
+        <h1 className="text-[28px] font-heading font-semibold">Dashboard</h1>
         <NewApplicationDialog />
       </div>
 
@@ -108,33 +109,36 @@ export function DashboardPage() {
           : statsQuery.isSuccess &&
             SUMMARY_CARDS.map(
               ({ key, label, category, icon: Icon, tileClassName, iconClassName }) => (
-                <Card
-                  key={key}
-                  className="cursor-pointer"
-                  onClick={() =>
-                    navigate({
-                      to: '/applications',
-                      search: { page: 1, category },
-                    })
-                  }
-                >
-                  <CardContent className="flex items-center justify-between">
-                    <div className="flex flex-col gap-1">
-                      <CardTitle>{label}</CardTitle>
-                      <span
-                        data-testid={`stat-value-${key}`}
-                        className="text-3xl font-mono font-medium"
+                <TiltCard key={key}>
+                  <Card
+                    className="cursor-pointer"
+                    onClick={() =>
+                      navigate({
+                        to: '/applications',
+                        search: { page: 1, category },
+                      })
+                    }
+                  >
+                    <CardContent className="flex items-center justify-between">
+                      <div className="flex flex-col gap-1">
+                        <CardTitle className="text-[13px] font-medium uppercase tracking-[0.5px] text-muted-foreground">
+                          {label}
+                        </CardTitle>
+                        <span
+                          data-testid={`stat-value-${key}`}
+                          className="text-3xl font-mono font-medium"
+                        >
+                          {statsQuery.data[key]}
+                        </span>
+                      </div>
+                      <div
+                        className={`flex size-14 shrink-0 items-center justify-center rounded-[16px] shadow-lg ${tileClassName}`}
                       >
-                        {statsQuery.data[key]}
-                      </span>
-                    </div>
-                    <div
-                      className={`flex size-14 shrink-0 items-center justify-center rounded-[16px] shadow-lg ${tileClassName}`}
-                    >
-                      <Icon className={`size-6 ${iconClassName}`} />
-                    </div>
-                  </CardContent>
-                </Card>
+                        <Icon className={`size-6 ${iconClassName}`} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TiltCard>
               ),
             )}
       </div>
