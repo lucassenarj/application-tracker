@@ -96,13 +96,19 @@ describe('DashboardPage', () => {
       renderWithRouter(routeTree, queryClient, '/dashboard')
 
       expect(await screen.findByText('Total')).toBeInTheDocument()
-      expect(screen.getByText('12')).toBeInTheDocument()
-      expect(screen.getByText('In Progress')).toBeInTheDocument()
-      expect(screen.getByText('5')).toBeInTheDocument()
-      expect(screen.getByText('Offers')).toBeInTheDocument()
-      expect(screen.getByText('2')).toBeInTheDocument()
-      expect(screen.getByText('Rejections')).toBeInTheDocument()
-      expect(screen.getByText('3')).toBeInTheDocument()
+      expect(screen.getByTestId('stat-value-total')).toHaveTextContent('12')
+      expect(
+        screen.getByText('In Progress', { selector: '[data-slot="card-title"]' }),
+      ).toBeInTheDocument()
+      expect(screen.getByTestId('stat-value-inProgress')).toHaveTextContent('5')
+      expect(
+        screen.getByText('Offers', { selector: '[data-slot="card-title"]' }),
+      ).toBeInTheDocument()
+      expect(screen.getByTestId('stat-value-offers')).toHaveTextContent('2')
+      expect(
+        screen.getByText('Rejections', { selector: '[data-slot="card-title"]' }),
+      ).toBeInTheDocument()
+      expect(screen.getByTestId('stat-value-rejections')).toHaveTextContent('3')
     })
 
     it('clicking a category card navigates to the Applications list filtered by that category', async () => {
@@ -123,7 +129,11 @@ describe('DashboardPage', () => {
 
       const { router } = renderWithRouter(routeTree, queryClient, '/dashboard')
 
-      await user.click(await screen.findByText('In Progress'))
+      await user.click(
+        await screen.findByText('In Progress', {
+          selector: '[data-slot="card-title"]',
+        }),
+      )
 
       expect(await screen.findByText('Applications page')).toBeInTheDocument()
       expect(router.state.location.search).toMatchObject({

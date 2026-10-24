@@ -1,11 +1,20 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Pencil } from 'lucide-react'
+import {
+  Briefcase,
+  Clock,
+  Pencil,
+  Trophy,
+  XCircle,
+  type LucideIcon,
+} from 'lucide-react'
 import { useState } from 'react'
+import { CategoryProgressBars } from '@/components/category-progress-bars'
 import { ChangeStatusDialog } from '@/components/change-status-dialog'
 import { NewApplicationDialog } from '@/components/new-application-dialog'
+import { StatusDonutChart } from '@/components/status-donut-chart'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { ApplicationStatusCategory } from '@/lib/applications/applications-list'
 import {
@@ -16,14 +25,46 @@ import {
 import { applicationStatsQueryOptions } from '@/lib/dashboard/stats'
 
 const SUMMARY_CARDS = [
-  { key: 'total', label: 'Total', category: undefined },
-  { key: 'inProgress', label: 'In Progress', category: 'IN_PROGRESS' },
-  { key: 'offers', label: 'Offers', category: 'OFFERS' },
-  { key: 'rejections', label: 'Rejections', category: 'REJECTIONS' },
+  {
+    key: 'total',
+    label: 'Total',
+    category: undefined,
+    icon: Briefcase,
+    tileClassName: 'bg-linear-to-br from-primary/20 to-primary/5 shadow-primary/20',
+    iconClassName: 'text-primary',
+  },
+  {
+    key: 'inProgress',
+    label: 'In Progress',
+    category: 'IN_PROGRESS',
+    icon: Clock,
+    tileClassName:
+      'bg-linear-to-br from-emerald-light/20 to-emerald-light/5 shadow-emerald-light/20',
+    iconClassName: 'text-emerald-light',
+  },
+  {
+    key: 'offers',
+    label: 'Offers',
+    category: 'OFFERS',
+    icon: Trophy,
+    tileClassName: 'bg-linear-to-br from-chart-3/20 to-chart-3/5 shadow-chart-3/20',
+    iconClassName: 'text-chart-3',
+  },
+  {
+    key: 'rejections',
+    label: 'Rejections',
+    category: 'REJECTIONS',
+    icon: XCircle,
+    tileClassName: 'bg-linear-to-br from-chart-4/20 to-chart-4/5 shadow-chart-4/20',
+    iconClassName: 'text-chart-4',
+  },
 ] as const satisfies ReadonlyArray<{
   key: 'total' | 'inProgress' | 'offers' | 'rejections'
   label: string
   category?: ApplicationStatusCategory
+  icon: LucideIcon
+  tileClassName: string
+  iconClassName: string
 }>
 
 interface ChangeStatusTarget {
@@ -39,7 +80,7 @@ export function DashboardPage() {
     useState<ChangeStatusTarget | null>(null)
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-heading font-medium">Dashboard</h1>
         <NewApplicationDialog />
@@ -55,36 +96,47 @@ export function DashboardPage() {
         {statsQuery.isPending
           ? SUMMARY_CARDS.map(({ key }) => (
               <Card key={key}>
-                <CardHeader>
-                  <Skeleton className="h-4 w-20" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-8 w-12" />
+                <CardContent className="flex items-center justify-between">
+                  <div className="flex flex-col gap-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-8 w-12" />
+                  </div>
+                  <Skeleton className="size-14 shrink-0 rounded-[16px]" />
                 </CardContent>
               </Card>
             ))
           : statsQuery.isSuccess &&
-            SUMMARY_CARDS.map(({ key, label, category }) => (
-              <Card
-                key={key}
-                className="cursor-pointer"
-                onClick={() =>
-                  navigate({
-                    to: '/applications',
-                    search: { page: 1, category },
-                  })
-                }
-              >
-                <CardHeader>
-                  <CardTitle>{label}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <span className="text-3xl font-heading font-medium">
-                    {statsQuery.data[key]}
-                  </span>
-                </CardContent>
-              </Card>
-            ))}
+            SUMMARY_CARDS.map(
+              ({ key, label, category, icon: Icon, tileClassName, iconClassName }) => (
+                <Card
+                  key={key}
+                  className="cursor-pointer"
+                  onClick={() =>
+                    navigate({
+                      to: '/applications',
+                      search: { page: 1, category },
+                    })
+                  }
+                >
+                  <CardContent className="flex items-center justify-between">
+                    <div className="flex flex-col gap-1">
+                      <CardTitle>{label}</CardTitle>
+                      <span
+                        data-testid={`stat-value-${key}`}
+                        className="text-3xl font-mono font-medium"
+                      >
+                        {statsQuery.data[key]}
+                      </span>
+                    </div>
+                    <div
+                      className={`flex size-14 shrink-0 items-center justify-center rounded-[16px] shadow-lg ${tileClassName}`}
+                    >
+                      <Icon className={`size-6 ${iconClassName}`} />
+                    </div>
+                  </CardContent>
+                </Card>
+              ),
+            )}
       </div>
 
       <h2 className="text-xl font-heading font-medium">Latest Applications</h2>
@@ -162,6 +214,13 @@ export function DashboardPage() {
       >
         See more
       </Link>
+
+      {statsQuery.isSuccess && (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <StatusDonutChart stats={statsQuery.data} />
+          <CategoryProgressBars stats={statsQuery.data} />
+        </div>
+      )}
 
       {changeStatusTarget && (
         <ChangeStatusDialog
