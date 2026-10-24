@@ -85,9 +85,9 @@ export function ApplicationsPage() {
     : 0
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-[30px]">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-heading font-medium">Applications</h1>
+        <h1 className="text-[28px] font-heading font-semibold">Applications</h1>
         <NewApplicationDialog />
       </div>
 
