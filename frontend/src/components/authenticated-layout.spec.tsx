@@ -107,6 +107,15 @@ describe('AuthenticatedLayout', () => {
     ).toHaveAttribute('href', '/dashboard')
   })
 
+  it('shows the loading bar while the user is loading', async () => {
+    const pendingQueryClient = new QueryClient()
+    renderWithRouter(routeTree, pendingQueryClient, '/dashboard')
+
+    expect(
+      await screen.findByRole('status', { name: 'Loading' }),
+    ).toBeInTheDocument()
+  })
+
   it('logs out and navigates to /login when Logout is clicked', async () => {
     const user = userEvent.setup()
     renderWithRouter(routeTree, queryClient, '/dashboard')

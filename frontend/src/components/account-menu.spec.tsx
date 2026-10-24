@@ -3,6 +3,7 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createRootRoute, createRoute } from '@tanstack/react-router'
 import { AccountMenu } from '@/components/account-menu'
+import { SidebarProvider } from '@/components/ui/sidebar'
 import type { User } from '@/lib/auth/user-query'
 import { renderWithRouter } from '@/test-utils/render-with-router'
 
@@ -17,7 +18,11 @@ const rootRoute = createRootRoute()
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/dashboard',
-  component: () => <AccountMenu user={fakeUser} />,
+  component: () => (
+    <SidebarProvider>
+      <AccountMenu user={fakeUser} />
+    </SidebarProvider>
+  ),
 })
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
