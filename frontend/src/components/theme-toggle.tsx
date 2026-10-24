@@ -10,6 +10,7 @@ export function ThemeToggle() {
       type="button"
       variant="outline"
       size="icon"
+      className="hover:border-emerald-light hover:bg-sidebar-accent"
       aria-label="Toggle theme"
       onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
     >

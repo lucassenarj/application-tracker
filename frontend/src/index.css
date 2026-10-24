@@ -53,6 +53,7 @@
     --radius-4xl: calc(var(--radius) * 2.6);
     --animate-float: float 20s ease-in-out infinite;
     --animate-loading-slide: loading-slide 1.2s ease-in-out infinite;
+    --animate-fade-in-up: fadeInUp 0.6s ease-out backwards;
 }
 
 @keyframes float {
@@ -60,6 +61,11 @@
     25% { transform: translate(30px, -30px) scale(1.05); }
     50% { transform: translate(-20px, 20px) scale(0.95); }
     75% { transform: translate(20px, 10px) scale(1.02); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes loading-slide {
@@ -102,7 +108,7 @@
     --sidebar-foreground: oklch(0.2178 0 0);
     --sidebar-primary: oklch(0.5960 0.1274 163.2254);
     --sidebar-primary-foreground: oklch(0.9970 0 0);
-    --sidebar-accent: oklch(0.8522 0.0645 74.4964);
+    --sidebar-accent: oklch(1.0000 0 0 / 0.80);
     --sidebar-accent-foreground: oklch(0.2178 0 0);
     --sidebar-border: oklch(0 0 0 / 0.08);
     --sidebar-ring: oklch(0.5960 0.1274 163.2254);
