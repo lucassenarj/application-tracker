@@ -59,7 +59,7 @@ export function ApplicationDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <Button variant="ghost" className="w-fit" onClick={goBack}>
         <ArrowLeft className="size-4" />
         Back
@@ -90,7 +90,10 @@ export function ApplicationDetailPage() {
               <div className="flex flex-wrap items-center gap-4 text-sm">
                 {query.data.salary !== undefined && (
                   <span className="text-muted-foreground">
-                    Salary: €{query.data.salary.toLocaleString()}
+                    Salary:{' '}
+                    <span className="font-mono">
+                      €{query.data.salary.toLocaleString()}
+                    </span>
                   </span>
                 )}
                 {query.data.externalUrl && (

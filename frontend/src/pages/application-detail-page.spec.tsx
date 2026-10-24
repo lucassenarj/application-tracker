@@ -90,7 +90,11 @@ describe('ApplicationDetailPage', () => {
 
     renderWithRouter(routeTree, queryClient, '/applications/abc123')
 
-    expect(await screen.findByText('Salary: €90,000')).toBeInTheDocument()
+    expect(
+      await screen.findByText(
+        (_, element) => element?.textContent === 'Salary: €90,000',
+      ),
+    ).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: 'View job posting' }),
     ).toHaveAttribute('href', 'https://example.com/jobs/123')
