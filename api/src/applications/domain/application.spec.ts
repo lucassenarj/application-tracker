@@ -186,4 +186,34 @@ describe('Application', () => {
       expect(application.createdAt).toBe(createdAt);
     });
   });
+
+  describe('lastStatusChangeAt', () => {
+    it('returns the APPLIED eventDate when no status change has been made yet', () => {
+      const application = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: 'company-1',
+        userId: 'user-1',
+      });
+
+      expect(application.lastStatusChangeAt).toBe(
+        application.statusHistory[0].eventDate,
+      );
+    });
+
+    it('returns the eventDate of the latest change after changeStatus is called', () => {
+      const application = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: 'company-1',
+        userId: 'user-1',
+      });
+      const eventDate = new Date('2026-03-15');
+
+      const updatedApplication = application.changeStatus({
+        status: 'WAITING_FEEDBACK',
+        eventDate,
+      });
+
+      expect(updatedApplication.lastStatusChangeAt).toBe(eventDate);
+    });
+  });
 });
