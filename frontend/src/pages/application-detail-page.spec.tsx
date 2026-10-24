@@ -121,7 +121,7 @@ describe('ApplicationDetailPage', () => {
 
     renderWithRouter(routeTree, queryClient, '/applications/abc123')
 
-    await screen.findByText('Senior Backend Engineer')
+    await screen.findByRole('heading', { name: 'Senior Backend Engineer' })
 
     expect(screen.queryByText(/Salary:/)).not.toBeInTheDocument()
     expect(
@@ -135,7 +135,7 @@ describe('ApplicationDetailPage', () => {
     renderWithRouter(routeTree, queryClient, '/applications/abc123')
 
     expect(
-      await screen.findByText('Senior Backend Engineer'),
+      await screen.findByRole('heading', { name: 'Senior Backend Engineer' }),
     ).toBeInTheDocument()
     expect(screen.getByText('Acme Corp')).toBeInTheDocument()
     expect(screen.getByText('Interview Scheduled')).toBeInTheDocument()
@@ -297,29 +297,15 @@ describe('ApplicationDetailPage', () => {
     expect(timeline.getByText('Offer')).toBeInTheDocument()
   })
 
-  it('navigates to the Applications list when there is no previous page to go back to', async () => {
+  it('navigates to the Applications list when the Applications breadcrumb is clicked', async () => {
     const user = userEvent.setup()
     mockDetailResponse()
 
     renderWithRouter(routeTree, queryClient, '/applications/abc123')
 
-    await user.click(await screen.findByRole('button', { name: 'Back' }))
-
-    expect(
-      await screen.findByText('Applications List page'),
-    ).toBeInTheDocument()
-  })
-
-  it('returns to the previous page when one exists in history', async () => {
-    const user = userEvent.setup()
-    mockDetailResponse()
-
-    renderWithRouter(routeTree, queryClient, [
-      '/applications',
-      '/applications/abc123',
-    ])
-
-    await user.click(await screen.findByRole('button', { name: 'Back' }))
+    await user.click(
+      await screen.findByRole('link', { name: 'Applications' }),
+    )
 
     expect(
       await screen.findByText('Applications List page'),

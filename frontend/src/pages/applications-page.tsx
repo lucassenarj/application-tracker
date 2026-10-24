@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { ChangeStatusDialog } from '@/components/change-status-dialog'
 import { NewApplicationDialog } from '@/components/new-application-dialog'
+import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -86,8 +87,8 @@ export function ApplicationsPage() {
 
   return (
     <div className="flex flex-col gap-[30px]">
-      <div className="flex items-center justify-between">
-        <h1 className="text-[28px] font-heading font-semibold">Applications</h1>
+      <div className="flex items-start justify-between">
+        <PageHeader title="Applications" />
         <NewApplicationDialog />
       </div>
 

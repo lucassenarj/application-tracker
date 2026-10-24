@@ -76,7 +76,7 @@ describe('ApplicationsPage', () => {
         '/applications?page=1',
       )
 
-      await screen.findByText('Applications')
+      await screen.findByRole('heading', { name: 'Applications' })
       expect(
         container.querySelectorAll('[data-slot="skeleton"]').length,
       ).toBeGreaterThan(0)
@@ -148,7 +148,7 @@ describe('ApplicationsPage', () => {
     it('renders All, In Progress, Offers, and Rejections tabs', async () => {
       renderWithRouter(routeTree, queryClient, '/applications?page=1')
 
-      await screen.findByText('Applications')
+      await screen.findByRole('heading', { name: 'Applications' })
 
       expect(screen.getByRole('tab', { name: 'All' })).toBeInTheDocument()
       expect(

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { PageHeader } from '@/components/page-header'
 import { UserAvatar } from '@/components/user-avatar'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -64,7 +65,7 @@ export function ProfilePage() {
 
   return (
     <div className="flex flex-col gap-[30px]">
-      <h1 className="text-[28px] font-heading font-semibold">Profile</h1>
+      <PageHeader title="Profile" />
 
       {mode === 'view' && (
         <Card>
