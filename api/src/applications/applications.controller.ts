@@ -49,6 +49,9 @@ export class ApplicationListItemResponse {
 
   @ApiProperty()
   createdAt: Date;
+
+  @ApiProperty()
+  updatedAt: Date;
 }
 
 function toListItemResponse({
@@ -64,6 +67,7 @@ function toListItemResponse({
       application.currentStatus,
     ),
     createdAt: application.createdAt,
+    updatedAt: application.lastStatusChangeAt,
   };
 }
 

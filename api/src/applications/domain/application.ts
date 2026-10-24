@@ -48,6 +48,10 @@ export class Application {
     this.createdAt = props.createdAt;
   }
 
+  get lastStatusChangeAt(): Date {
+    return this.statusHistory[this.statusHistory.length - 1].eventDate;
+  }
+
   static create(input: CreateApplicationProps): Application {
     if (!input.title) {
       throw new Error('title is required');
