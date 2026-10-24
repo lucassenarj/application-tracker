@@ -55,6 +55,24 @@ describe('ApplicationsController', () => {
         'REJECTED',
       ]);
     });
+
+    it('includes the latest status change date on each item', async () => {
+      const mockRequest = { user: { id: 'user-1' } } as unknown as Request;
+
+      const newApplication = await applicationsController.create(
+        { title: 'Senior Backend Engineer', companyName: 'Acme Corp' },
+        mockRequest,
+      );
+
+      const result = await applicationsController.findAll(
+        { page: 1, pageSize: 10 },
+        mockRequest,
+      );
+
+      expect(result.items[0].updatedAt).toEqual(
+        newApplication.statusHistory[0].eventDate,
+      );
+    });
   });
 
   describe('findOne', () => {
