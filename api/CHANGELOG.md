@@ -1,3 +1,10 @@
+# [api-v1.9.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.8.0...api-v1.9.0) (2026-10-24)
+
+
+### Features
+
+* **application:** expose the latest status-change date on the applications list ([3b31916](https://github.com/lucassenarj/application-tracker/commit/3b319163c2922e3c5b21146ff797dd0297bfc9f4))
+
 # [api-v1.8.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.7.0...api-v1.8.0) (2026-10-02)
 
 
