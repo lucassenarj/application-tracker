@@ -35,7 +35,7 @@ export function LoginPage() {
       <div className="fixed top-6 right-6 z-50">
         <ThemeToggle />
       </div>
-      <Card className="w-full max-w-sm [--card-spacing:--spacing(10)]">
+      <Card className="w-full max-w-md [--card-spacing:--spacing(10)]">
         <CardHeader className="flex flex-col items-center gap-2 text-center">
           <BrandMark size={70} />
           <CardTitle className="text-2xl">Welcome Back</CardTitle>
