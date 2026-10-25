@@ -1,4 +1,5 @@
 import {
+  IsISO4217CurrencyCode,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -25,6 +26,10 @@ export class CreateApplicationDto {
   @IsOptional()
   @IsNumber()
   salary?: number;
+
+  @IsOptional()
+  @IsISO4217CurrencyCode()
+  currency?: string;
 
   @IsString()
   @IsNotEmpty()

@@ -54,7 +54,7 @@ describe('Application', () => {
       expect(firstApplication.id).not.toBe(secondApplication.id);
     });
 
-    it('leaves optional fields (description, externalUrl, salary) undefined when omitted', () => {
+    it('leaves optional fields (description, externalUrl, salary, currency) undefined when omitted', () => {
       const application = Application.create({
         title: 'Senior Backend Engineer',
         companyId: 'company-1',
@@ -64,6 +64,7 @@ describe('Application', () => {
       expect(application.description).toBeUndefined();
       expect(application.externalUrl).toBeUndefined();
       expect(application.salary).toBeUndefined();
+      expect(application.currency).toBeUndefined();
     });
 
     it('throws an error when title is missing', () => {

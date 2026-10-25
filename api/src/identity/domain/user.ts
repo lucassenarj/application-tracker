@@ -18,6 +18,9 @@ export class User {
   readonly authProvider: AuthProvider;
   readonly name?: string;
   readonly avatar?: string;
+  readonly phone?: string;
+  readonly bio?: string;
+  readonly language?: string;
   readonly role: UserRole;
   readonly isActive: boolean;
   readonly createdAt: Date;
@@ -29,6 +32,9 @@ export class User {
     authProvider: AuthProvider;
     name?: string;
     avatar?: string;
+    phone?: string;
+    bio?: string;
+    language?: string;
     role: UserRole;
     isActive: boolean;
     createdAt: Date;
@@ -39,6 +45,9 @@ export class User {
     this.authProvider = props.authProvider;
     this.name = props.name;
     this.avatar = props.avatar;
+    this.phone = props.phone;
+    this.bio = props.bio;
+    this.language = props.language;
     this.role = props.role;
     this.isActive = props.isActive;
     this.createdAt = props.createdAt;
@@ -81,6 +90,9 @@ export class User {
     authProvider: AuthProvider;
     name?: string;
     avatar?: string;
+    phone?: string;
+    bio?: string;
+    language?: string;
     role: UserRole;
     isActive: boolean;
     createdAt: Date;
@@ -88,7 +100,13 @@ export class User {
     return new User(props);
   }
 
-  updateProfile(input: { name?: string; avatar?: string }): User {
+  updateProfile(input: {
+    name?: string;
+    avatar?: string;
+    phone?: string;
+    bio?: string;
+    language?: string;
+  }): User {
     return new User({
       id: this.id,
       email: this.email,
@@ -96,6 +114,9 @@ export class User {
       authProvider: this.authProvider,
       name: input.name ?? this.name,
       avatar: input.avatar ?? this.avatar,
+      phone: input.phone ?? this.phone,
+      bio: input.bio ?? this.bio,
+      language: input.language ?? this.language,
       role: this.role,
       isActive: this.isActive,
       createdAt: this.createdAt,

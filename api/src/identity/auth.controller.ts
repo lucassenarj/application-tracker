@@ -132,6 +132,9 @@ export class AuthController {
     const user = await this.authService.updateProfile(request.user!.id, {
       name: dto.name,
       avatar: dto.avatar,
+      phone: dto.phone,
+      bio: dto.bio,
+      language: dto.language,
     });
 
     return UserResponse.fromDomain(user);

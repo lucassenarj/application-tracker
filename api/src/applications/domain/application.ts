@@ -8,6 +8,7 @@ export interface CreateApplicationProps {
   description?: string;
   externalUrl?: string;
   salary?: number;
+  currency?: string;
   companyId: string;
   userId: string;
 }
@@ -18,6 +19,7 @@ export class Application {
   readonly description?: string;
   readonly externalUrl?: string;
   readonly salary?: number;
+  readonly currency?: string;
   readonly companyId: string;
   readonly userId: string;
   readonly currentStatus: ApplicationStatus;
@@ -30,6 +32,7 @@ export class Application {
     description?: string;
     externalUrl?: string;
     salary?: number;
+    currency?: string;
     companyId: string;
     userId: string;
     currentStatus: ApplicationStatus;
@@ -41,6 +44,7 @@ export class Application {
     this.description = props.description;
     this.externalUrl = props.externalUrl;
     this.salary = props.salary;
+    this.currency = props.currency;
     this.companyId = props.companyId;
     this.userId = props.userId;
     this.currentStatus = props.currentStatus;
@@ -84,6 +88,7 @@ export class Application {
       description: input.description,
       externalUrl: input.externalUrl,
       salary: input.salary,
+      currency: input.currency,
       companyId: input.companyId,
       userId: input.userId,
       currentStatus: 'APPLIED',
@@ -125,6 +130,7 @@ export class Application {
       description: this.description,
       externalUrl: this.externalUrl,
       salary: this.salary,
+      currency: this.currency,
       companyId: this.companyId,
       userId: this.userId,
       currentStatus: input.status,
@@ -139,6 +145,7 @@ export class Application {
     description?: string;
     externalUrl?: string;
     salary?: number;
+    currency?: string;
     companyId: string;
     userId: string;
     currentStatus: ApplicationStatus;
