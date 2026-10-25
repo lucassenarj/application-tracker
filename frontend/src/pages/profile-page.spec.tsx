@@ -41,18 +41,36 @@ describe('ProfilePage', () => {
     vi.unstubAllGlobals()
   })
 
-  it("shows the user's name, email, and avatar image in view mode by default", async () => {
+  it('pre-fills the form with the current first name, last name, and shows the email as read-only', async () => {
     renderWithRouter(routeTree, queryClient, '/profile')
 
-    expect(await screen.findByText('Jane Doe')).toBeInTheDocument()
-    expect(screen.getByText('jane@example.com')).toBeInTheDocument()
-    expect(screen.getByRole('img')).toHaveAttribute(
-      'src',
-      'https://example.com/avatar.png',
+    expect(
+      await screen.findByRole('textbox', { name: 'First Name' }),
+    ).toHaveValue('Jane')
+    expect(screen.getByRole('textbox', { name: 'Last Name' })).toHaveValue(
+      'Doe',
     )
+
+    const emailField = screen.getByRole('textbox', { name: 'Email Address' })
+    expect(emailField).toHaveValue('jane@example.com')
+    expect(emailField).toBeDisabled()
   })
 
-  it('shows an initial-letter placeholder when no avatar URL is set', async () => {
+  it('clicking the avatar edit icon reveals the Avatar URL field pre-filled with the current value', async () => {
+    const user = userEvent.setup()
+    renderWithRouter(routeTree, queryClient, '/profile')
+
+    expect(
+      screen.queryByRole('textbox', { name: 'Avatar URL' }),
+    ).not.toBeInTheDocument()
+
+    await user.click(await screen.findByRole('button', { name: 'Edit avatar' }))
+
+    expect(
+      screen.getByRole('textbox', { name: 'Avatar URL' }),
+    ).toHaveValue('https://example.com/avatar.png')
+  })
+  it('shows an initial-letter placeholder in the avatar when no avatar URL is set', async () => {
     queryClient.setQueryData(userQueryOptions.queryKey, {
       ...fakeUser,
       avatar: undefined,
@@ -63,33 +81,13 @@ describe('ProfilePage', () => {
     expect(await screen.findByRole('paragraph')).toHaveTextContent('J')
     expect(screen.queryByRole('img')).not.toBeInTheDocument()
   })
-
-  it('clicking Edit shows the form pre-filled with the current name and avatar', async () => {
-    const user = userEvent.setup()
-    renderWithRouter(routeTree, queryClient, '/profile')
-
-    await user.click(await screen.findByRole('button', { name: 'Edit' }))
-
-    expect(
-      await screen.findByRole('textbox', { name: 'Name' }),
-    ).toHaveValue('Jane Doe')
-    expect(
-      screen.getByRole('textbox', { name: 'Avatar URL' }),
-    ).toHaveValue('https://example.com/avatar.png')
-  })
-
-  it('saving updates the values, shows a success confirmation, and returns to view mode', async () => {
+  it('saving combines first and last name, sends the update, and shows a success confirmation', async () => {
     const user = userEvent.setup()
     fetchMock.mockImplementation((_url, options) => {
       if ((options as RequestInit | undefined)?.method === 'PATCH') {
         return Promise.resolve({
           ok: true,
-          json: () =>
-            Promise.resolve({
-              ...fakeUser,
-              name: 'Jane Updated',
-              avatar: 'https://example.com/new.png',
-            }),
+          json: () => Promise.resolve({ ...fakeUser, name: 'Jane Updated' }),
         })
       }
       return Promise.resolve({
@@ -100,26 +98,25 @@ describe('ProfilePage', () => {
 
     renderWithRouter(routeTree, queryClient, '/profile')
 
-    await user.click(await screen.findByRole('button', { name: 'Edit' }))
+    const lastNameInput = await screen.findByRole('textbox', {
+      name: 'Last Name',
+    })
+    await user.clear(lastNameInput)
+    await user.type(lastNameInput, 'Updated')
 
-    const nameInput = await screen.findByRole('textbox', { name: 'Name' })
-    await user.clear(nameInput)
-    await user.type(nameInput, 'Jane Updated')
-
-    const avatarInput = screen.getByRole('textbox', { name: 'Avatar URL' })
-    await user.clear(avatarInput)
-    await user.type(avatarInput, 'https://example.com/new.png')
-
-    await user.click(screen.getByRole('button', { name: 'Save' }))
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
 
     expect(await screen.findByText('Profile updated.')).toBeInTheDocument()
-    expect(screen.getByText('Jane Updated')).toBeInTheDocument()
-    expect(
-      screen.queryByRole('textbox', { name: 'Name' }),
-    ).not.toBeInTheDocument()
-  })
 
-  it('shows an error message when the update fails and stays in edit mode', async () => {
+    const patchCall = fetchMock.mock.calls.find(
+      ([url, options]) =>
+        (url as string).endsWith('/auth/me') &&
+        (options as RequestInit | undefined)?.method === 'PATCH',
+    )
+    const body = JSON.parse(patchCall?.[1]?.body as string)
+    expect(body.name).toBe('Jane Updated')
+  })
+  it('shows an error message when the update fails', async () => {
     const user = userEvent.setup()
     fetchMock.mockImplementation((_url, options) => {
       if ((options as RequestInit | undefined)?.method === 'PATCH') {
@@ -137,13 +134,12 @@ describe('ProfilePage', () => {
 
     renderWithRouter(routeTree, queryClient, '/profile')
 
-    await user.click(await screen.findByRole('button', { name: 'Edit' }))
-    await user.click(screen.getByRole('button', { name: 'Save' }))
+    await screen.findByRole('textbox', { name: 'First Name' })
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
 
     expect(
       await screen.findByText('Internal server error'),
     ).toBeInTheDocument()
-    expect(screen.getByRole('textbox', { name: 'Name' })).toBeInTheDocument()
   })
 
   it('shows the total number of applications tracked', async () => {
@@ -165,22 +161,19 @@ describe('ProfilePage', () => {
     ).toBeInTheDocument()
   })
 
-  it('clicking Cancel while editing discards changes and returns to view mode', async () => {
+  it('clicking Cancel resets the form to the original values', async () => {
     const user = userEvent.setup()
     renderWithRouter(routeTree, queryClient, '/profile')
 
-    await user.click(await screen.findByRole('button', { name: 'Edit' }))
-
-    const nameInput = await screen.findByRole('textbox', { name: 'Name' })
-    await user.clear(nameInput)
-    await user.type(nameInput, 'Someone Else')
+    const lastNameInput = await screen.findByRole('textbox', {
+      name: 'Last Name',
+    })
+    await user.clear(lastNameInput)
+    await user.type(lastNameInput, 'Someone Else')
 
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
-    expect(
-      screen.queryByRole('textbox', { name: 'Name' }),
-    ).not.toBeInTheDocument()
-    expect(screen.getByText('Jane Doe')).toBeInTheDocument()
+    expect(lastNameInput).toHaveValue('Doe')
 
     const patchCall = fetchMock.mock.calls.find(
       ([url, options]) =>
@@ -188,5 +181,19 @@ describe('ProfilePage', () => {
         (options as RequestInit | undefined)?.method === 'PATCH',
     )
     expect(patchCall).toBeUndefined()
+  })
+
+  it('renders Phone Number, Bio, and Language fields for visual completeness (not yet wired to the API)', async () => {
+    renderWithRouter(routeTree, queryClient, '/profile')
+
+    expect(
+      await screen.findByRole('textbox', { name: 'Phone Number' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('textbox', { name: 'Bio' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('combobox', { name: 'Language' }),
+    ).toBeInTheDocument()
   })
 })
