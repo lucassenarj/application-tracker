@@ -136,5 +136,41 @@ describe('User', () => {
 
       expect(user.name).toBe('Original Name');
     });
+
+    it('updates phone when provided', () => {
+      const updatedUser = user.updateProfile({ phone: '+15551234567' });
+
+      expect(updatedUser.phone).toBe('+15551234567');
+    });
+
+    it('leaves phone unchanged when not provided', () => {
+      const updatedUser = user.updateProfile({ name: 'Jane Doe' });
+
+      expect(updatedUser.phone).toBeUndefined();
+    });
+
+    it('updates bio when provided', () => {
+      const updatedUser = user.updateProfile({ bio: 'Backend engineer.' });
+
+      expect(updatedUser.bio).toBe('Backend engineer.');
+    });
+
+    it('leaves bio unchanged when not provided', () => {
+      const updatedUser = user.updateProfile({ name: 'Jane Doe' });
+
+      expect(updatedUser.bio).toBeUndefined();
+    });
+
+    it('updates language when provided', () => {
+      const updatedUser = user.updateProfile({ language: 'en-US' });
+
+      expect(updatedUser.language).toBe('en-US');
+    });
+
+    it('leaves language unchanged when not provided', () => {
+      const updatedUser = user.updateProfile({ name: 'Jane Doe' });
+
+      expect(updatedUser.language).toBeUndefined();
+    });
   });
 });

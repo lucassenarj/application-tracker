@@ -10,6 +10,9 @@ type PersistedUser = {
   authProvider: string;
   name: string | null;
   avatar: string | null;
+  phone: string | null;
+  bio: string | null;
+  language: string | null;
   role: string;
   isActive: boolean;
   createdAt: Date;
@@ -28,6 +31,9 @@ export class PrismaUserRepository implements UserRepository {
         authProvider: user.authProvider,
         name: user.name,
         avatar: user.avatar,
+        phone: user.phone,
+        bio: user.bio,
+        language: user.language,
         role: user.role,
         isActive: user.isActive,
       },
@@ -38,6 +44,9 @@ export class PrismaUserRepository implements UserRepository {
         authProvider: user.authProvider,
         name: user.name,
         avatar: user.avatar,
+        phone: user.phone,
+        bio: user.bio,
+        language: user.language,
         role: user.role,
         isActive: user.isActive,
         createdAt: user.createdAt,
@@ -64,6 +73,9 @@ function toUser(row: PersistedUser): User {
     authProvider: row.authProvider as User['authProvider'],
     name: row.name ?? undefined,
     avatar: row.avatar ?? undefined,
+    phone: row.phone ?? undefined,
+    bio: row.bio ?? undefined,
+    language: row.language ?? undefined,
     role: row.role as User['role'],
     isActive: row.isActive,
     createdAt: row.createdAt,
