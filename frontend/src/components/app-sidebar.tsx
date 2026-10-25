@@ -13,12 +13,16 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarSeparator,
 } from '@/components/ui/sidebar'
 import type { User } from '@/lib/auth/user-query'
 
-const NAV_ITEMS = [
+const MAIN_NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/applications', label: 'Applications', icon: FileText },
+] as const
+
+const ACCOUNT_NAV_ITEMS = [
   { to: '/profile', label: 'Profile', icon: UserIcon },
 ] as const
 
@@ -44,7 +48,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
           <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+              {MAIN_NAV_ITEMS.map(({ to, label, icon: Icon }) => (
                 <SidebarMenuItem key={to}>
                   <SidebarMenuButton
                     isActive={location.pathname.startsWith(to)}
@@ -53,6 +57,29 @@ export function AppSidebar({ user }: AppSidebarProps) {
                         to={to}
                         search={to === '/applications' ? { page: 1 } : undefined}
                       >
+                        <Icon />
+                        <span>{label}</span>
+                      </Link>
+                    }
+                  />
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Account</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {ACCOUNT_NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+                <SidebarMenuItem key={to}>
+                  <SidebarMenuButton
+                    isActive={location.pathname.startsWith(to)}
+                    render={
+                      <Link to={to}>
                         <Icon />
                         <span>{label}</span>
                       </Link>

@@ -51,6 +51,14 @@ describe('AppSidebar', () => {
     )
   })
 
+  it('groups nav links under Main Menu and Account section labels', async () => {
+    const queryClient = new QueryClient()
+    renderWithRouter(routeTree, queryClient, '/dashboard')
+
+    expect(await screen.findByText('Main Menu')).toBeInTheDocument()
+    expect(screen.getByText('Account')).toBeInTheDocument()
+  })
+
   it('marks the current route as active', async () => {
     const queryClient = new QueryClient()
     renderWithRouter(routeTree, queryClient, '/dashboard')
