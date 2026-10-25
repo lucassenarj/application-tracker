@@ -52,6 +52,7 @@ model Application {
   description   String?
   externalUrl   String?
   salary        Float?
+  currency      String?
   companyId     String
   userId        String
   currentStatus ApplicationStatus
@@ -87,6 +88,9 @@ model User {
   authProvider AuthProvider @default(PASSWORD)
   name         String?
   avatar       String?
+  phone        String?
+  bio          String?
+  language     String?
   role         UserRole     @default(USER)
   isActive     Boolean      @default(true)
   createdAt    DateTime     @default(now())

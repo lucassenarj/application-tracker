@@ -92,7 +92,7 @@ describe('PrismaApplicationRepository', () => {
       );
     });
 
-    it('persists optional fields (description, externalUrl, salary) and returns them via findById', async () => {
+    it('persists optional fields (description, externalUrl, salary, currency) and returns them via findById', async () => {
       const company = Company.create({ name: 'Acme Corp' });
       await companyRepository.save(company);
 
@@ -101,6 +101,7 @@ describe('PrismaApplicationRepository', () => {
         description: 'Great role',
         externalUrl: 'https://jobs.example/123',
         salary: 120000,
+        currency: 'EUR',
         companyId: company.id,
         userId: 'user-1',
       });
@@ -113,6 +114,7 @@ describe('PrismaApplicationRepository', () => {
       expect(foundApplication?.description).toBe('Great role');
       expect(foundApplication?.externalUrl).toBe('https://jobs.example/123');
       expect(foundApplication?.salary).toBe(120000);
+      expect(foundApplication?.currency).toBe('EUR');
     });
 
     it('persists Contact and interviewCategory on a StatusChange and returns them via findById', async () => {

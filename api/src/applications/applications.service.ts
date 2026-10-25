@@ -30,6 +30,7 @@ interface CreateApplicationInput {
   description?: string;
   externalUrl?: string;
   salary?: number;
+  currency?: string;
   companyName: string;
   companyId?: string;
   userId: string;
@@ -90,6 +91,7 @@ export class ApplicationsService {
       description: input.description,
       externalUrl: input.externalUrl,
       salary: input.salary,
+      currency: input.currency,
       companyId: company.id,
       userId: input.userId,
     });
