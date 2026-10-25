@@ -81,7 +81,7 @@ export function NewApplicationDialog() {
           <DialogTitle>New Application</DialogTitle>
         </DialogHeader>
         <form
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-6"
           noValidate
           onSubmit={handleSubmit(onSubmit)}
         >
@@ -91,7 +91,7 @@ export function NewApplicationDialog() {
             </p>
           )}
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="title">Title</Label>
             <Input id="title" {...register('title')} />
             {errors.title && (
@@ -101,7 +101,7 @@ export function NewApplicationDialog() {
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="companyName">Company</Label>
             <Controller
               name="companyName"
@@ -124,12 +124,12 @@ export function NewApplicationDialog() {
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="description">Description</Label>
             <Textarea id="description" {...register('description')} />
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="externalUrl">Job posting URL</Label>
             <Input id="externalUrl" {...register('externalUrl')} />
             {errors.externalUrl && (
@@ -139,7 +139,7 @@ export function NewApplicationDialog() {
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="salary">Salary</Label>
             <Input id="salary" type="number" {...register('salary')} />
             {errors.salary && (

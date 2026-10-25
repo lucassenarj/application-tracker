@@ -119,7 +119,7 @@ export function ChangeStatusDialog({
         </DialogHeader>
 
         <form
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-6"
           noValidate
           onSubmit={handleSubmit(onSubmit)}
         >
@@ -188,7 +188,7 @@ export function ChangeStatusDialog({
             />
           )}
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="eventDate">Event Date</Label>
             <Input id="eventDate" type="date" {...register('eventDate')} />
             {errors.eventDate && (
@@ -198,12 +198,12 @@ export function ChangeStatusDialog({
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="contactName">Contact Name</Label>
             <Input id="contactName" {...register('contactName')} />
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="contactEmail">Contact Email</Label>
             <Input id="contactEmail" {...register('contactEmail')} />
             {errors.contactEmail && (
@@ -213,7 +213,7 @@ export function ChangeStatusDialog({
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="notes">Notes</Label>
             <Textarea id="notes" {...register('notes')} />
           </div>
