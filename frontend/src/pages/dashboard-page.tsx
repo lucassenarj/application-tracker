@@ -3,27 +3,33 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import {
   Briefcase,
   Clock,
-  Pencil,
   Trophy,
   XCircle,
   type LucideIcon,
 } from 'lucide-react'
-import { useState } from 'react'
 import { CategoryProgressBars } from '@/components/category-progress-bars'
-import { ChangeStatusDialog } from '@/components/change-status-dialog'
 import { NewApplicationDialog } from '@/components/new-application-dialog'
 import { StatusDonutChart } from '@/components/status-donut-chart'
 import { TiltCard } from '@/components/tilt-card'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import type { ApplicationStatusCategory } from '@/lib/applications/applications-list'
 import {
   formatStatus,
   latestApplicationsQueryOptions,
-  type ApplicationStatus,
 } from '@/lib/dashboard/applications-list'
+import { getStatusBadgeStyle } from '@/lib/dashboard/status-badge'
 import { applicationStatsQueryOptions } from '@/lib/dashboard/stats'
+import { formatRelativeTime } from '@/lib/relative-time'
 
 const SUMMARY_CARDS = [
   {
@@ -68,17 +74,14 @@ const SUMMARY_CARDS = [
   iconClassName: string
 }>
 
-interface ChangeStatusTarget {
-  applicationId: string
-  availableTransitions: ApplicationStatus[]
-}
-
 export function DashboardPage() {
   const navigate = useNavigate()
   const statsQuery = useQuery(applicationStatsQueryOptions)
   const applicationsQuery = useQuery(latestApplicationsQueryOptions)
-  const [changeStatusTarget, setChangeStatusTarget] =
-    useState<ChangeStatusTarget | null>(null)
+
+  const goToDetail = (id: string) => {
+    navigate({ to: '/applications/$id', params: { id } })
+  }
 
   return (
     <div className="flex flex-col gap-[30px]">
@@ -143,14 +146,28 @@ export function DashboardPage() {
             )}
       </div>
 
-      <h2 className="text-xl font-heading font-medium">Latest Applications</h2>
-
       <Card>
-        <CardContent className="flex flex-col gap-3">
-          {applicationsQuery.isPending &&
-            Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-10 w-full" />
-            ))}
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Latest Applications</CardTitle>
+            <CardDescription>Your most recently updated applications</CardDescription>
+          </div>
+          <Link
+            to="/applications"
+            search={{ page: 1 }}
+            className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+          >
+            See more
+          </Link>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {applicationsQuery.isPending && (
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full" />
+              ))}
+            </div>
+          )}
 
           {applicationsQuery.isError && (
             <p className="text-sm text-destructive">
@@ -162,85 +179,53 @@ export function DashboardPage() {
             (applicationsQuery.data.items.length === 0 ? (
               <p className="text-sm text-muted-foreground">No applications yet.</p>
             ) : (
-              applicationsQuery.data.items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between border-b pb-2 cursor-pointer last:border-b-0 last:pb-0"
-                  onClick={() =>
-                    navigate({
-                      to: '/applications/$id',
-                      params: { id: item.id },
-                    })
-                  }
-                >
-                  <div className="flex flex-col">
-                    <span className="font-medium">{item.title}</span>
-                    <span className="text-sm text-muted-foreground">
-                      {item.companyName}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {item.availableTransitions.length > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        aria-label={`Change status for ${item.title}`}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setChangeStatusTarget({
-                            applicationId: item.id,
-                            availableTransitions: item.availableTransitions,
-                          })
-                        }}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Updated</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {applicationsQuery.data.items.map((item) => {
+                    const badgeStyle = getStatusBadgeStyle(item.currentStatus)
+                    return (
+                      <TableRow
+                        key={item.id}
+                        className="cursor-pointer"
+                        onClick={() => goToDetail(item.id)}
                       >
-                        <Pencil className="size-3.5" />
-                      </Button>
-                    )}
-                    <div className="flex flex-col items-end">
-                      <span className="text-sm">
-                        {formatStatus(item.currentStatus)}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(item.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))
+                        <TableCell className="font-medium text-foreground">
+                          {item.title}
+                        </TableCell>
+                        <TableCell>{item.companyName}</TableCell>
+                        <TableCell>
+                          {formatRelativeTime(new Date(item.updatedAt))}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={badgeStyle.variant}
+                            className={badgeStyle.className}
+                          >
+                            {formatStatus(item.currentStatus)}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
             ))}
         </CardContent>
       </Card>
-
-      <Link
-        to="/applications"
-        search={{ page: 1 }}
-        className="self-center text-sm underline underline-offset-4"
-      >
-        See more
-      </Link>
 
       {statsQuery.isSuccess && (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <StatusDonutChart stats={statsQuery.data} />
           <CategoryProgressBars stats={statsQuery.data} />
         </div>
-      )}
-
-      {changeStatusTarget && (
-        <ChangeStatusDialog
-          applicationId={changeStatusTarget.applicationId}
-          availableTransitions={changeStatusTarget.availableTransitions}
-          open={changeStatusTarget !== null}
-          onOpenChange={(open) => {
-            if (!open) setChangeStatusTarget(null)
-          }}
-          onSuccess={() => {
-            navigate({
-              to: '/applications/$id',
-              params: { id: changeStatusTarget.applicationId },
-            })
-          }}
-        />
       )}
     </div>
   )
