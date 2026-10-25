@@ -38,11 +38,11 @@ describe('NewApplicationDialog', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renders the New Application trigger button', () => {
+  it('renders the Add Application trigger button', () => {
     renderDialog(queryClient)
 
     expect(
-      screen.getByRole('button', { name: 'New Application' }),
+      screen.getByRole('button', { name: 'Add Application' }),
     ).toBeInTheDocument()
   })
 
@@ -50,7 +50,7 @@ describe('NewApplicationDialog', () => {
     const user = userEvent.setup()
     renderDialog(queryClient)
 
-    await user.click(screen.getByRole('button', { name: 'New Application' }))
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
 
     expect(
       await screen.findByRole('textbox', { name: 'Title' }),
@@ -73,7 +73,7 @@ describe('NewApplicationDialog', () => {
     const user = userEvent.setup()
     renderDialog(queryClient)
 
-    await user.click(screen.getByRole('button', { name: 'New Application' }))
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
     await user.click(await screen.findByRole('button', { name: 'Create' }))
 
     expect(await screen.findByText('Title is required')).toBeInTheDocument()
@@ -82,7 +82,7 @@ describe('NewApplicationDialog', () => {
     const user = userEvent.setup()
     renderDialog(queryClient)
 
-    await user.click(screen.getByRole('button', { name: 'New Application' }))
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
     await user.type(
       await screen.findByRole('textbox', { name: 'Title' }),
       'Senior Backend Engineer',
@@ -95,7 +95,7 @@ describe('NewApplicationDialog', () => {
     const user = userEvent.setup()
     renderDialog(queryClient)
 
-    await user.click(screen.getByRole('button', { name: 'New Application' }))
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
     await user.type(
       await screen.findByRole('textbox', { name: 'Title' }),
       'Senior Backend Engineer',
@@ -116,7 +116,7 @@ describe('NewApplicationDialog', () => {
     const user = userEvent.setup()
     renderDialog(queryClient)
 
-    const trigger = screen.getByRole('button', { name: 'New Application' })
+    const trigger = screen.getByRole('button', { name: 'Add Application' })
     await user.click(trigger)
     await user.type(
       await screen.findByRole('textbox', { name: 'Title' }),
@@ -144,7 +144,7 @@ describe('NewApplicationDialog', () => {
 
     renderDialog(queryClient)
 
-    await user.click(screen.getByRole('button', { name: 'New Application' }))
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
     await user.type(
       await screen.findByRole('textbox', { name: 'Title' }),
       'Senior Backend Engineer',
@@ -178,7 +178,7 @@ describe('NewApplicationDialog', () => {
 
     renderDialog(queryClient)
 
-    await user.click(screen.getByRole('button', { name: 'New Application' }))
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
     await user.type(
       await screen.findByRole('textbox', { name: 'Title' }),
       'Senior Backend Engineer',

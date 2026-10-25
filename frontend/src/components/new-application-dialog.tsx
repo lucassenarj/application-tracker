@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
@@ -63,7 +64,18 @@ export function NewApplicationDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button>New Application</Button>} />
+      <DialogTrigger
+        render={
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 bg-background/40 text-[13px] text-muted-foreground backdrop-blur-sm hover:border-emerald-light hover:bg-sidebar-accent hover:text-foreground"
+          >
+            <Plus />
+            Add Application
+          </Button>
+        }
+      />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>New Application</DialogTitle>
