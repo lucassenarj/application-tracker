@@ -1,3 +1,11 @@
+# [api-v1.10.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.9.0...api-v1.10.0) (2026-10-25)
+
+
+### Features
+
+* **application:** add an optional currency field to applications ([432fb14](https://github.com/lucassenarj/application-tracker/commit/432fb141a1e34e82cf028cc2535cf666a44f06c6))
+* **identity:** add optional phone, bio, and language fields to user profiles ([1905507](https://github.com/lucassenarj/application-tracker/commit/1905507445bf245d021b0142a30b42f96f64b806))
+
 # [api-v1.9.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.8.0...api-v1.9.0) (2026-10-24)
 
 
