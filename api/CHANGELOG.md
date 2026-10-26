@@ -1,3 +1,10 @@
+# [api-v1.11.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.10.0...api-v1.11.0) (2026-10-26)
+
+
+### Features
+
+* **identity:** add an optional defaultCurrency user preference ([8b36341](https://github.com/lucassenarj/application-tracker/commit/8b363412bde7ae1f35f0a8a73970d1b55c3389a7))
+
 # [api-v1.10.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.9.0...api-v1.10.0) (2026-10-25)
 
 
