@@ -21,6 +21,7 @@ export class User {
   readonly phone?: string;
   readonly bio?: string;
   readonly language?: string;
+  readonly defaultCurrency?: string;
   readonly role: UserRole;
   readonly isActive: boolean;
   readonly createdAt: Date;
@@ -35,6 +36,7 @@ export class User {
     phone?: string;
     bio?: string;
     language?: string;
+    defaultCurrency?: string;
     role: UserRole;
     isActive: boolean;
     createdAt: Date;
@@ -48,6 +50,7 @@ export class User {
     this.phone = props.phone;
     this.bio = props.bio;
     this.language = props.language;
+    this.defaultCurrency = props.defaultCurrency;
     this.role = props.role;
     this.isActive = props.isActive;
     this.createdAt = props.createdAt;
@@ -93,6 +96,7 @@ export class User {
     phone?: string;
     bio?: string;
     language?: string;
+    defaultCurrency?: string;
     role: UserRole;
     isActive: boolean;
     createdAt: Date;
@@ -106,6 +110,7 @@ export class User {
     phone?: string;
     bio?: string;
     language?: string;
+    defaultCurrency?: string;
   }): User {
     return new User({
       id: this.id,
@@ -117,6 +122,7 @@ export class User {
       phone: input.phone ?? this.phone,
       bio: input.bio ?? this.bio,
       language: input.language ?? this.language,
+      defaultCurrency: input.defaultCurrency ?? this.defaultCurrency,
       role: this.role,
       isActive: this.isActive,
       createdAt: this.createdAt,
