@@ -172,5 +172,17 @@ describe('User', () => {
 
       expect(updatedUser.language).toBeUndefined();
     });
+
+    it('updates defaultCurrency when provided', () => {
+      const updatedUser = user.updateProfile({ defaultCurrency: 'USD' });
+
+      expect(updatedUser.defaultCurrency).toBe('USD');
+    });
+
+    it('leaves defaultCurrency unchanged when not provided', () => {
+      const updatedUser = user.updateProfile({ name: 'Jane Doe' });
+
+      expect(updatedUser.defaultCurrency).toBeUndefined();
+    });
   });
 });

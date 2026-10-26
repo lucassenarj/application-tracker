@@ -135,6 +135,7 @@ export class AuthController {
       phone: dto.phone,
       bio: dto.bio,
       language: dto.language,
+      defaultCurrency: dto.defaultCurrency,
     });
 
     return UserResponse.fromDomain(user);

@@ -1,4 +1,5 @@
 import {
+  IsISO4217CurrencyCode,
   IsLocale,
   IsOptional,
   IsPhoneNumber,
@@ -28,4 +29,8 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsLocale()
   language?: string;
+
+  @IsOptional()
+  @IsISO4217CurrencyCode()
+  defaultCurrency?: string;
 }
