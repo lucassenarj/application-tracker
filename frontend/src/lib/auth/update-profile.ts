@@ -8,6 +8,7 @@ interface UpdateProfileInput {
   phone?: string
   bio?: string
   language?: string
+  defaultCurrency?: string
 }
 
 export function useUpdateProfileMutation() {

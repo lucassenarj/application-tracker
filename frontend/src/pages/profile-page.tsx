@@ -33,6 +33,8 @@ const LANGUAGE_OPTIONS = [
   { value: 'de', label: 'German' },
 ] as const
 
+const CURRENCY_OPTIONS = ['EUR', 'USD', 'GBP'] as const
+
 function languageLabel(value: string | null): string {
   return (
     LANGUAGE_OPTIONS.find((option) => option.value === value)?.label ??
@@ -67,6 +69,7 @@ export function ProfilePage() {
       phone: '',
       bio: '',
       language: LANGUAGE_OPTIONS[0].value,
+      defaultCurrency: CURRENCY_OPTIONS[0],
     },
   })
 
@@ -76,6 +79,7 @@ export function ProfilePage() {
     phone: currentUser?.phone ?? '',
     bio: currentUser?.bio ?? '',
     language: currentUser?.language ?? LANGUAGE_OPTIONS[0].value,
+    defaultCurrency: currentUser?.defaultCurrency ?? CURRENCY_OPTIONS[0],
   })
 
   useEffect(() => {
@@ -92,6 +96,7 @@ export function ProfilePage() {
       phone: values.phone || undefined,
       bio: values.bio || undefined,
       language: values.language || undefined,
+      defaultCurrency: values.defaultCurrency || undefined,
     })
   }
 
@@ -205,37 +210,70 @@ export function ProfilePage() {
               )}
             </div>
 
-            <div className="flex items-center justify-between gap-4 border-t pt-6">
-              <div className="flex flex-col gap-1">
-                <span className="text-sm font-medium">Language</span>
-                <span className="text-sm text-muted-foreground">
-                  Select your preferred language
-                </span>
+            <div className="flex flex-col gap-4 border-t pt-6">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-medium">Language</span>
+                  <span className="text-sm text-muted-foreground">
+                    Select your preferred language
+                  </span>
+                </div>
+                <Controller
+                  name="language"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        id="language"
+                        aria-label="Language"
+                        className="w-auto min-w-[150px]"
+                      >
+                        <SelectValue>
+                          {(value: string | null) => languageLabel(value)}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LANGUAGE_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
-              <Controller
-                name="language"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger
-                      id="language"
-                      aria-label="Language"
-                      className="w-auto min-w-[150px]"
-                    >
-                      <SelectValue>
-                        {(value: string | null) => languageLabel(value)}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LANGUAGE_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
+
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-medium">Default Currency</span>
+                  <span className="text-sm text-muted-foreground">
+                    Used to pre-fill new applications
+                  </span>
+                </div>
+                <Controller
+                  name="defaultCurrency"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        id="defaultCurrency"
+                        aria-label="Default Currency"
+                        className="w-auto min-w-[150px]"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CURRENCY_OPTIONS.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
             </div>
           </form>
         </CardContent>

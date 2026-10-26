@@ -9,6 +9,7 @@ export const updateProfileSchema = z.object({
   phone: z.string().trim().optional(),
   bio: z.string().trim().max(500, 'Bio must be at most 500 characters').optional(),
   language: z.string().optional(),
+  defaultCurrency: z.string().optional(),
 })
 
 export type UpdateProfileFormValues = z.infer<typeof updateProfileSchema>

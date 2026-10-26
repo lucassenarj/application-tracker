@@ -345,11 +345,17 @@ describe('ApplicationsPage', () => {
 
     it('shows a loading indicator while a search request is in flight', async () => {
       const user = userEvent.setup()
-      let callCount = 0
+      let listCallCount = 0
       let resolveSearchFetch: (() => void) | undefined
-      fetchMock.mockImplementation(() => {
-        callCount += 1
-        if (callCount === 1) {
+      fetchMock.mockImplementation((url: string) => {
+        if (!url.includes('/applications?')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ items: [], total: 0 }),
+          })
+        }
+        listCallCount += 1
+        if (listCallCount === 1) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ items: [], total: 0 }),

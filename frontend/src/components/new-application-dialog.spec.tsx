@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NewApplicationDialog } from '@/components/new-application-dialog'
+import { userQueryOptions } from '@/lib/auth/user-query'
 
 function renderDialog(queryClient: QueryClient) {
   return render(
@@ -192,12 +193,30 @@ describe('NewApplicationDialog', () => {
 
     await waitFor(() => {
       const createCall = fetchMock.mock.calls.find(
-        ([url]) =>
-          !url.includes('csrf-token') && !url.includes('companies/search'),
+        ([url, options]) =>
+          (options as RequestInit | undefined)?.method === 'POST' &&
+          !url.includes('companies/search'),
       )
       const body = JSON.parse(createCall?.[1]?.body as string)
       expect(body.companyId).toBe('company-1')
     })
+  })
+
+  it("defaults the currency select to the user's preferred currency when set", async () => {
+    const user = userEvent.setup()
+    queryClient.setQueryData(userQueryOptions.queryKey, {
+      id: '1',
+      email: 'jane@example.com',
+      defaultCurrency: 'USD',
+      createdAt: '2026-01-01T00:00:00.000Z',
+    })
+    renderDialog(queryClient)
+
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
+
+    expect(
+      await screen.findByRole('combobox', { name: 'Currency' }),
+    ).toHaveTextContent('USD')
   })
 
   it('sends the default currency (EUR) when creating an application', async () => {
@@ -217,8 +236,9 @@ describe('NewApplicationDialog', () => {
 
     await waitFor(() => {
       const createCall = fetchMock.mock.calls.find(
-        ([url]) =>
-          !url.includes('csrf-token') && !url.includes('companies/search'),
+        ([url, options]) =>
+          (options as RequestInit | undefined)?.method === 'POST' &&
+          !url.includes('companies/search'),
       )
       const body = JSON.parse(createCall?.[1]?.body as string)
       expect(body.currency).toBe('EUR')
@@ -244,8 +264,9 @@ describe('NewApplicationDialog', () => {
 
     await waitFor(() => {
       const createCall = fetchMock.mock.calls.find(
-        ([url]) =>
-          !url.includes('csrf-token') && !url.includes('companies/search'),
+        ([url, options]) =>
+          (options as RequestInit | undefined)?.method === 'POST' &&
+          !url.includes('companies/search'),
       )
       const body = JSON.parse(createCall?.[1]?.body as string)
       expect(body.currency).toBe('USD')

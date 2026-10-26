@@ -9,6 +9,7 @@ export interface User {
   phone?: string
   bio?: string
   language?: string
+  defaultCurrency?: string
   createdAt: string
 }
 

@@ -22,6 +22,7 @@ const fakeUser: User = {
   phone: '+15551234567',
   bio: 'Backend engineer.',
   language: 'es',
+  defaultCurrency: 'USD',
   createdAt: '2026-01-01T00:00:00.000Z',
 }
 
@@ -186,7 +187,7 @@ describe('ProfilePage', () => {
     expect(patchCall).toBeUndefined()
   })
 
-  it('pre-fills the phone, bio, and language fields from the current user', async () => {
+  it('pre-fills the phone, bio, language, and default currency fields from the current user', async () => {
     renderWithRouter(routeTree, queryClient, '/profile')
 
     expect(
@@ -198,6 +199,9 @@ describe('ProfilePage', () => {
     expect(
       screen.getByRole('combobox', { name: 'Language' }),
     ).toHaveTextContent('Spanish')
+    expect(
+      screen.getByRole('combobox', { name: 'Default Currency' }),
+    ).toHaveTextContent('USD')
   })
 
   it('saving sends the updated phone, bio, and language values', async () => {
@@ -230,6 +234,11 @@ describe('ProfilePage', () => {
     await user.click(screen.getByRole('combobox', { name: 'Language' }))
     await user.click(await screen.findByRole('option', { name: 'French' }))
 
+    await user.click(
+      screen.getByRole('combobox', { name: 'Default Currency' }),
+    )
+    await user.click(await screen.findByRole('option', { name: 'GBP' }))
+
     await user.click(screen.getByRole('button', { name: 'Save Changes' }))
 
     await screen.findByText('Profile updated.')
@@ -243,5 +252,6 @@ describe('ProfilePage', () => {
     expect(body.phone).toBe('+447911123456')
     expect(body.bio).toBe('Updated bio.')
     expect(body.language).toBe('fr')
+    expect(body.defaultCurrency).toBe('GBP')
   })
 })

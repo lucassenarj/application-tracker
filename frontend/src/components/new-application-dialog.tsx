@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useQuery } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
@@ -27,11 +28,13 @@ import {
   createApplicationSchema,
   type CreateApplicationFormValues,
 } from '@/lib/applications/create-application-schema'
+import { userQueryOptions } from '@/lib/auth/user-query'
 
 export function NewApplicationDialog() {
   const [open, setOpen] = useState(false)
   const [companyId, setCompanyId] = useState<string | undefined>(undefined)
   const createApplicationMutation = useCreateApplicationMutation()
+  const userQuery = useQuery(userQueryOptions)
   const {
     register,
     handleSubmit,
@@ -46,7 +49,7 @@ export function NewApplicationDialog() {
       description: '',
       externalUrl: '',
       salary: '',
-      currency: 'EUR',
+      currency: userQuery.data?.defaultCurrency ?? 'EUR',
     },
   })
 
