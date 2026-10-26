@@ -158,4 +158,54 @@ describe('ApplicationsController', () => {
       ]);
     });
   });
+
+  describe('getApplicationsOverTime', () => {
+    it('returns 12 weekly buckets for the authenticated user', async () => {
+      const mockRequest = { user: { id: 'user-1' } } as unknown as Request;
+
+      await applicationsController.create(
+        { title: 'Senior Backend Engineer', companyName: 'Acme Corp' },
+        mockRequest,
+      );
+
+      const buckets =
+        await applicationsController.getApplicationsOverTime(mockRequest);
+
+      expect(buckets).toHaveLength(12);
+      expect(buckets.reduce((sum, b) => sum + b.count, 0)).toBe(1);
+    });
+  });
+
+  describe('getUpcomingInterviews', () => {
+    it('returns upcoming interviews for the authenticated user', async () => {
+      const mockRequest = { user: { id: 'user-1' } } as unknown as Request;
+
+      const application = await applicationsController.create(
+        { title: 'Senior Backend Engineer', companyName: 'Acme Corp' },
+        mockRequest,
+      );
+      await applicationsController.changeStatus(
+        application.id,
+        {
+          status: 'INTERVIEW_SCHEDULED',
+          eventDate: new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+          interviewCategory: 'TECHNICAL',
+        },
+        mockRequest,
+      );
+
+      const interviews =
+        await applicationsController.getUpcomingInterviews(mockRequest);
+
+      expect(interviews).toHaveLength(1);
+      expect(interviews[0]).toMatchObject({
+        applicationId: application.id,
+        applicationTitle: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        interviewCategory: 'TECHNICAL',
+      });
+    });
+  });
 });

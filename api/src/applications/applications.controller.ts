@@ -22,7 +22,9 @@ import type {
   ApplicationWithCompanyName,
   PaginatedResult,
   RecentActivityItem,
+  UpcomingInterview,
 } from './domain/application.repository';
+import type { ApplicationsOverTimeBucket } from './domain/applications-over-time';
 import type { InterviewCategory, StatusChange } from './domain/status-change';
 import {
   ApplicationsService,
@@ -256,6 +258,53 @@ function toRecentActivityResponse(
   };
 }
 
+export class OverTimeBucketResponse {
+  @ApiProperty()
+  weekStart: string;
+
+  @ApiProperty()
+  count: number;
+}
+
+function toOverTimeBucketResponse(
+  bucket: ApplicationsOverTimeBucket,
+): OverTimeBucketResponse {
+  return { weekStart: bucket.weekStart, count: bucket.count };
+}
+
+export class UpcomingInterviewResponse {
+  @ApiProperty()
+  statusChangeId: string;
+
+  @ApiProperty()
+  applicationId: string;
+
+  @ApiProperty()
+  applicationTitle: string;
+
+  @ApiProperty()
+  companyName: string;
+
+  @ApiProperty()
+  eventDate: Date;
+
+  @ApiProperty({ required: false, enum: ['TECHNICAL', 'NON_TECHNICAL'] })
+  interviewCategory?: InterviewCategory;
+}
+
+function toUpcomingInterviewResponse(
+  interview: UpcomingInterview,
+): UpcomingInterviewResponse {
+  return {
+    statusChangeId: interview.statusChangeId,
+    applicationId: interview.applicationId,
+    applicationTitle: interview.applicationTitle,
+    companyName: interview.companyName,
+    eventDate: interview.eventDate,
+    interviewCategory: interview.interviewCategory,
+  };
+}
+
 @Controller('applications')
 @UseGuards(JwtAuthGuard)
 export class ApplicationsController {
@@ -313,6 +362,26 @@ export class ApplicationsController {
       query.limit,
     );
     return activity.map(toRecentActivityResponse);
+  }
+
+  @Get('over-time')
+  async getApplicationsOverTime(
+    @Req() request: Request,
+  ): Promise<OverTimeBucketResponse[]> {
+    const buckets = await this.applicationsService.getApplicationsOverTime(
+      request.user!.id,
+    );
+    return buckets.map(toOverTimeBucketResponse);
+  }
+
+  @Get('interviews/upcoming')
+  async getUpcomingInterviews(
+    @Req() request: Request,
+  ): Promise<UpcomingInterviewResponse[]> {
+    const interviews = await this.applicationsService.getUpcomingInterviews(
+      request.user!.id,
+    );
+    return interviews.map(toUpcomingInterviewResponse);
   }
 
   @Get(':id')

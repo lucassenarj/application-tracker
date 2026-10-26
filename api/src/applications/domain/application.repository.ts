@@ -1,6 +1,7 @@
 import { Application } from './application';
 import { ApplicationStatus } from './application-status';
 import { ApplicationStatusCategory } from './application-status-category';
+import { InterviewCategory } from './status-change';
 
 export interface FindAllByUserOptions {
   page: number;
@@ -29,6 +30,15 @@ export interface RecentActivityItem {
   eventDate: Date;
 }
 
+export interface UpcomingInterview {
+  statusChangeId: string;
+  applicationId: string;
+  applicationTitle: string;
+  companyName: string;
+  eventDate: Date;
+  interviewCategory?: InterviewCategory;
+}
+
 export interface ApplicationRepository {
   save(application: Application): Promise<void>;
   findById(id: string): Promise<Application | null>;
@@ -43,4 +53,9 @@ export interface ApplicationRepository {
     userId: string,
     limit: number,
   ): Promise<RecentActivityItem[]>;
+  findCreatedDatesByUser(userId: string): Promise<Date[]>;
+  findUpcomingInterviewsByUser(
+    userId: string,
+    now: Date,
+  ): Promise<UpcomingInterview[]>;
 }

@@ -14,7 +14,12 @@ import type {
   FindAllByUserOptions,
   PaginatedResult,
   RecentActivityItem,
+  UpcomingInterview,
 } from './domain/application.repository';
+import {
+  bucketApplicationsByWeek,
+  type ApplicationsOverTimeBucket,
+} from './domain/applications-over-time';
 import { Company } from './domain/company';
 import type { CompanyRepository } from './domain/company.repository';
 import { Contact, InterviewCategory } from './domain/status-change';
@@ -171,6 +176,22 @@ export class ApplicationsService {
       userId,
       limit,
     );
+  }
+
+  async getApplicationsOverTime(
+    userId: string,
+  ): Promise<ApplicationsOverTimeBucket[]> {
+    const createdDates =
+      await this.applicationRepository.findCreatedDatesByUser(userId);
+
+    return bucketApplicationsByWeek(createdDates, 12);
+  }
+
+  async getUpcomingInterviews(
+    userId: string,
+    now: Date = new Date(),
+  ): Promise<UpcomingInterview[]> {
+    return this.applicationRepository.findUpcomingInterviewsByUser(userId, now);
   }
 }
 

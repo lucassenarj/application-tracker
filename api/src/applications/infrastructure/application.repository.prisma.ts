@@ -12,6 +12,7 @@ import type {
   FindAllByUserOptions,
   PaginatedResult,
   RecentActivityItem,
+  UpcomingInterview,
 } from '../domain/application.repository';
 import { Contact, StatusChange } from '../domain/status-change';
 import { toPrefixTsQuery } from './postgres-search';
@@ -179,6 +180,45 @@ export class PrismaApplicationRepository implements ApplicationRepository {
       companyName: row.application.company.name,
       status: row.status,
       eventDate: row.eventDate,
+    }));
+  }
+
+  async findCreatedDatesByUser(userId: string): Promise<Date[]> {
+    const rows = await this.prisma.application.findMany({
+      where: { userId },
+      select: { createdAt: true },
+    });
+
+    return rows.map((row) => row.createdAt);
+  }
+
+  async findUpcomingInterviewsByUser(
+    userId: string,
+    now: Date,
+  ): Promise<UpcomingInterview[]> {
+    const rows = await this.prisma.statusChange.findMany({
+      where: {
+        application: { userId },
+        status: 'INTERVIEW_SCHEDULED',
+        eventDate: { gte: now },
+      },
+      orderBy: { eventDate: 'asc' },
+      include: {
+        application: {
+          select: { title: true, company: { select: { name: true } } },
+        },
+      },
+    });
+
+    return rows.map((row) => ({
+      statusChangeId: row.id,
+      applicationId: row.applicationId,
+      applicationTitle: row.application.title,
+      companyName: row.application.company.name,
+      eventDate: row.eventDate,
+      interviewCategory:
+        (row.interviewCategory as StatusChange['interviewCategory']) ??
+        undefined,
     }));
   }
 }

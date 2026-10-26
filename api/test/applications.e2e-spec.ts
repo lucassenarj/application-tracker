@@ -66,6 +66,44 @@ describe('Applications (e2e)', () => {
       where: { email: 'recent-activity-e2e-test@example.com' },
     });
 
+    await prisma.statusChange.deleteMany({
+      where: {
+        application: { title: 'Over Time E2E Test Application' },
+      },
+    });
+    await prisma.application.deleteMany({
+      where: { title: 'Over Time E2E Test Application' },
+    });
+    await prisma.company.deleteMany({
+      where: { name: 'Over Time E2e Test Co' },
+    });
+    await prisma.refreshToken.deleteMany({
+      where: { user: { email: 'over-time-e2e-test@example.com' } },
+    });
+    await prisma.user.deleteMany({
+      where: { email: 'over-time-e2e-test@example.com' },
+    });
+
+    await prisma.statusChange.deleteMany({
+      where: {
+        application: {
+          title: 'Upcoming Interviews E2E Test Application',
+        },
+      },
+    });
+    await prisma.application.deleteMany({
+      where: { title: 'Upcoming Interviews E2E Test Application' },
+    });
+    await prisma.company.deleteMany({
+      where: { name: 'Upcoming Interviews E2e Test Co' },
+    });
+    await prisma.refreshToken.deleteMany({
+      where: { user: { email: 'upcoming-interviews-e2e-test@example.com' } },
+    });
+    await prisma.user.deleteMany({
+      where: { email: 'upcoming-interviews-e2e-test@example.com' },
+    });
+
     await app.close();
   });
 
@@ -144,6 +182,92 @@ describe('Applications (e2e)', () => {
       // word boundary, so only its first letter gets capitalized.
       companyName: 'Recent Activity E2e Test Co',
       status: 'APPLIED',
+    });
+  });
+
+  it('returns applications-over-time buckets for the authenticated user, not confused with the :id route', async () => {
+    const agent = request.agent(app.getHttpServer());
+
+    await agent.post('/auth/register').send({
+      email: 'over-time-e2e-test@example.com',
+      password: 'plain-text-password',
+    });
+    await agent.post('/auth/login').send({
+      email: 'over-time-e2e-test@example.com',
+      password: 'plain-text-password',
+    });
+
+    const csrfResponse = await agent.get('/auth/csrf-token');
+    const csrfToken = (csrfResponse.body as { csrfToken: string }).csrfToken;
+
+    await agent
+      .post('/applications')
+      .set('x-csrf-token', csrfToken)
+      .send({
+        title: 'Over Time E2E Test Application',
+        companyName: 'Over Time E2E Test Co',
+      })
+      .expect(201);
+
+    const response = await agent.get('/applications/over-time').expect(200);
+
+    const body = response.body as Array<{ weekStart: string; count: number }>;
+
+    expect(body).toHaveLength(12);
+    expect(body.reduce((sum, b) => sum + b.count, 0)).toBe(1);
+  });
+
+  it('returns upcoming interviews for the authenticated user', async () => {
+    const agent = request.agent(app.getHttpServer());
+
+    await agent.post('/auth/register').send({
+      email: 'upcoming-interviews-e2e-test@example.com',
+      password: 'plain-text-password',
+    });
+    await agent.post('/auth/login').send({
+      email: 'upcoming-interviews-e2e-test@example.com',
+      password: 'plain-text-password',
+    });
+
+    const csrfResponse = await agent.get('/auth/csrf-token');
+    const csrfToken = (csrfResponse.body as { csrfToken: string }).csrfToken;
+
+    const createResponse = await agent
+      .post('/applications')
+      .set('x-csrf-token', csrfToken)
+      .send({
+        title: 'Upcoming Interviews E2E Test Application',
+        companyName: 'Upcoming Interviews E2E Test Co',
+      })
+      .expect(201);
+
+    const applicationId = (createResponse.body as { id: string }).id;
+
+    await agent
+      .patch(`/applications/${applicationId}/status`)
+      .set('x-csrf-token', csrfToken)
+      .send({
+        status: 'INTERVIEW_SCHEDULED',
+        eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        interviewCategory: 'TECHNICAL',
+      })
+      .expect(200);
+
+    const response = await agent
+      .get('/applications/interviews/upcoming')
+      .expect(200);
+
+    const body = response.body as Array<{
+      applicationTitle: string;
+      companyName: string;
+      interviewCategory: string;
+    }>;
+
+    expect(body).toHaveLength(1);
+    expect(body[0]).toMatchObject({
+      applicationTitle: 'Upcoming Interviews E2E Test Application',
+      companyName: 'Upcoming Interviews E2e Test Co',
+      interviewCategory: 'TECHNICAL',
     });
   });
 });
