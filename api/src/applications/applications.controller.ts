@@ -130,6 +130,9 @@ export class ApplicationResponse {
   @ApiProperty({ required: false })
   salary?: number;
 
+  @ApiProperty({ required: false })
+  currency?: string;
+
   @ApiProperty()
   companyId: string;
 
@@ -153,6 +156,7 @@ function toApplicationResponse(application: Application): ApplicationResponse {
     description: application.description,
     externalUrl: application.externalUrl,
     salary: application.salary,
+    currency: application.currency,
     companyId: application.companyId,
     userId: application.userId,
     currentStatus: application.currentStatus,
@@ -176,6 +180,9 @@ export class ApplicationDetailResponse {
 
   @ApiProperty({ required: false })
   salary?: number;
+
+  @ApiProperty({ required: false })
+  currency?: string;
 
   @ApiProperty()
   companyName: string;
@@ -203,6 +210,7 @@ function toDetailResponse({
     description: application.description,
     externalUrl: application.externalUrl,
     salary: application.salary,
+    currency: application.currency,
     companyName,
     currentStatus: application.currentStatus,
     availableTransitions: ApplicationStatusStateMachine.getAvailableTransitions(
@@ -228,6 +236,7 @@ export class ApplicationsController {
       description: dto.description,
       externalUrl: dto.externalUrl,
       salary: dto.salary,
+      currency: dto.currency,
       companyName: dto.companyName,
       companyId: dto.companyId,
       userId: request.user!.id,

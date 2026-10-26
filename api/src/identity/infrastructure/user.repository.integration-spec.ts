@@ -61,6 +61,25 @@ describe('PrismaUserRepository', () => {
       expect(foundUser?.name).toBe('Jane Doe');
       expect(foundUser?.isActive).toBe(false);
     });
+
+    it('persists optional fields (phone, bio, language) and returns them via findByEmail', async () => {
+      const user = User.create({
+        email: 'jane@example.com',
+        passwordHash: 'hashed-password',
+      });
+      const updatedUser = user.updateProfile({
+        phone: '+15551234567',
+        bio: 'Backend engineer.',
+        language: 'en-US',
+      });
+
+      await userRepository.save(updatedUser);
+      const foundUser = await userRepository.findByEmail('jane@example.com');
+
+      expect(foundUser?.phone).toBe('+15551234567');
+      expect(foundUser?.bio).toBe('Backend engineer.');
+      expect(foundUser?.language).toBe('en-US');
+    });
   });
 
   describe('findByEmail', () => {

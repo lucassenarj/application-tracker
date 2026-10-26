@@ -177,7 +177,13 @@ export class AuthService {
 
   async updateProfile(
     userId: string,
-    input: { name?: string; avatar?: string },
+    input: {
+      name?: string;
+      avatar?: string;
+      phone?: string;
+      bio?: string;
+      language?: string;
+    },
   ): Promise<User> {
     const user = await this.getProfile(userId);
 

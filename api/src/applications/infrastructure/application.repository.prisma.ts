@@ -33,6 +33,7 @@ type PersistedApplication = {
   description: string | null;
   externalUrl: string | null;
   salary: number | null;
+  currency: string | null;
   companyId: string;
   userId: string;
   currentStatus: string;
@@ -54,6 +55,7 @@ export class PrismaApplicationRepository implements ApplicationRepository {
         description: application.description,
         externalUrl: application.externalUrl,
         salary: application.salary,
+        currency: application.currency,
         companyId: application.companyId,
         userId: application.userId,
         currentStatus: application.currentStatus,
@@ -162,6 +164,7 @@ function toApplication(row: PersistedApplication): Application {
     description: row.description ?? undefined,
     externalUrl: row.externalUrl ?? undefined,
     salary: row.salary ?? undefined,
+    currency: row.currency ?? undefined,
     companyId: row.companyId,
     userId: row.userId,
     currentStatus: row.currentStatus as Application['currentStatus'],
