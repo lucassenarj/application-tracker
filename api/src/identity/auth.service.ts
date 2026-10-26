@@ -183,6 +183,7 @@ export class AuthService {
       phone?: string;
       bio?: string;
       language?: string;
+      defaultCurrency?: string;
     },
   ): Promise<User> {
     const user = await this.getProfile(userId);

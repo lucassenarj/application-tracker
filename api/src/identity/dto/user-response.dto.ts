@@ -9,6 +9,7 @@ export class UserResponse {
   @Expose() phone?: string;
   @Expose() bio?: string;
   @Expose() language?: string;
+  @Expose() defaultCurrency?: string;
   @Expose() createdAt: Date;
 
   @Exclude()
