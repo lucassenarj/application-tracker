@@ -54,7 +54,11 @@ export function ApplicationDetailPage() {
                       <span className="text-muted-foreground">
                         Salary:{' '}
                         <span className="font-mono">
-                          {formatCurrency(query.data.salary)}
+                          {formatCurrency(
+                            query.data.salary,
+                            undefined,
+                            query.data.currency,
+                          )}
                         </span>
                       </span>
                     )}

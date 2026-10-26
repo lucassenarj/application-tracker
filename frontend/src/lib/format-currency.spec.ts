@@ -17,4 +17,8 @@ describe('formatCurrency', () => {
 
     languageGetter.mockRestore()
   })
+
+  it('formats using the given currency code instead of defaulting to EUR', () => {
+    expect(formatCurrency(90000, 'en', 'USD')).toBe('$90,000')
+  })
 })

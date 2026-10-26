@@ -81,6 +81,14 @@ describe('ApplicationDetailPage', () => {
     })
   })
 
+  it("renders the salary using the application's own currency", async () => {
+    mockDetailResponse({ salary: 90000, currency: 'USD' })
+
+    renderWithRouter(routeTree, queryClient, '/applications/abc123')
+
+    expect(await screen.findByText('$90,000')).toBeInTheDocument()
+  })
+
   it('renders the salary, a link to the job posting, and the description when present', async () => {
     mockDetailResponse({
       salary: 90000,

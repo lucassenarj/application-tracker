@@ -14,6 +14,13 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useCreateApplicationMutation } from '@/lib/applications/create-application'
 import {
@@ -39,6 +46,7 @@ export function NewApplicationDialog() {
       description: '',
       externalUrl: '',
       salary: '',
+      currency: 'EUR',
     },
   })
 
@@ -51,6 +59,7 @@ export function NewApplicationDialog() {
         description: values.description || undefined,
         externalUrl: values.externalUrl || undefined,
         salary: values.salary ? Number(values.salary) : undefined,
+        currency: values.currency || undefined,
       },
       {
         onSuccess: () => {
@@ -139,14 +148,36 @@ export function NewApplicationDialog() {
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="salary">Salary</Label>
-            <Input id="salary" type="number" {...register('salary')} />
-            {errors.salary && (
-              <span className="text-sm text-destructive">
-                {errors.salary.message}
-              </span>
-            )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="salary">Salary</Label>
+              <Input id="salary" type="number" {...register('salary')} />
+              {errors.salary && (
+                <span className="text-sm text-destructive">
+                  {errors.salary.message}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="currency">Currency</Label>
+              <Controller
+                name="currency"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="currency" aria-label="Currency">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="EUR">EUR</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="GBP">GBP</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
           </div>
 
           <DialogFooter>

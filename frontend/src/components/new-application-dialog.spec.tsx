@@ -67,6 +67,9 @@ describe('NewApplicationDialog', () => {
     expect(
       screen.getByRole('spinbutton', { name: 'Salary' }),
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('combobox', { name: 'Currency' }),
+    ).toHaveTextContent('EUR')
     expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument()
   })
   it('shows a validation error when submitting with an empty title', async () => {
@@ -194,6 +197,58 @@ describe('NewApplicationDialog', () => {
       )
       const body = JSON.parse(createCall?.[1]?.body as string)
       expect(body.companyId).toBe('company-1')
+    })
+  })
+
+  it('sends the default currency (EUR) when creating an application', async () => {
+    const user = userEvent.setup()
+    renderDialog(queryClient)
+
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
+    await user.type(
+      await screen.findByRole('textbox', { name: 'Title' }),
+      'Senior Backend Engineer',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Company' }),
+      'Acme Corp',
+    )
+    await user.click(screen.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      const createCall = fetchMock.mock.calls.find(
+        ([url]) =>
+          !url.includes('csrf-token') && !url.includes('companies/search'),
+      )
+      const body = JSON.parse(createCall?.[1]?.body as string)
+      expect(body.currency).toBe('EUR')
+    })
+  })
+
+  it('sends the selected currency when changed', async () => {
+    const user = userEvent.setup()
+    renderDialog(queryClient)
+
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
+    await user.type(
+      await screen.findByRole('textbox', { name: 'Title' }),
+      'Senior Backend Engineer',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Company' }),
+      'Acme Corp',
+    )
+    await user.click(screen.getByRole('combobox', { name: 'Currency' }))
+    await user.click(await screen.findByRole('option', { name: 'USD' }))
+    await user.click(screen.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      const createCall = fetchMock.mock.calls.find(
+        ([url]) =>
+          !url.includes('csrf-token') && !url.includes('companies/search'),
+      )
+      const body = JSON.parse(createCall?.[1]?.body as string)
+      expect(body.currency).toBe('USD')
     })
   })
 })
