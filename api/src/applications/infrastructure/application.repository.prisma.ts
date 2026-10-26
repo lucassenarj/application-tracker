@@ -11,6 +11,7 @@ import type {
   ApplicationWithCompanyName,
   FindAllByUserOptions,
   PaginatedResult,
+  RecentActivityItem,
 } from '../domain/application.repository';
 import { Contact, StatusChange } from '../domain/status-change';
 import { toPrefixTsQuery } from './postgres-search';
@@ -154,6 +155,31 @@ export class PrismaApplicationRepository implements ApplicationRepository {
     }
 
     return counts;
+  }
+
+  async findRecentStatusChangesByUser(
+    userId: string,
+    limit: number,
+  ): Promise<RecentActivityItem[]> {
+    const rows = await this.prisma.statusChange.findMany({
+      where: { application: { userId } },
+      orderBy: { eventDate: 'desc' },
+      take: limit,
+      include: {
+        application: {
+          select: { title: true, company: { select: { name: true } } },
+        },
+      },
+    });
+
+    return rows.map((row) => ({
+      statusChangeId: row.id,
+      applicationId: row.applicationId,
+      applicationTitle: row.application.title,
+      companyName: row.application.company.name,
+      status: row.status,
+      eventDate: row.eventDate,
+    }));
   }
 }
 

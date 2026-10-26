@@ -20,6 +20,15 @@ export interface ApplicationWithCompanyName {
   companyName: string;
 }
 
+export interface RecentActivityItem {
+  statusChangeId: string;
+  applicationId: string;
+  applicationTitle: string;
+  companyName: string;
+  status: ApplicationStatus;
+  eventDate: Date;
+}
+
 export interface ApplicationRepository {
   save(application: Application): Promise<void>;
   findById(id: string): Promise<Application | null>;
@@ -30,4 +39,8 @@ export interface ApplicationRepository {
   countByUserGroupedByStatus(
     userId: string,
   ): Promise<Record<ApplicationStatus, number>>;
+  findRecentStatusChangesByUser(
+    userId: string,
+    limit: number,
+  ): Promise<RecentActivityItem[]>;
 }

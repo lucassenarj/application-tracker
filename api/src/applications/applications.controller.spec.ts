@@ -131,4 +131,31 @@ describe('ApplicationsController', () => {
       });
     });
   });
+
+  describe('getRecentActivity', () => {
+    it('returns the recent activity for the authenticated user', async () => {
+      const mockRequest = { user: { id: 'user-1' } } as unknown as Request;
+
+      const application = await applicationsController.create(
+        { title: 'Senior Backend Engineer', companyName: 'Acme Corp' },
+        mockRequest,
+      );
+
+      const activity = await applicationsController.getRecentActivity(
+        {},
+        mockRequest,
+      );
+
+      expect(activity).toEqual([
+        {
+          statusChangeId: application.statusHistory[0].id,
+          applicationId: application.id,
+          applicationTitle: 'Senior Backend Engineer',
+          companyName: 'Acme Corp',
+          status: 'APPLIED',
+          eventDate: application.statusHistory[0].eventDate,
+        },
+      ]);
+    });
+  });
 });

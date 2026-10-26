@@ -454,4 +454,91 @@ describe('ApplicationsService', () => {
       });
     });
   });
+
+  describe('getRecentActivity', () => {
+    it('returns an empty array when the user has no status changes', async () => {
+      const activity = await applicationService.getRecentActivity(
+        'user-without-applications',
+      );
+
+      expect(activity).toEqual([]);
+    });
+
+    it('returns the application title, company name, status, and event date for each status change', async () => {
+      const application = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      const activity = await applicationService.getRecentActivity('user-1');
+
+      expect(activity).toEqual([
+        {
+          statusChangeId: application.statusHistory[0].id,
+          applicationId: application.id,
+          applicationTitle: 'Senior Backend Engineer',
+          companyName: 'Acme Corp',
+          status: 'APPLIED',
+          eventDate: application.statusHistory[0].eventDate,
+        },
+      ]);
+    });
+
+    it('orders items by most recent eventDate first', async () => {
+      const older = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+      const newer = await applicationService.create({
+        title: 'Staff Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      const inOneDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const inTwoDays = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+
+      await applicationService.changeStatus(older.id, 'user-1', {
+        status: 'WAITING_FEEDBACK',
+        eventDate: inOneDay,
+      });
+      await applicationService.changeStatus(newer.id, 'user-1', {
+        status: 'WAITING_FEEDBACK',
+        eventDate: inTwoDays,
+      });
+
+      const activity = await applicationService.getRecentActivity('user-1');
+
+      expect(activity[0].applicationId).toBe(newer.id);
+      expect(activity[0].eventDate).toEqual(inTwoDays);
+    });
+
+    it('does not include status changes belonging to a different user', async () => {
+      await applicationService.create({
+        title: 'Should not appear',
+        companyName: 'Acme Corp',
+        userId: 'user-2',
+      });
+
+      const activity = await applicationService.getRecentActivity('user-1');
+
+      expect(activity).toEqual([]);
+    });
+
+    it('limits results to the given limit', async () => {
+      for (let i = 0; i < 15; i++) {
+        await applicationService.create({
+          title: `Application ${i}`,
+          companyName: 'Acme Corp',
+          userId: 'user-1',
+        });
+      }
+
+      const activity = await applicationService.getRecentActivity('user-1', 5);
+
+      expect(activity).toHaveLength(5);
+    });
+  });
 });

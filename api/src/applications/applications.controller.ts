@@ -21,6 +21,7 @@ import { ApplicationStatusStateMachine } from './domain/application-status.state
 import type {
   ApplicationWithCompanyName,
   PaginatedResult,
+  RecentActivityItem,
 } from './domain/application.repository';
 import type { InterviewCategory, StatusChange } from './domain/status-change';
 import {
@@ -30,6 +31,7 @@ import {
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { FindAllApplicationsDto } from './dto/find-all-applications.dto';
+import { FindRecentActivityDto } from './dto/find-recent-activity.dto';
 
 export class ApplicationListItemResponse {
   @ApiProperty()
@@ -221,6 +223,39 @@ function toDetailResponse({
   };
 }
 
+export class RecentActivityItemResponse {
+  @ApiProperty()
+  statusChangeId: string;
+
+  @ApiProperty()
+  applicationId: string;
+
+  @ApiProperty()
+  applicationTitle: string;
+
+  @ApiProperty()
+  companyName: string;
+
+  @ApiProperty({ enum: APPLICATION_STATUSES })
+  status: ApplicationStatus;
+
+  @ApiProperty()
+  eventDate: Date;
+}
+
+function toRecentActivityResponse(
+  item: RecentActivityItem,
+): RecentActivityItemResponse {
+  return {
+    statusChangeId: item.statusChangeId,
+    applicationId: item.applicationId,
+    applicationTitle: item.applicationTitle,
+    companyName: item.companyName,
+    status: item.status,
+    eventDate: item.eventDate,
+  };
+}
+
 @Controller('applications')
 @UseGuards(JwtAuthGuard)
 export class ApplicationsController {
@@ -266,6 +301,18 @@ export class ApplicationsController {
   @Get('stats')
   getStats(@Req() request: Request): Promise<ApplicationStats> {
     return this.applicationsService.getStats(request.user!.id);
+  }
+
+  @Get('recent-activity')
+  async getRecentActivity(
+    @Query() query: FindRecentActivityDto,
+    @Req() request: Request,
+  ): Promise<RecentActivityItemResponse[]> {
+    const activity = await this.applicationsService.getRecentActivity(
+      request.user!.id,
+      query.limit,
+    );
+    return activity.map(toRecentActivityResponse);
   }
 
   @Get(':id')

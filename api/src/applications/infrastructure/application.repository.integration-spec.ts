@@ -558,4 +558,54 @@ describe('PrismaApplicationRepository', () => {
       expect(counts.APPLIED).toBe(1);
     });
   });
+
+  describe('findRecentStatusChangesByUser', () => {
+    it('returns the application title, company name, status, and event date, ordered by most recent eventDate first', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const application = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(application);
+
+      const inOneDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const updatedApplication = application.changeStatus({
+        status: 'WAITING_FEEDBACK',
+        eventDate: inOneDay,
+      });
+      await applicationRepository.save(updatedApplication);
+
+      const activity =
+        await applicationRepository.findRecentStatusChangesByUser('user-1', 10);
+
+      expect(activity).toHaveLength(2);
+      expect(activity[0]).toMatchObject({
+        applicationId: application.id,
+        applicationTitle: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        status: 'WAITING_FEEDBACK',
+        eventDate: inOneDay,
+      });
+    });
+
+    it('does not include status changes belonging to a different user', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const otherUserApplication = Application.create({
+        title: 'Should not appear',
+        companyId: company.id,
+        userId: 'user-2',
+      });
+      await applicationRepository.save(otherUserApplication);
+
+      const activity =
+        await applicationRepository.findRecentStatusChangesByUser('user-1', 10);
+
+      expect(activity).toEqual([]);
+    });
+  });
 });

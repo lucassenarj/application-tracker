@@ -13,6 +13,7 @@ import type {
   ApplicationWithCompanyName,
   FindAllByUserOptions,
   PaginatedResult,
+  RecentActivityItem,
 } from './domain/application.repository';
 import { Company } from './domain/company';
 import type { CompanyRepository } from './domain/company.repository';
@@ -160,6 +161,16 @@ export class ApplicationsService {
       offers: sumByCategory(counts, 'OFFERS'),
       rejections: sumByCategory(counts, 'REJECTIONS'),
     };
+  }
+
+  async getRecentActivity(
+    userId: string,
+    limit = 10,
+  ): Promise<RecentActivityItem[]> {
+    return this.applicationRepository.findRecentStatusChangesByUser(
+      userId,
+      limit,
+    );
   }
 }
 

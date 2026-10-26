@@ -9,6 +9,7 @@ import type {
   ApplicationWithCompanyName,
   FindAllByUserOptions,
   PaginatedResult,
+  RecentActivityItem,
 } from '../../domain/application.repository';
 import type { FakeCompanyRepository } from './company.repository.fake';
 
@@ -86,5 +87,43 @@ export class FakeApplicationRepository implements ApplicationRepository {
     ) as Record<ApplicationStatus, number>;
 
     return Promise.resolve(counts);
+  }
+
+  async findRecentStatusChangesByUser(
+    userId: string,
+    limit: number,
+  ): Promise<RecentActivityItem[]> {
+    const matching = [...this.applications.values()].filter(
+      (a) => a.userId === userId,
+    );
+
+    const items = await Promise.all(
+      matching.flatMap((application) =>
+        application.statusHistory.map(async (statusChange) => {
+          const company = await this.companyRepository.findById(
+            application.companyId,
+          );
+
+          if (!company) {
+            throw new Error(
+              `No company found for id ${application.companyId} — test setup likely forgot to save it`,
+            );
+          }
+
+          return {
+            statusChangeId: statusChange.id,
+            applicationId: application.id,
+            applicationTitle: application.title,
+            companyName: company.name,
+            status: statusChange.status,
+            eventDate: statusChange.eventDate,
+          };
+        }),
+      ),
+    );
+
+    return items
+      .sort((a, b) => b.eventDate.getTime() - a.eventDate.getTime())
+      .slice(0, limit);
   }
 }
