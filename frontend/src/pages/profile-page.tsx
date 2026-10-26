@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
 import { Pencil } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { PageHeader } from '@/components/page-header'
@@ -56,15 +56,31 @@ export function ProfilePage() {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<UpdateProfileFormValues>({
     resolver: zodResolver(updateProfileSchema),
-    defaultValues: { firstName: '', lastName: '', avatar: '' },
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      avatar: '',
+      phone: '',
+      bio: '',
+      language: LANGUAGE_OPTIONS[0].value,
+    },
+  })
+
+  const userDefaults = (currentUser: typeof user) => ({
+    ...splitName(currentUser?.name),
+    avatar: currentUser?.avatar ?? '',
+    phone: currentUser?.phone ?? '',
+    bio: currentUser?.bio ?? '',
+    language: currentUser?.language ?? LANGUAGE_OPTIONS[0].value,
   })
 
   useEffect(() => {
     if (user) {
-      reset({ ...splitName(user.name), avatar: user.avatar ?? '' })
+      reset(userDefaults(user))
     }
   }, [user, reset])
 
@@ -73,12 +89,15 @@ export function ProfilePage() {
     updateProfileMutation.mutate({
       name: name || undefined,
       avatar: values.avatar || undefined,
+      phone: values.phone || undefined,
+      bio: values.bio || undefined,
+      language: values.language || undefined,
     })
   }
 
   const cancel = () => {
     if (user) {
-      reset({ ...splitName(user.name), avatar: user.avatar ?? '' })
+      reset(userDefaults(user))
     }
     setAvatarFieldOpen(false)
   }
@@ -149,11 +168,29 @@ export function ProfilePage() {
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="phone">Phone Number</Label>
-                <Input id="phone" placeholder="+1 (555) 123-4567" />
+                <Input
+                  id="phone"
+                  placeholder="+1 (555) 123-4567"
+                  {...register('phone')}
+                />
+                {errors.phone && (
+                  <span className="text-sm text-destructive">
+                    {errors.phone.message}
+                  </span>
+                )}
               </div>
               <div className="flex flex-col gap-2 md:col-span-2">
                 <Label htmlFor="bio">Bio</Label>
-                <Textarea id="bio" placeholder="Tell us about yourself" />
+                <Textarea
+                  id="bio"
+                  placeholder="Tell us about yourself"
+                  {...register('bio')}
+                />
+                {errors.bio && (
+                  <span className="text-sm text-destructive">
+                    {errors.bio.message}
+                  </span>
+                )}
               </div>
               {avatarFieldOpen && (
                 <div className="flex flex-col gap-2 md:col-span-2">
@@ -175,24 +212,30 @@ export function ProfilePage() {
                   Select your preferred language
                 </span>
               </div>
-              <Select defaultValue="en-US">
-                <SelectTrigger
-                  id="language"
-                  aria-label="Language"
-                  className="w-auto min-w-[150px]"
-                >
-                  <SelectValue>
-                    {(value: string | null) => languageLabel(value)}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {LANGUAGE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Controller
+                name="language"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger
+                      id="language"
+                      aria-label="Language"
+                      className="w-auto min-w-[150px]"
+                    >
+                      <SelectValue>
+                        {(value: string | null) => languageLabel(value)}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LANGUAGE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </div>
           </form>
         </CardContent>

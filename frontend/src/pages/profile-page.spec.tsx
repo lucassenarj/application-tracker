@@ -19,6 +19,9 @@ const fakeUser: User = {
   email: 'jane@example.com',
   name: 'Jane Doe',
   avatar: 'https://example.com/avatar.png',
+  phone: '+15551234567',
+  bio: 'Backend engineer.',
+  language: 'es',
   createdAt: '2026-01-01T00:00:00.000Z',
 }
 
@@ -183,17 +186,62 @@ describe('ProfilePage', () => {
     expect(patchCall).toBeUndefined()
   })
 
-  it('renders Phone Number, Bio, and Language fields for visual completeness (not yet wired to the API)', async () => {
+  it('pre-fills the phone, bio, and language fields from the current user', async () => {
     renderWithRouter(routeTree, queryClient, '/profile')
 
     expect(
       await screen.findByRole('textbox', { name: 'Phone Number' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('textbox', { name: 'Bio' }),
-    ).toBeInTheDocument()
+    ).toHaveValue('+15551234567')
+    expect(screen.getByRole('textbox', { name: 'Bio' })).toHaveValue(
+      'Backend engineer.',
+    )
     expect(
       screen.getByRole('combobox', { name: 'Language' }),
-    ).toBeInTheDocument()
+    ).toHaveTextContent('Spanish')
+  })
+
+  it('saving sends the updated phone, bio, and language values', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation((_url, options) => {
+      if ((options as RequestInit | undefined)?.method === 'PATCH') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(fakeUser),
+        })
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(fakeUser),
+      })
+    })
+
+    renderWithRouter(routeTree, queryClient, '/profile')
+
+    const phoneInput = await screen.findByRole('textbox', {
+      name: 'Phone Number',
+    })
+    await user.clear(phoneInput)
+    await user.type(phoneInput, '+447911123456')
+
+    const bioInput = screen.getByRole('textbox', { name: 'Bio' })
+    await user.clear(bioInput)
+    await user.type(bioInput, 'Updated bio.')
+
+    await user.click(screen.getByRole('combobox', { name: 'Language' }))
+    await user.click(await screen.findByRole('option', { name: 'French' }))
+
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+    await screen.findByText('Profile updated.')
+
+    const patchCall = fetchMock.mock.calls.find(
+      ([url, options]) =>
+        (url as string).endsWith('/auth/me') &&
+        (options as RequestInit | undefined)?.method === 'PATCH',
+    )
+    const body = JSON.parse(patchCall?.[1]?.body as string)
+    expect(body.phone).toBe('+447911123456')
+    expect(body.bio).toBe('Updated bio.')
+    expect(body.language).toBe('fr')
   })
 })
