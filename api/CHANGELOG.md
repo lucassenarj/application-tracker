@@ -1,3 +1,10 @@
+# [api-v1.12.1](https://github.com/lucassenarj/application-tracker/compare/api-v1.12.0...api-v1.12.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* **application:** exclude future-dated status changes from Recent Activity ([65775a2](https://github.com/lucassenarj/application-tracker/commit/65775a2dd293443c632636ad519f95f75895addc))
+
 # [api-v1.12.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.11.0...api-v1.12.0) (2026-10-27)
 
 
