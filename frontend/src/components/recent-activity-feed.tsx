@@ -17,20 +17,44 @@ function getCompanyInitials(companyName: string): string {
     .toUpperCase()
 }
 
-function getAvatarGradient(status: ApplicationStatus): string {
+type StatusColorFamily = 'green' | 'orange' | 'red' | 'neutral'
+
+function getStatusColorFamily(status: ApplicationStatus): StatusColorFamily {
   switch (status) {
     case 'INTERVIEW_SCHEDULED':
     case 'OFFER':
     case 'OFFER_ACCEPTED':
-      return 'bg-gradient-to-br from-green-400 to-green-600'
+      return 'green'
     case 'WAITING_FEEDBACK':
-      return 'bg-gradient-to-br from-orange-400 to-orange-600'
+      return 'orange'
     case 'REJECTED':
     case 'OFFER_DECLINED':
-      return 'bg-gradient-to-br from-red-400 to-red-600'
+      return 'red'
     default:
-      return 'bg-gradient-to-br from-slate-400 to-slate-600'
+      return 'neutral'
   }
+}
+
+const AVATAR_GRADIENT_BY_FAMILY: Record<StatusColorFamily, string> = {
+  green: 'bg-gradient-to-br from-green-400 to-green-600',
+  orange: 'bg-gradient-to-br from-orange-400 to-orange-600',
+  red: 'bg-gradient-to-br from-red-400 to-red-600',
+  neutral: 'bg-gradient-to-br from-slate-400 to-slate-600',
+}
+
+const STATUS_TEXT_COLOR_BY_FAMILY: Record<StatusColorFamily, string> = {
+  green: 'text-green-700 dark:text-green-400',
+  orange: 'text-orange-700 dark:text-orange-400',
+  red: 'text-red-600 dark:text-red-400',
+  neutral: 'text-foreground',
+}
+
+function getAvatarGradient(status: ApplicationStatus): string {
+  return AVATAR_GRADIENT_BY_FAMILY[getStatusColorFamily(status)]
+}
+
+function getStatusTextColor(status: ApplicationStatus): string {
+  return STATUS_TEXT_COLOR_BY_FAMILY[getStatusColorFamily(status)]
 }
 
 export function RecentActivityFeed() {
@@ -42,14 +66,14 @@ export function RecentActivityFeed() {
   }
 
   return (
-    <Card>
+    <Card className="flex max-h-[380px] flex-col">
       <CardHeader>
         <CardTitle>Recent Activity</CardTitle>
         <CardDescription>
           Status changes across all your applications
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
         {activityQuery.isPending && (
           <div className="flex flex-col gap-2">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -85,7 +109,10 @@ export function RecentActivityFeed() {
                       <strong className="font-medium text-foreground">
                         {item.applicationTitle}
                       </strong>
-                      {` at ${item.companyName} moved to ${formatStatus(item.status)}`}
+                      {` at ${item.companyName} moved to `}
+                      <span className={getStatusTextColor(item.status)}>
+                        {formatStatus(item.status)}
+                      </span>
                     </p>
                     <span className="text-xs text-muted-foreground/70">
                       {formatRelativeTime(new Date(item.eventDate))}
