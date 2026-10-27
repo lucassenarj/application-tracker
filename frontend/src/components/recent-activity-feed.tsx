@@ -1,21 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { ApplicationStatus } from '@/lib/applications/applications-list'
 import { formatStatus } from '@/lib/dashboard/applications-list'
+import { getCompanyInitials } from '@/lib/dashboard/company-initials'
 import { recentActivityQueryOptions } from '@/lib/dashboard/recent-activity'
 import { formatRelativeTime } from '@/lib/relative-time'
-
-function getCompanyInitials(companyName: string): string {
-  return companyName
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((word) => word[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
-}
 
 type StatusColorFamily = 'green' | 'orange' | 'red' | 'neutral'
 
@@ -66,14 +57,11 @@ export function RecentActivityFeed() {
   }
 
   return (
-    <Card className="flex max-h-[380px] flex-col">
+    <Card className="flex h-full flex-col">
       <CardHeader>
         <CardTitle>Recent Activity</CardTitle>
-        <CardDescription>
-          Status changes across all your applications
-        </CardDescription>
       </CardHeader>
-      <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+      <CardContent className="thin-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
         {activityQuery.isPending && (
           <div className="flex flex-col gap-2">
             {Array.from({ length: 5 }).map((_, i) => (
