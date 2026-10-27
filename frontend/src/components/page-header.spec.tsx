@@ -45,4 +45,13 @@ describe('PageHeader', () => {
       await screen.findByRole('link', { name: 'Applications' }),
     ).toHaveAttribute('href', '/applications?page=1')
   })
+
+  it('renders a theme toggle button', async () => {
+    const queryClient = new QueryClient()
+    renderWithRouter(routeTree, queryClient, '/applications')
+
+    expect(
+      await screen.findByRole('button', { name: 'Toggle theme' }),
+    ).toBeInTheDocument()
+  })
 })

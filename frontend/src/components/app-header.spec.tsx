@@ -18,15 +18,12 @@ const dashboardRoute = createRoute({
 const routeTree = rootRoute.addChildren([dashboardRoute])
 
 describe('AppHeader', () => {
-  it('renders the sidebar trigger on the left and the theme toggle on the right', async () => {
+  it('renders a mobile-only sidebar trigger', async () => {
     const queryClient = new QueryClient()
     renderWithRouter(routeTree, queryClient, '/dashboard')
 
     expect(
       await screen.findByRole('button', { name: 'Toggle Sidebar' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Toggle theme' }),
     ).toBeInTheDocument()
   })
 })
