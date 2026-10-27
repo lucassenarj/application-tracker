@@ -18,10 +18,12 @@ describe('PrismaApplicationRepository', () => {
 
   afterAll(async () => {
     await prisma.statusChange.deleteMany({
-      where: { application: { userId: { in: ['user-1', 'user-2'] } } },
+      where: {
+        application: { company: { name: { in: ['Acme Corp', 'Globex Inc'] } } },
+      },
     });
     await prisma.application.deleteMany({
-      where: { userId: { in: ['user-1', 'user-2'] } },
+      where: { company: { name: { in: ['Acme Corp', 'Globex Inc'] } } },
     });
     await prisma.company.deleteMany({
       where: { name: { in: ['Acme Corp', 'Globex Inc'] } },
@@ -31,10 +33,12 @@ describe('PrismaApplicationRepository', () => {
 
   beforeEach(async () => {
     await prisma.statusChange.deleteMany({
-      where: { application: { userId: { in: ['user-1', 'user-2'] } } },
+      where: {
+        application: { company: { name: { in: ['Acme Corp', 'Globex Inc'] } } },
+      },
     });
     await prisma.application.deleteMany({
-      where: { userId: { in: ['user-1', 'user-2'] } },
+      where: { company: { name: { in: ['Acme Corp', 'Globex Inc'] } } },
     });
     await prisma.company.deleteMany({
       where: { name: { in: ['Acme Corp', 'Globex Inc'] } },
@@ -556,6 +560,155 @@ describe('PrismaApplicationRepository', () => {
         await applicationRepository.countByUserGroupedByStatus('user-1');
 
       expect(counts.APPLIED).toBe(1);
+    });
+  });
+
+  describe('findRecentStatusChangesByUser', () => {
+    it('returns the application title, company name, status, and event date, ordered by most recent eventDate first', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const application = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(application);
+
+      const inOneDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const updatedApplication = application.changeStatus({
+        status: 'WAITING_FEEDBACK',
+        eventDate: inOneDay,
+      });
+      await applicationRepository.save(updatedApplication);
+
+      const activity =
+        await applicationRepository.findRecentStatusChangesByUser('user-1', 10);
+
+      expect(activity).toHaveLength(2);
+      expect(activity[0]).toMatchObject({
+        applicationId: application.id,
+        applicationTitle: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        status: 'WAITING_FEEDBACK',
+        eventDate: inOneDay,
+      });
+    });
+
+    it('does not include status changes belonging to a different user', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const otherUserApplication = Application.create({
+        title: 'Should not appear',
+        companyId: company.id,
+        userId: 'user-2',
+      });
+      await applicationRepository.save(otherUserApplication);
+
+      const activity =
+        await applicationRepository.findRecentStatusChangesByUser('user-1', 10);
+
+      expect(activity).toEqual([]);
+    });
+  });
+
+  describe('findCreatedDatesByUser', () => {
+    it("returns the createdAt timestamps of the user's applications", async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const application = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(application);
+
+      const dates =
+        await applicationRepository.findCreatedDatesByUser('user-1');
+
+      expect(dates).toEqual([application.createdAt]);
+    });
+
+    it('does not include applications belonging to a different user', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const otherUserApplication = Application.create({
+        title: 'Should not appear',
+        companyId: company.id,
+        userId: 'user-2',
+      });
+      await applicationRepository.save(otherUserApplication);
+
+      const dates =
+        await applicationRepository.findCreatedDatesByUser('user-1');
+
+      expect(dates).toEqual([]);
+    });
+  });
+
+  describe('findUpcomingInterviewsByUser', () => {
+    it('returns scheduled interviews in the future, ordered by soonest first', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const application = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(application);
+
+      const eventDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      const updatedApplication = application.changeStatus({
+        status: 'INTERVIEW_SCHEDULED',
+        eventDate,
+        interviewCategory: 'TECHNICAL',
+      });
+      await applicationRepository.save(updatedApplication);
+
+      const interviews =
+        await applicationRepository.findUpcomingInterviewsByUser(
+          'user-1',
+          new Date(),
+        );
+
+      expect(interviews).toHaveLength(1);
+      expect(interviews[0]).toMatchObject({
+        applicationId: application.id,
+        applicationTitle: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        eventDate,
+        interviewCategory: 'TECHNICAL',
+      });
+    });
+
+    it('does not include past interview dates or non-interview status changes', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const application = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(application);
+
+      const updatedApplication = application.changeStatus({
+        status: 'WAITING_FEEDBACK',
+        eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      });
+      await applicationRepository.save(updatedApplication);
+
+      const interviews =
+        await applicationRepository.findUpcomingInterviewsByUser(
+          'user-1',
+          new Date(),
+        );
+
+      expect(interviews).toEqual([]);
     });
   });
 });

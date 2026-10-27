@@ -13,7 +13,13 @@ import type {
   ApplicationWithCompanyName,
   FindAllByUserOptions,
   PaginatedResult,
+  RecentActivityItem,
+  UpcomingInterview,
 } from './domain/application.repository';
+import {
+  bucketApplicationsByWeek,
+  type ApplicationsOverTimeBucket,
+} from './domain/applications-over-time';
 import { Company } from './domain/company';
 import type { CompanyRepository } from './domain/company.repository';
 import { Contact, InterviewCategory } from './domain/status-change';
@@ -160,6 +166,32 @@ export class ApplicationsService {
       offers: sumByCategory(counts, 'OFFERS'),
       rejections: sumByCategory(counts, 'REJECTIONS'),
     };
+  }
+
+  async getRecentActivity(
+    userId: string,
+    limit = 10,
+  ): Promise<RecentActivityItem[]> {
+    return this.applicationRepository.findRecentStatusChangesByUser(
+      userId,
+      limit,
+    );
+  }
+
+  async getApplicationsOverTime(
+    userId: string,
+  ): Promise<ApplicationsOverTimeBucket[]> {
+    const createdDates =
+      await this.applicationRepository.findCreatedDatesByUser(userId);
+
+    return bucketApplicationsByWeek(createdDates, 12);
+  }
+
+  async getUpcomingInterviews(
+    userId: string,
+    now: Date = new Date(),
+  ): Promise<UpcomingInterview[]> {
+    return this.applicationRepository.findUpcomingInterviewsByUser(userId, now);
   }
 }
 
