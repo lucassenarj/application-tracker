@@ -208,4 +208,37 @@ describe('ApplicationsController', () => {
       });
     });
   });
+
+  describe('getInterviewsForMonth', () => {
+    it('returns interviews within the given month for the authenticated user', async () => {
+      const mockRequest = { user: { id: 'user-1' } } as unknown as Request;
+
+      const application = await applicationsController.create(
+        { title: 'Senior Backend Engineer', companyName: 'Acme Corp' },
+        mockRequest,
+      );
+      await applicationsController.changeStatus(
+        application.id,
+        {
+          status: 'INTERVIEW_SCHEDULED',
+          eventDate: new Date(2026, 9, 15).toISOString(),
+          interviewCategory: 'TECHNICAL',
+        },
+        mockRequest,
+      );
+
+      const interviews = await applicationsController.getInterviewsForMonth(
+        { year: 2026, month: 10 },
+        mockRequest,
+      );
+
+      expect(interviews).toHaveLength(1);
+      expect(interviews[0]).toMatchObject({
+        applicationId: application.id,
+        applicationTitle: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        interviewCategory: 'TECHNICAL',
+      });
+    });
+  });
 });

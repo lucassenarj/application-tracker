@@ -12,6 +12,7 @@ import type {
   RecentActivityItem,
   UpcomingInterview,
 } from '../../domain/application.repository';
+import type { StatusChange } from '../../domain/status-change';
 import type { FakeCompanyRepository } from './company.repository.fake';
 
 export class FakeApplicationRepository implements ApplicationRepository {
@@ -142,41 +143,63 @@ export class FakeApplicationRepository implements ApplicationRepository {
     userId: string,
     now: Date,
   ): Promise<UpcomingInterview[]> {
+    return this.findInterviewsByUser(
+      userId,
+      (statusChange) =>
+        statusChange.status === 'INTERVIEW_SCHEDULED' &&
+        statusChange.eventDate.getTime() >= now.getTime(),
+    );
+  }
+
+  async findInterviewsByUserInRange(
+    userId: string,
+    start: Date,
+    end: Date,
+  ): Promise<UpcomingInterview[]> {
+    return this.findInterviewsByUser(
+      userId,
+      (statusChange) =>
+        statusChange.status === 'INTERVIEW_SCHEDULED' &&
+        statusChange.eventDate.getTime() >= start.getTime() &&
+        statusChange.eventDate.getTime() < end.getTime(),
+    );
+  }
+
+  private async findInterviewsByUser(
+    userId: string,
+    matchesStatusChange: (statusChange: StatusChange) => boolean,
+  ): Promise<UpcomingInterview[]> {
     const matching = [...this.applications.values()].filter(
       (a) => a.userId === userId,
     );
 
-    const items = await Promise.all(
-      matching.flatMap((application) =>
-        application.statusHistory
-          .filter(
-            (statusChange) =>
-              statusChange.status === 'INTERVIEW_SCHEDULED' &&
-              statusChange.eventDate.getTime() >= now.getTime(),
-          )
-          .map(async (statusChange) => {
-            const company = await this.companyRepository.findById(
-              application.companyId,
-            );
+    const itemsByApplication = await Promise.all(
+      matching.map(async (application) => {
+        const company = await this.companyRepository.findById(
+          application.companyId,
+        );
 
-            if (!company) {
-              throw new Error(
-                `No company found for id ${application.companyId} — test setup likely forgot to save it`,
-              );
-            }
+        if (!company) {
+          throw new Error(
+            `No company found for id ${application.companyId} — test setup likely forgot to save it`,
+          );
+        }
 
-            return {
-              statusChangeId: statusChange.id,
-              applicationId: application.id,
-              applicationTitle: application.title,
-              companyName: company.name,
-              eventDate: statusChange.eventDate,
-              interviewCategory: statusChange.interviewCategory,
-            };
-          }),
-      ),
+        return application.statusHistory
+          .filter(matchesStatusChange)
+          .map((statusChange) => ({
+            statusChangeId: statusChange.id,
+            applicationId: application.id,
+            applicationTitle: application.title,
+            companyName: company.name,
+            eventDate: statusChange.eventDate,
+            interviewCategory: statusChange.interviewCategory,
+          }));
+      }),
     );
 
-    return items.sort((a, b) => a.eventDate.getTime() - b.eventDate.getTime());
+    return itemsByApplication
+      .flat()
+      .sort((a, b) => a.eventDate.getTime() - b.eventDate.getTime());
   }
 }

@@ -22,6 +22,7 @@ import {
 } from './domain/applications-over-time';
 import { Company } from './domain/company';
 import type { CompanyRepository } from './domain/company.repository';
+import { getMonthDateRange } from './domain/month-date-range';
 import { Contact, InterviewCategory } from './domain/status-change';
 
 export interface ApplicationStats {
@@ -194,6 +195,19 @@ export class ApplicationsService {
     now: Date = new Date(),
   ): Promise<UpcomingInterview[]> {
     return this.applicationRepository.findUpcomingInterviewsByUser(userId, now);
+  }
+
+  async getInterviewsForMonth(
+    userId: string,
+    year: number,
+    month: number,
+  ): Promise<UpcomingInterview[]> {
+    const { start, end } = getMonthDateRange(year, month);
+    return this.applicationRepository.findInterviewsByUserInRange(
+      userId,
+      start,
+      end,
+    );
   }
 }
 
