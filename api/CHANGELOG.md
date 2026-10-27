@@ -1,3 +1,10 @@
+# [api-v1.12.3](https://github.com/lucassenarj/application-tracker/compare/api-v1.12.2...api-v1.12.3) (2026-10-27)
+
+
+### Bug Fixes
+
+* **identity:** bind CSRF tokens to the access token so refresh requests pass validation ([3b3dbd0](https://github.com/lucassenarj/application-tracker/commit/3b3dbd02272ffee91f5643637ce3d0eb148d2a67))
+
 # [api-v1.12.2](https://github.com/lucassenarj/application-tracker/compare/api-v1.12.1...api-v1.12.2) (2026-10-27)
 
 
