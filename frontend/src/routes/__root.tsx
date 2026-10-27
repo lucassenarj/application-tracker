@@ -6,6 +6,7 @@ import {
   createRootRouteWithContext,
 } from '@tanstack/react-router'
 import { AnimatedBackground } from '@/components/animated-background'
+import { ConsentBanner } from '@/components/consent-banner'
 
 interface RouterContext {
   queryClient: QueryClient
@@ -26,6 +27,7 @@ function RootLayout() {
       <main className="flex-1">
         <Outlet />
       </main>
+      <ConsentBanner />
       <ReactQueryDevtools initialIsOpen={false} />
     </div>
   )
