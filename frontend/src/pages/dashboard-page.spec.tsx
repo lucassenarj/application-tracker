@@ -32,25 +32,45 @@ describe('DashboardPage', () => {
   let queryClient: QueryClient
   const fetchMock = vi.fn()
 
+  function mockDashboardFetch(
+    overrides: {
+      stats?: () => Promise<unknown>
+      applications?: () => Promise<unknown>
+      recentActivity?: () => Promise<unknown>
+    } = {},
+  ) {
+    const defaultStats = () =>
+      Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({ total: 0, inProgress: 0, offers: 0, rejections: 0 }),
+      })
+    const defaultApplications = () =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ items: [], total: 0 }),
+      })
+    const defaultRecentActivity = () =>
+      Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
+
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/applications/stats')) {
+        return (overrides.stats ?? defaultStats)()
+      }
+      if (url.endsWith('/applications/recent-activity')) {
+        return (overrides.recentActivity ?? defaultRecentActivity)()
+      }
+      return (overrides.applications ?? defaultApplications)()
+    })
+  }
+
   beforeEach(() => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
     vi.stubEnv('VITE_API_URL', 'https://api.example.com')
     fetchMock.mockReset()
-    fetchMock.mockImplementation((url: string) => {
-      if (url.endsWith('/applications/stats')) {
-        return Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({ total: 0, inProgress: 0, offers: 0, rejections: 0 }),
-        })
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ items: [], total: 0 }),
-      })
-    })
+    mockDashboardFetch()
     vi.stubGlobal('fetch', fetchMock)
   })
 
@@ -61,15 +81,7 @@ describe('DashboardPage', () => {
 
   describe('summary cards', () => {
     it('renders loading skeletons while stats are pending', async () => {
-      fetchMock.mockImplementation((url: string) => {
-        if (url.endsWith('/applications/stats')) {
-          return new Promise(() => {})
-        }
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ items: [], total: 0 }),
-        })
-      })
+      mockDashboardFetch({ stats: () => new Promise(() => {}) })
 
       const { container } = renderWithRouter(routeTree, queryClient, '/dashboard')
 
@@ -81,18 +93,13 @@ describe('DashboardPage', () => {
     })
 
     it('renders the four summary cards with the loaded stats values', async () => {
-      fetchMock.mockImplementation((url: string) => {
-        if (url.endsWith('/applications/stats')) {
-          return Promise.resolve({
+      mockDashboardFetch({
+        stats: () =>
+          Promise.resolve({
             ok: true,
             json: () =>
               Promise.resolve({ total: 12, inProgress: 5, offers: 2, rejections: 3 }),
-          })
-        }
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ items: [], total: 0 }),
-        })
+          }),
       })
 
       renderWithRouter(routeTree, queryClient, '/dashboard')
@@ -100,41 +107,32 @@ describe('DashboardPage', () => {
       expect(await screen.findByText('Total')).toBeInTheDocument()
       expect(screen.getByTestId('stat-value-total')).toHaveTextContent('12')
       expect(
-        screen.getByText('In Progress', { selector: '[data-slot="card-title"]' }),
+        screen.getByText('In Progress', { selector: 'p' }),
       ).toBeInTheDocument()
       expect(screen.getByTestId('stat-value-inProgress')).toHaveTextContent('5')
-      expect(
-        screen.getByText('Offers', { selector: '[data-slot="card-title"]' }),
-      ).toBeInTheDocument()
+      expect(screen.getByText('Offers', { selector: 'p' })).toBeInTheDocument()
       expect(screen.getByTestId('stat-value-offers')).toHaveTextContent('2')
       expect(
-        screen.getByText('Rejections', { selector: '[data-slot="card-title"]' }),
+        screen.getByText('Rejections', { selector: 'p' }),
       ).toBeInTheDocument()
       expect(screen.getByTestId('stat-value-rejections')).toHaveTextContent('3')
     })
 
     it('clicking a category card navigates to the Applications list filtered by that category', async () => {
       const user = userEvent.setup()
-      fetchMock.mockImplementation((url: string) => {
-        if (url.endsWith('/applications/stats')) {
-          return Promise.resolve({
+      mockDashboardFetch({
+        stats: () =>
+          Promise.resolve({
             ok: true,
             json: () =>
               Promise.resolve({ total: 12, inProgress: 5, offers: 2, rejections: 3 }),
-          })
-        }
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ items: [], total: 0 }),
-        })
+          }),
       })
 
       const { router } = renderWithRouter(routeTree, queryClient, '/dashboard')
 
       await user.click(
-        await screen.findByText('In Progress', {
-          selector: '[data-slot="card-title"]',
-        }),
+        await screen.findByText('In Progress', { selector: 'p' }),
       )
 
       expect(await screen.findByText('Applications page')).toBeInTheDocument()
@@ -146,18 +144,13 @@ describe('DashboardPage', () => {
 
     it('clicking the Total card navigates to the Applications list with no category filter', async () => {
       const user = userEvent.setup()
-      fetchMock.mockImplementation((url: string) => {
-        if (url.endsWith('/applications/stats')) {
-          return Promise.resolve({
+      mockDashboardFetch({
+        stats: () =>
+          Promise.resolve({
             ok: true,
             json: () =>
               Promise.resolve({ total: 12, inProgress: 5, offers: 2, rejections: 3 }),
-          })
-        }
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ items: [], total: 0 }),
-        })
+          }),
       })
 
       const { router } = renderWithRouter(routeTree, queryClient, '/dashboard')
@@ -169,18 +162,13 @@ describe('DashboardPage', () => {
     })
 
     it('shows an error message when the stats request fails', async () => {
-      fetchMock.mockImplementation((url: string) => {
-        if (url.endsWith('/applications/stats')) {
-          return Promise.resolve({
+      mockDashboardFetch({
+        stats: () =>
+          Promise.resolve({
             ok: false,
             status: 500,
             json: () => Promise.resolve({ message: 'Internal server error' }),
-          })
-        }
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ items: [], total: 0 }),
-        })
+          }),
       })
 
       renderWithRouter(routeTree, queryClient, '/dashboard')
@@ -193,16 +181,7 @@ describe('DashboardPage', () => {
 
   describe('latest applications list', () => {
     it('renders loading skeletons while pending', async () => {
-      fetchMock.mockImplementation((url: string) => {
-        if (url.endsWith('/applications/stats')) {
-          return Promise.resolve({
-            ok: true,
-            json: () =>
-              Promise.resolve({ total: 0, inProgress: 0, offers: 0, rejections: 0 }),
-          })
-        }
-        return new Promise(() => {})
-      })
+      mockDashboardFetch({ applications: () => new Promise(() => {}) })
 
       const { container } = renderWithRouter(routeTree, queryClient, '/dashboard')
 
@@ -224,18 +203,12 @@ describe('DashboardPage', () => {
           updatedAt: '2026-02-01T10:00:00.000Z',
         }),
       ]
-      fetchMock.mockImplementation((url: string) => {
-        if (url.endsWith('/applications/stats')) {
-          return Promise.resolve({
+      mockDashboardFetch({
+        applications: () =>
+          Promise.resolve({
             ok: true,
-            json: () =>
-              Promise.resolve({ total: 0, inProgress: 0, offers: 0, rejections: 0 }),
-          })
-        }
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ items, total: items.length }),
-        })
+            json: () => Promise.resolve({ items, total: items.length }),
+          }),
       })
 
       renderWithRouter(routeTree, queryClient, '/dashboard')
@@ -263,38 +236,20 @@ describe('DashboardPage', () => {
       ).toBeInTheDocument()
     })
     it('shows "No applications yet." when the list is empty', async () => {
-      fetchMock.mockImplementation((url: string) => {
-        if (url.endsWith('/applications/stats')) {
-          return Promise.resolve({
-            ok: true,
-            json: () =>
-              Promise.resolve({ total: 0, inProgress: 0, offers: 0, rejections: 0 }),
-          })
-        }
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ items: [], total: 0 }),
-        })
-      })
+      mockDashboardFetch()
 
       renderWithRouter(routeTree, queryClient, '/dashboard')
 
       expect(await screen.findByText('No applications yet.')).toBeInTheDocument()
     })
     it('shows an error message when the applications request fails', async () => {
-      fetchMock.mockImplementation((url: string) => {
-        if (url.endsWith('/applications/stats')) {
-          return Promise.resolve({
-            ok: true,
-            json: () =>
-              Promise.resolve({ total: 0, inProgress: 0, offers: 0, rejections: 0 }),
-          })
-        }
-        return Promise.resolve({
-          ok: false,
-          status: 500,
-          json: () => Promise.resolve({ message: 'Internal server error' }),
-        })
+      mockDashboardFetch({
+        applications: () =>
+          Promise.resolve({
+            ok: false,
+            status: 500,
+            json: () => Promise.resolve({ message: 'Internal server error' }),
+          }),
       })
 
       renderWithRouter(routeTree, queryClient, '/dashboard')
@@ -310,18 +265,12 @@ describe('DashboardPage', () => {
   it("clicking an application row navigates to its detail page", async () => {
     const user = userEvent.setup()
     const items = [buildApplicationListItem({ id: 'abc123' })]
-    fetchMock.mockImplementation((url: string) => {
-      if (url.endsWith('/applications/stats')) {
-        return Promise.resolve({
+    mockDashboardFetch({
+      applications: () =>
+        Promise.resolve({
           ok: true,
-          json: () =>
-            Promise.resolve({ total: 0, inProgress: 0, offers: 0, rejections: 0 }),
-        })
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ items, total: items.length }),
-      })
+          json: () => Promise.resolve({ items, total: items.length }),
+        }),
     })
 
     renderWithRouter(routeTree, queryClient, '/dashboard')
@@ -339,5 +288,4 @@ describe('DashboardPage', () => {
     const link = await screen.findByRole('link', { name: 'See more' })
     expect(link).toHaveAttribute('href', '/applications?page=1')
   })
-
 })

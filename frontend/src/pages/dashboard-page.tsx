@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { CategoryProgressBars } from '@/components/category-progress-bars'
 import { NewApplicationDialog } from '@/components/new-application-dialog'
+import { RecentActivityFeed } from '@/components/recent-activity-feed'
 import { StatusDonutChart } from '@/components/status-donut-chart'
 import { TiltCard } from '@/components/tilt-card'
 import { Badge } from '@/components/ui/badge'
@@ -124,9 +125,9 @@ export function DashboardPage() {
                   >
                     <CardContent className="flex items-center justify-between">
                       <div className="flex flex-col gap-1">
-                        <CardTitle className="text-[13px] font-medium uppercase tracking-[0.5px] text-muted-foreground">
+                        <p className="text-[13px] font-medium uppercase tracking-[0.5px] text-muted-foreground">
                           {label}
-                        </CardTitle>
+                        </p>
                         <span
                           data-testid={`stat-value-${key}`}
                           className="text-3xl font-mono font-medium"
@@ -146,80 +147,83 @@ export function DashboardPage() {
             )}
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Latest Applications</CardTitle>
-            <CardDescription>Your most recently updated applications</CardDescription>
-          </div>
-          <Link
-            to="/applications"
-            search={{ page: 1 }}
-            className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
-          >
-            See more
-          </Link>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {applicationsQuery.isPending && (
-            <div className="flex flex-col gap-2">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Latest Applications</CardTitle>
+              <CardDescription>Your most recently updated applications</CardDescription>
             </div>
-          )}
+            <Link
+              to="/applications"
+              search={{ page: 1 }}
+              className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+            >
+              See more
+            </Link>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {applicationsQuery.isPending && (
+              <div className="flex flex-col gap-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
+                ))}
+              </div>
+            )}
 
-          {applicationsQuery.isError && (
-            <p className="text-sm text-destructive">
-              Couldn't load your applications. Try refreshing the page.
-            </p>
-          )}
+            {applicationsQuery.isError && (
+              <p className="text-sm text-destructive">
+                Couldn't load your applications. Try refreshing the page.
+              </p>
+            )}
 
-          {applicationsQuery.isSuccess &&
-            (applicationsQuery.data.items.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No applications yet.</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Updated</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {applicationsQuery.data.items.map((item) => {
-                    const badgeStyle = getStatusBadgeStyle(item.currentStatus)
-                    return (
-                      <TableRow
-                        key={item.id}
-                        className="cursor-pointer"
-                        onClick={() => goToDetail(item.id)}
-                      >
-                        <TableCell className="font-medium text-foreground">
-                          {item.title}
-                        </TableCell>
-                        <TableCell>{item.companyName}</TableCell>
-                        <TableCell>
-                          {formatRelativeTime(new Date(item.updatedAt))}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={badgeStyle.variant}
-                            className={badgeStyle.className}
-                          >
-                            {formatStatus(item.currentStatus)}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            ))}
-        </CardContent>
-      </Card>
+            {applicationsQuery.isSuccess &&
+              (applicationsQuery.data.items.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No applications yet.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Updated</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {applicationsQuery.data.items.map((item) => {
+                      const badgeStyle = getStatusBadgeStyle(item.currentStatus)
+                      return (
+                        <TableRow
+                          key={item.id}
+                          className="cursor-pointer"
+                          onClick={() => goToDetail(item.id)}
+                        >
+                          <TableCell className="font-medium text-foreground">
+                            {item.title}
+                          </TableCell>
+                          <TableCell>{item.companyName}</TableCell>
+                          <TableCell>
+                            {formatRelativeTime(new Date(item.updatedAt))}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={badgeStyle.variant}
+                              className={badgeStyle.className}
+                            >
+                              {formatStatus(item.currentStatus)}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              ))}
+          </CardContent>
+        </Card>
+        <RecentActivityFeed />
+      </div>
 
       {statsQuery.isSuccess && (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
