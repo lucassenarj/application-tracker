@@ -498,22 +498,50 @@ describe('ApplicationsService', () => {
         userId: 'user-1',
       });
 
-      const inOneDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      const inTwoDays = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+      const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
       await applicationService.changeStatus(older.id, 'user-1', {
         status: 'WAITING_FEEDBACK',
-        eventDate: inOneDay,
+        eventDate: twoDaysAgo,
       });
       await applicationService.changeStatus(newer.id, 'user-1', {
         status: 'WAITING_FEEDBACK',
-        eventDate: inTwoDays,
+        eventDate: oneDayAgo,
       });
 
       const activity = await applicationService.getRecentActivity('user-1');
 
-      expect(activity[0].applicationId).toBe(newer.id);
-      expect(activity[0].eventDate).toEqual(inTwoDays);
+      const newerIndex = activity.findIndex(
+        (item) =>
+          item.applicationId === newer.id && item.status === 'WAITING_FEEDBACK',
+      );
+      const olderIndex = activity.findIndex(
+        (item) =>
+          item.applicationId === older.id && item.status === 'WAITING_FEEDBACK',
+      );
+
+      expect(newerIndex).toBeLessThan(olderIndex);
+    });
+
+    it('excludes status changes with a future eventDate', async () => {
+      const application = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      const inThreeWeeks = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000);
+      await applicationService.changeStatus(application.id, 'user-1', {
+        status: 'INTERVIEW_SCHEDULED',
+        eventDate: inThreeWeeks,
+        interviewCategory: 'TECHNICAL',
+      });
+
+      const activity = await applicationService.getRecentActivity('user-1');
+
+      expect(activity).toHaveLength(1);
+      expect(activity[0].status).toBe('APPLIED');
     });
 
     it('does not include status changes belonging to a different user', async () => {

@@ -93,6 +93,7 @@ export class FakeApplicationRepository implements ApplicationRepository {
   async findRecentStatusChangesByUser(
     userId: string,
     limit: number,
+    now: Date,
   ): Promise<RecentActivityItem[]> {
     const matching = [...this.applications.values()].filter(
       (a) => a.userId === userId,
@@ -124,6 +125,7 @@ export class FakeApplicationRepository implements ApplicationRepository {
     );
 
     return items
+      .filter((item) => item.eventDate.getTime() <= now.getTime())
       .sort((a, b) => b.eventDate.getTime() - a.eventDate.getTime())
       .slice(0, limit);
   }
