@@ -564,7 +564,7 @@ describe('PrismaApplicationRepository', () => {
   });
 
   describe('findRecentStatusChangesByUser', () => {
-    it('returns the application title, company name, status, and event date, ordered by most recent eventDate first', async () => {
+    it('returns the application title, company name, status, and event date for each status change', async () => {
       const company = Company.create({ name: 'Acme Corp' });
       await companyRepository.save(company);
 
@@ -575,24 +575,112 @@ describe('PrismaApplicationRepository', () => {
       });
       await applicationRepository.save(application);
 
-      const inOneDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
       const updatedApplication = application.changeStatus({
         status: 'WAITING_FEEDBACK',
-        eventDate: inOneDay,
+        eventDate: oneHourAgo,
       });
       await applicationRepository.save(updatedApplication);
 
       const activity =
-        await applicationRepository.findRecentStatusChangesByUser('user-1', 10);
+        await applicationRepository.findRecentStatusChangesByUser(
+          'user-1',
+          10,
+          new Date(),
+        );
 
       expect(activity).toHaveLength(2);
-      expect(activity[0]).toMatchObject({
-        applicationId: application.id,
-        applicationTitle: 'Senior Backend Engineer',
-        companyName: 'Acme Corp',
-        status: 'WAITING_FEEDBACK',
-        eventDate: inOneDay,
+      expect(activity).toContainEqual(
+        expect.objectContaining({
+          applicationId: application.id,
+          applicationTitle: 'Senior Backend Engineer',
+          companyName: 'Acme Corp',
+          status: 'WAITING_FEEDBACK',
+          eventDate: oneHourAgo,
+        }),
+      );
+    });
+
+    it('orders items by most recent eventDate first', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const olderApplication = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
       });
+      await applicationRepository.save(olderApplication);
+
+      const newerApplication = Application.create({
+        title: 'Staff Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(newerApplication);
+
+      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+      await applicationRepository.save(
+        olderApplication.changeStatus({
+          status: 'WAITING_FEEDBACK',
+          eventDate: twoHoursAgo,
+        }),
+      );
+      await applicationRepository.save(
+        newerApplication.changeStatus({
+          status: 'WAITING_FEEDBACK',
+          eventDate: oneHourAgo,
+        }),
+      );
+
+      const activity =
+        await applicationRepository.findRecentStatusChangesByUser(
+          'user-1',
+          10,
+          new Date(),
+        );
+
+      const newerIndex = activity.findIndex(
+        (item) =>
+          item.applicationId === newerApplication.id &&
+          item.status === 'WAITING_FEEDBACK',
+      );
+      const olderIndex = activity.findIndex(
+        (item) =>
+          item.applicationId === olderApplication.id &&
+          item.status === 'WAITING_FEEDBACK',
+      );
+
+      expect(newerIndex).toBeLessThan(olderIndex);
+    });
+
+    it('excludes status changes with a future eventDate', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      const application = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      const updatedApplication = application.changeStatus({
+        status: 'INTERVIEW_SCHEDULED',
+        eventDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
+        interviewCategory: 'TECHNICAL',
+      });
+      await applicationRepository.save(updatedApplication);
+
+      const activity =
+        await applicationRepository.findRecentStatusChangesByUser(
+          'user-1',
+          10,
+          new Date(),
+        );
+
+      expect(activity).toHaveLength(1);
+      expect(activity[0].status).toBe('APPLIED');
     });
 
     it('does not include status changes belonging to a different user', async () => {
@@ -607,7 +695,11 @@ describe('PrismaApplicationRepository', () => {
       await applicationRepository.save(otherUserApplication);
 
       const activity =
-        await applicationRepository.findRecentStatusChangesByUser('user-1', 10);
+        await applicationRepository.findRecentStatusChangesByUser(
+          'user-1',
+          10,
+          new Date(),
+        );
 
       expect(activity).toEqual([]);
     });

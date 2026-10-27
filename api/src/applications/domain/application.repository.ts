@@ -52,6 +52,7 @@ export interface ApplicationRepository {
   findRecentStatusChangesByUser(
     userId: string,
     limit: number,
+    now: Date,
   ): Promise<RecentActivityItem[]>;
   findCreatedDatesByUser(userId: string): Promise<Date[]>;
   findUpcomingInterviewsByUser(
