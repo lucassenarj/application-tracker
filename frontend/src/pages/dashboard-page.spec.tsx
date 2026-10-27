@@ -38,6 +38,7 @@ describe('DashboardPage', () => {
       applications?: () => Promise<unknown>
       recentActivity?: () => Promise<unknown>
       overTime?: () => Promise<unknown>
+      upcomingInterviews?: () => Promise<unknown>
     } = {},
   ) {
     const defaultStats = () =>
@@ -55,6 +56,8 @@ describe('DashboardPage', () => {
       Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
     const defaultOverTime = () =>
       Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
+    const defaultUpcomingInterviews = () =>
+      Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
 
     fetchMock.mockImplementation((url: string) => {
       if (url.endsWith('/applications/stats')) {
@@ -65,6 +68,9 @@ describe('DashboardPage', () => {
       }
       if (url.endsWith('/applications/over-time')) {
         return (overrides.overTime ?? defaultOverTime)()
+      }
+      if (url.endsWith('/applications/interviews/upcoming')) {
+        return (overrides.upcomingInterviews ?? defaultUpcomingInterviews)()
       }
       return (overrides.applications ?? defaultApplications)()
     })

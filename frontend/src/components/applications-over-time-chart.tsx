@@ -25,7 +25,7 @@ export function ApplicationsOverTimeChart() {
   const ceiling = ticks[0]
 
   return (
-    <Card className="flex max-h-[380px] flex-col">
+    <Card className="flex h-[420px] flex-col">
       <CardHeader>
         <CardTitle>Applications Over Time</CardTitle>
         <CardDescription>

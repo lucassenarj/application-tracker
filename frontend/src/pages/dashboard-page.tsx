@@ -8,11 +8,12 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { ApplicationsOverTimeChart } from '@/components/applications-over-time-chart'
-import { CategoryProgressBars } from '@/components/category-progress-bars'
 import { NewApplicationDialog } from '@/components/new-application-dialog'
 import { RecentActivityFeed } from '@/components/recent-activity-feed'
-import { StatusDonutChart } from '@/components/status-donut-chart'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { TiltCard } from '@/components/tilt-card'
+import { UpcomingInterviewsCalendar } from '@/components/upcoming-interviews-calendar'
+import { UpcomingInterviewsList } from '@/components/upcoming-interviews-list'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -89,7 +90,10 @@ export function DashboardPage() {
     <div className="flex flex-col gap-[30px]">
       <div className="flex items-center justify-between">
         <h1 className="text-[28px] font-heading font-semibold">Dashboard</h1>
-        <NewApplicationDialog />
+        <div className="flex items-center gap-[15px]">
+          <ThemeToggle />
+          <NewApplicationDialog />
+        </div>
       </div>
 
       {statsQuery.isError && (
@@ -148,8 +152,9 @@ export function DashboardPage() {
             )}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
-        <ApplicationsOverTimeChart />
+      <div className="grid grid-cols-1 gap-6 lg:h-[460px] lg:grid-cols-3">
+        <UpcomingInterviewsCalendar />
+        <UpcomingInterviewsList />
         <RecentActivityFeed />
       </div>
 
@@ -228,12 +233,7 @@ export function DashboardPage() {
         </CardContent>
       </Card>
 
-      {statsQuery.isSuccess && (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <StatusDonutChart stats={statsQuery.data} />
-          <CategoryProgressBars stats={statsQuery.data} />
-        </div>
-      )}
+      <ApplicationsOverTimeChart />
     </div>
   )
 }
