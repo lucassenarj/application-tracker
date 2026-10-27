@@ -1,3 +1,10 @@
+# [api-v1.12.2](https://github.com/lucassenarj/application-tracker/compare/api-v1.12.1...api-v1.12.2) (2026-10-27)
+
+
+### Bug Fixes
+
+* **application:** add a month-scoped interviews endpoint, including past interviews ([3ae4264](https://github.com/lucassenarj/application-tracker/commit/3ae4264e26ab23ffa291d5ca1906608dbd1f7a23))
+
 # [api-v1.12.1](https://github.com/lucassenarj/application-tracker/compare/api-v1.12.0...api-v1.12.1) (2026-10-27)
 
 
