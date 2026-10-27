@@ -59,4 +59,9 @@ export interface ApplicationRepository {
     userId: string,
     now: Date,
   ): Promise<UpcomingInterview[]>;
+  findInterviewsByUserInRange(
+    userId: string,
+    start: Date,
+    end: Date,
+  ): Promise<UpcomingInterview[]>;
 }

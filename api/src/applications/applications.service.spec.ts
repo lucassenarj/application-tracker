@@ -713,4 +713,94 @@ describe('ApplicationsService', () => {
       expect(interviews).toEqual([]);
     });
   });
+
+  describe('getInterviewsForMonth', () => {
+    let application: Application;
+
+    beforeEach(async () => {
+      application = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+    });
+
+    it('includes an interview scheduled within the given month', async () => {
+      const eventDate = new Date(2026, 9, 15);
+
+      const updatedApplication = await applicationService.changeStatus(
+        application.id,
+        'user-1',
+        {
+          status: 'INTERVIEW_SCHEDULED',
+          eventDate,
+          interviewCategory: 'TECHNICAL',
+        },
+      );
+
+      const interviews = await applicationService.getInterviewsForMonth(
+        'user-1',
+        2026,
+        10,
+      );
+
+      expect(interviews).toEqual([
+        {
+          statusChangeId: updatedApplication.statusHistory[1].id,
+          applicationId: application.id,
+          applicationTitle: 'Senior Backend Engineer',
+          companyName: 'Acme Corp',
+          eventDate,
+          interviewCategory: 'TECHNICAL',
+        },
+      ]);
+    });
+
+    it('excludes interviews outside the given month', async () => {
+      await applicationService.changeStatus(application.id, 'user-1', {
+        status: 'INTERVIEW_SCHEDULED',
+        eventDate: new Date(2026, 10, 1),
+        interviewCategory: 'TECHNICAL',
+      });
+
+      const interviews = await applicationService.getInterviewsForMonth(
+        'user-1',
+        2026,
+        10,
+      );
+
+      expect(interviews).toEqual([]);
+    });
+
+    it('includes interviews in the past, within the given month', async () => {
+      const pastEventDate = new Date(2020, 0, 15);
+
+      const updatedApplication = await applicationService.changeStatus(
+        application.id,
+        'user-1',
+        {
+          status: 'INTERVIEW_SCHEDULED',
+          eventDate: pastEventDate,
+          interviewCategory: 'NON_TECHNICAL',
+        },
+      );
+
+      const interviews = await applicationService.getInterviewsForMonth(
+        'user-1',
+        2020,
+        1,
+      );
+
+      expect(interviews).toEqual([
+        {
+          statusChangeId: updatedApplication.statusHistory[1].id,
+          applicationId: application.id,
+          applicationTitle: 'Senior Backend Engineer',
+          companyName: 'Acme Corp',
+          eventDate: pastEventDate,
+          interviewCategory: 'NON_TECHNICAL',
+        },
+      ]);
+    });
+  });
 });

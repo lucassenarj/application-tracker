@@ -197,11 +197,26 @@ export class PrismaApplicationRepository implements ApplicationRepository {
     userId: string,
     now: Date,
   ): Promise<UpcomingInterview[]> {
+    return this.findInterviewsByUser(userId, { gte: now });
+  }
+
+  async findInterviewsByUserInRange(
+    userId: string,
+    start: Date,
+    end: Date,
+  ): Promise<UpcomingInterview[]> {
+    return this.findInterviewsByUser(userId, { gte: start, lt: end });
+  }
+
+  private async findInterviewsByUser(
+    userId: string,
+    eventDateFilter: { gte: Date; lt?: Date },
+  ): Promise<UpcomingInterview[]> {
     const rows = await this.prisma.statusChange.findMany({
       where: {
         application: { userId },
         status: 'INTERVIEW_SCHEDULED',
-        eventDate: { gte: now },
+        eventDate: eventDateFilter,
       },
       orderBy: { eventDate: 'asc' },
       include: {
