@@ -1,5 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { ApplicationsService } from './applications.service';
+import type { Application } from './domain/application';
 import { FakeApplicationRepository } from './test-utils/fakes/application.repository.fake';
 import { FakeCompanyRepository } from './test-utils/fakes/company.repository.fake';
 
@@ -452,6 +453,236 @@ describe('ApplicationsService', () => {
         offers: 1,
         rejections: 1,
       });
+    });
+  });
+
+  describe('getRecentActivity', () => {
+    it('returns an empty array when the user has no status changes', async () => {
+      const activity = await applicationService.getRecentActivity(
+        'user-without-applications',
+      );
+
+      expect(activity).toEqual([]);
+    });
+
+    it('returns the application title, company name, status, and event date for each status change', async () => {
+      const application = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      const activity = await applicationService.getRecentActivity('user-1');
+
+      expect(activity).toEqual([
+        {
+          statusChangeId: application.statusHistory[0].id,
+          applicationId: application.id,
+          applicationTitle: 'Senior Backend Engineer',
+          companyName: 'Acme Corp',
+          status: 'APPLIED',
+          eventDate: application.statusHistory[0].eventDate,
+        },
+      ]);
+    });
+
+    it('orders items by most recent eventDate first', async () => {
+      const older = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+      const newer = await applicationService.create({
+        title: 'Staff Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      const inOneDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const inTwoDays = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+
+      await applicationService.changeStatus(older.id, 'user-1', {
+        status: 'WAITING_FEEDBACK',
+        eventDate: inOneDay,
+      });
+      await applicationService.changeStatus(newer.id, 'user-1', {
+        status: 'WAITING_FEEDBACK',
+        eventDate: inTwoDays,
+      });
+
+      const activity = await applicationService.getRecentActivity('user-1');
+
+      expect(activity[0].applicationId).toBe(newer.id);
+      expect(activity[0].eventDate).toEqual(inTwoDays);
+    });
+
+    it('does not include status changes belonging to a different user', async () => {
+      await applicationService.create({
+        title: 'Should not appear',
+        companyName: 'Acme Corp',
+        userId: 'user-2',
+      });
+
+      const activity = await applicationService.getRecentActivity('user-1');
+
+      expect(activity).toEqual([]);
+    });
+
+    it('limits results to the given limit', async () => {
+      for (let i = 0; i < 15; i++) {
+        await applicationService.create({
+          title: `Application ${i}`,
+          companyName: 'Acme Corp',
+          userId: 'user-1',
+        });
+      }
+
+      const activity = await applicationService.getRecentActivity('user-1', 5);
+
+      expect(activity).toHaveLength(5);
+    });
+  });
+
+  describe('getApplicationsOverTime', () => {
+    it("returns 12 weekly buckets based on the user's application createdAt dates", async () => {
+      await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      const buckets =
+        await applicationService.getApplicationsOverTime('user-1');
+
+      expect(buckets).toHaveLength(12);
+      expect(buckets.reduce((sum, b) => sum + b.count, 0)).toBe(1);
+    });
+
+    it('does not include applications belonging to a different user', async () => {
+      await applicationService.create({
+        title: 'Should not count',
+        companyName: 'Acme Corp',
+        userId: 'user-2',
+      });
+
+      const buckets =
+        await applicationService.getApplicationsOverTime('user-1');
+
+      expect(buckets.reduce((sum, b) => sum + b.count, 0)).toBe(0);
+    });
+  });
+
+  describe('getUpcomingInterviews', () => {
+    let application: Application;
+
+    beforeEach(async () => {
+      application = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+    });
+
+    it('includes application title, company name, event date, and interview category for a scheduled interview', async () => {
+      const eventDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      const updatedApplication = await applicationService.changeStatus(
+        application.id,
+        'user-1',
+        {
+          status: 'INTERVIEW_SCHEDULED',
+          eventDate,
+          interviewCategory: 'TECHNICAL',
+        },
+      );
+
+      const interviews =
+        await applicationService.getUpcomingInterviews('user-1');
+
+      expect(interviews).toEqual([
+        {
+          statusChangeId: updatedApplication.statusHistory[1].id,
+          applicationId: application.id,
+          applicationTitle: 'Senior Backend Engineer',
+          companyName: 'Acme Corp',
+          eventDate,
+          interviewCategory: 'TECHNICAL',
+        },
+      ]);
+    });
+
+    it('orders interviews by soonest eventDate first', async () => {
+      const later = await applicationService.create({
+        title: 'Staff Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      await applicationService.changeStatus(later.id, 'user-1', {
+        status: 'INTERVIEW_SCHEDULED',
+        eventDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        interviewCategory: 'TECHNICAL',
+      });
+      await applicationService.changeStatus(application.id, 'user-1', {
+        status: 'INTERVIEW_SCHEDULED',
+        eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        interviewCategory: 'NON_TECHNICAL',
+      });
+
+      const interviews =
+        await applicationService.getUpcomingInterviews('user-1');
+
+      expect(interviews.map((i) => i.applicationId)).toEqual([
+        application.id,
+        later.id,
+      ]);
+    });
+
+    it('does not include past interview dates', async () => {
+      await applicationService.changeStatus(application.id, 'user-1', {
+        status: 'INTERVIEW_SCHEDULED',
+        eventDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        interviewCategory: 'TECHNICAL',
+      });
+
+      const interviews =
+        await applicationService.getUpcomingInterviews('user-1');
+
+      expect(interviews).toEqual([]);
+    });
+
+    it('does not include status changes that are not INTERVIEW_SCHEDULED', async () => {
+      await applicationService.changeStatus(application.id, 'user-1', {
+        status: 'WAITING_FEEDBACK',
+        eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      });
+
+      const interviews =
+        await applicationService.getUpcomingInterviews('user-1');
+
+      expect(interviews).toEqual([]);
+    });
+
+    it('does not include interviews belonging to a different user', async () => {
+      const otherUsersApplication = await applicationService.create({
+        title: 'Should not appear',
+        companyName: 'Acme Corp',
+        userId: 'user-2',
+      });
+      await applicationService.changeStatus(
+        otherUsersApplication.id,
+        'user-2',
+        {
+          status: 'INTERVIEW_SCHEDULED',
+          eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          interviewCategory: 'TECHNICAL',
+        },
+      );
+
+      const interviews =
+        await applicationService.getUpcomingInterviews('user-1');
+
+      expect(interviews).toEqual([]);
     });
   });
 });
