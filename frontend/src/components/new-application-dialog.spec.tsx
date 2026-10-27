@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NewApplicationDialog } from '@/components/new-application-dialog'
 import { userQueryOptions } from '@/lib/auth/user-query'
+import { fetchMock } from '@/test-setup'
 
 function renderDialog(queryClient: QueryClient) {
   return render(
@@ -14,14 +15,11 @@ function renderDialog(queryClient: QueryClient) {
 
 describe('NewApplicationDialog', () => {
   let queryClient: QueryClient
-  const fetchMock = vi.fn()
 
   beforeEach(() => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
-    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
-    fetchMock.mockReset()
     fetchMock.mockImplementation((url: string) => {
       if (url.includes('/companies/search')) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
@@ -31,12 +29,6 @@ describe('NewApplicationDialog', () => {
         json: () => Promise.resolve({ id: '1' }),
       })
     })
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllEnvs()
-    vi.unstubAllGlobals()
   })
 
   it('renders the Add Application trigger button', () => {

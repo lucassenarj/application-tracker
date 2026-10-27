@@ -6,6 +6,7 @@ import { renderWithRouter } from '@/test-utils/render-with-router'
 import { DashboardPage } from '@/pages/dashboard-page'
 import { formatRelativeTime } from '@/lib/relative-time'
 import type { ApplicationListItem } from '@/lib/dashboard/applications-list'
+import { fetchMock } from '@/test-setup'
 
 const routeTree = buildRouteTree({
   '/dashboard': DashboardPage,
@@ -30,7 +31,6 @@ function buildApplicationListItem(
 
 describe('DashboardPage', () => {
   let queryClient: QueryClient
-  const fetchMock = vi.fn()
 
   function mockDashboardFetch(
     overrides: {
@@ -80,15 +80,7 @@ describe('DashboardPage', () => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
-    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
-    fetchMock.mockReset()
     mockDashboardFetch()
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllEnvs()
-    vi.unstubAllGlobals()
   })
 
   describe('summary cards', () => {

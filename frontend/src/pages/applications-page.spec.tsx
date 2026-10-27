@@ -8,6 +8,7 @@ import { applicationsSearchSchema } from '@/routes/_authenticated.applications'
 import { renderWithRouter } from '@/test-utils/render-with-router'
 import { formatRelativeTime } from '@/lib/relative-time'
 import type { ApplicationListItem } from '@/lib/applications/applications-list'
+import { fetchMock } from '@/test-setup'
 
 const rootRoute = createRootRoute()
 const authenticatedRoute = createRoute({
@@ -46,26 +47,17 @@ function buildApplicationListItem(
 
 describe('ApplicationsPage', () => {
   let queryClient: QueryClient
-  const fetchMock = vi.fn()
 
   beforeEach(() => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
-    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
-    fetchMock.mockReset()
     fetchMock.mockImplementation(() =>
       Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ items: [], total: 0 }),
       }),
     )
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllEnvs()
-    vi.unstubAllGlobals()
   })
 
   describe('table', () => {

@@ -5,6 +5,7 @@ import { createRootRoute, createRoute } from '@tanstack/react-router'
 import { ProfilePage } from '@/pages/profile-page'
 import { userQueryOptions, type User } from '@/lib/auth/user-query'
 import { renderWithRouter } from '@/test-utils/render-with-router'
+import { fetchMock } from '@/test-setup'
 
 const rootRoute = createRootRoute()
 const profileRoute = createRoute({
@@ -28,21 +29,12 @@ const fakeUser: User = {
 
 describe('ProfilePage', () => {
   let queryClient: QueryClient
-  const fetchMock = vi.fn()
 
   beforeEach(() => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
     queryClient.setQueryData(userQueryOptions.queryKey, fakeUser)
-    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
-    fetchMock.mockReset()
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllEnvs()
-    vi.unstubAllGlobals()
   })
 
   it('pre-fills the form with the current first name, last name, and shows the email as read-only', async () => {

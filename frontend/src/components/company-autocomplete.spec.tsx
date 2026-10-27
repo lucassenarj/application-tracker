@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { CompanyAutocomplete } from '@/components/company-autocomplete'
+import { fetchMock } from '@/test-setup'
 
 function ControlledWrapper({
   onChange,
@@ -23,7 +24,6 @@ function ControlledWrapper({
 
 describe('CompanyAutocomplete', () => {
   let queryClient: QueryClient
-  const fetchMock = vi.fn()
   const onChange = vi.fn()
 
   beforeEach(() => {
@@ -31,17 +31,9 @@ describe('CompanyAutocomplete', () => {
       defaultOptions: { queries: { retry: false } },
     })
     onChange.mockReset()
-    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
-    fetchMock.mockReset()
     fetchMock.mockImplementation(() =>
       Promise.resolve({ ok: true, json: () => Promise.resolve([]) }),
     )
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllEnvs()
-    vi.unstubAllGlobals()
   })
 
   it('renders suggestions returned by the search query', async () => {

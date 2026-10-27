@@ -4,6 +4,7 @@ import { buildRouteTree } from '@/test-utils/build-route-tree'
 import { renderWithRouter } from '@/test-utils/render-with-router'
 import { ApplicationsOverTimeChart } from '@/components/applications-over-time-chart'
 import { getChartTicks } from '@/lib/dashboard/chart-ticks'
+import { fetchMock } from '@/test-setup'
 
 const routeTree = buildRouteTree({
   '/': ApplicationsOverTimeChart,
@@ -11,23 +12,14 @@ const routeTree = buildRouteTree({
 
 describe('ApplicationsOverTimeChart', () => {
   let queryClient: QueryClient
-  const fetchMock = vi.fn()
 
   beforeEach(() => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
-    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
-    fetchMock.mockReset()
     fetchMock.mockImplementation(() =>
       Promise.resolve({ ok: true, json: () => Promise.resolve([]) }),
     )
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllEnvs()
-    vi.unstubAllGlobals()
   })
 
   it('renders loading skeletons while pending', async () => {

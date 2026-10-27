@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { buildRouteTree } from '@/test-utils/build-route-tree'
 import { renderWithRouter } from '@/test-utils/render-with-router'
 import { RegisterPage } from '@/pages/register-page'
+import { fetchMock } from '@/test-setup'
 
 const routeTree = buildRouteTree({
   '/register': RegisterPage,
@@ -13,21 +14,12 @@ const routeTree = buildRouteTree({
 
 describe('RegisterPage', () => {
   let queryClient: QueryClient
-  const fetchMock = vi.fn()
 
   beforeEach(() => {
     queryClient = new QueryClient()
-    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
-    fetchMock.mockReset()
     fetchMock.mockImplementation(() =>
       Promise.resolve({ ok: true, json: () => Promise.resolve({}) }),
     )
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllEnvs()
-    vi.unstubAllGlobals()
   })
 
   it('renders the email and password fields and a submit button', async () => {

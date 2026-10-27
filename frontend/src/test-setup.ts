@@ -8,3 +8,16 @@ window.matchMedia = vi.fn().mockImplementation((query: string) => ({
   addEventListener: vi.fn(),
   removeEventListener: vi.fn(),
 }))
+
+export const fetchMock = vi.fn()
+
+beforeEach(() => {
+  vi.stubEnv('VITE_API_URL', 'https://api.example.com')
+  fetchMock.mockReset()
+  vi.stubGlobal('fetch', fetchMock)
+})
+
+afterEach(() => {
+  vi.unstubAllEnvs()
+  vi.unstubAllGlobals()
+})

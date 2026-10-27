@@ -5,6 +5,7 @@ import { createRootRoute, createRoute } from '@tanstack/react-router'
 import { ApplicationDetailPage } from '@/pages/application-detail-page'
 import type { ApplicationDetail } from '@/lib/applications/application-detail'
 import { renderWithRouter } from '@/test-utils/render-with-router'
+import { fetchMock } from '@/test-setup'
 
 const rootRoute = createRootRoute()
 const authenticatedRoute = createRoute({
@@ -30,7 +31,6 @@ const routeTree = rootRoute.addChildren([
 
 describe('ApplicationDetailPage', () => {
   let queryClient: QueryClient
-  const fetchMock = vi.fn()
 
   const baseDetailResponse: ApplicationDetail = {
     id: 'abc123',
@@ -55,14 +55,6 @@ describe('ApplicationDetailPage', () => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
-    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
-    fetchMock.mockReset()
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllEnvs()
-    vi.unstubAllGlobals()
   })
 
   it('renders loading skeletons while the detail query is pending', async () => {
