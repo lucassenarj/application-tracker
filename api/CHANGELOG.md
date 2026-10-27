@@ -1,3 +1,11 @@
+# [api-v1.12.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.11.0...api-v1.12.0) (2026-10-27)
+
+
+### Features
+
+* **application:** add a Recent Activity status-change feed endpoint ([401224d](https://github.com/lucassenarj/application-tracker/commit/401224d12ce9f2548c7e290b4053cf82261ef38f))
+* **application:** add applications-over-time and upcoming-interviews endpoints ([fe0ba2f](https://github.com/lucassenarj/application-tracker/commit/fe0ba2fa5b344a1c4b83aaeb90e459ad07479b50))
+
 # [api-v1.11.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.10.0...api-v1.11.0) (2026-10-26)
 
 
