@@ -20,6 +20,22 @@ describe('apiFetch', () => {
     vi.unstubAllGlobals()
   })
 
+  function mockCsrfTokenAndAlwaysUnauthorized() {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/auth/csrf-token')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
+        })
+      }
+      return Promise.resolve({
+        ok: false,
+        status: 401,
+        json: () => Promise.resolve({ message: 'Unauthorized' }),
+      })
+    })
+  }
+
   describe('request construction', () => {
     it('prepends the configured base URL to the given path', async () => {
       await apiFetch('/applications')
@@ -165,6 +181,228 @@ describe('apiFetch', () => {
         (url as string).endsWith('/auth/csrf-token'),
       )
       expect(csrfTokenCalls).toHaveLength(1)
+    })
+  })
+
+  describe('token refresh', () => {
+    it('retries the original request after a successful refresh, when the first attempt returns 401', async () => {
+      let applicationsCallCount = 0
+      fetchMock.mockImplementation((url: string) => {
+        if (url.endsWith('/applications/1')) {
+          applicationsCallCount += 1
+          if (applicationsCallCount === 1) {
+            return Promise.resolve({
+              ok: false,
+              status: 401,
+              json: () => Promise.resolve({ message: 'Unauthorized' }),
+            })
+          }
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({ id: '1', title: 'Senior Backend Engineer' }),
+          })
+        }
+        if (url.endsWith('/auth/refresh')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+        }
+        if (url.endsWith('/auth/csrf-token')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
+          })
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+      })
+
+      const result = await apiFetch('/applications/1')
+
+      expect(result).toEqual({ id: '1', title: 'Senior Backend Engineer' })
+    })
+
+    it.each(['/auth/login', '/auth/register'])(
+      'does not attempt a refresh for a 401 from %s',
+      async (path) => {
+        mockCsrfTokenAndAlwaysUnauthorized()
+
+        await expect(
+          apiFetch(path, { method: 'POST', body: {} }),
+        ).rejects.toBeInstanceOf(ApiError)
+
+        const refreshCalls = fetchMock.mock.calls.filter(([url]) =>
+          (url as string).endsWith('/auth/refresh'),
+        )
+        expect(refreshCalls).toHaveLength(0)
+      },
+    )
+
+    it('does not attempt a second refresh when /auth/refresh itself returns 401', async () => {
+      mockCsrfTokenAndAlwaysUnauthorized()
+
+      await expect(
+        apiFetch('/auth/refresh', { method: 'POST', body: {} }),
+      ).rejects.toBeInstanceOf(ApiError)
+
+      const refreshCalls = fetchMock.mock.calls.filter(([url]) =>
+        (url as string).endsWith('/auth/refresh'),
+      )
+      expect(refreshCalls).toHaveLength(1)
+    })
+
+    it('shares a single in-flight refresh call across concurrent 401s', async () => {
+      let firstCallCount = 0
+      let secondCallCount = 0
+      fetchMock.mockImplementation((url: string) => {
+        if (url.endsWith('/applications/1')) {
+          firstCallCount += 1
+          if (firstCallCount === 1) {
+            return Promise.resolve({
+              ok: false,
+              status: 401,
+              json: () => Promise.resolve({}),
+            })
+          }
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ id: '1' }) })
+        }
+        if (url.endsWith('/applications/2')) {
+          secondCallCount += 1
+          if (secondCallCount === 1) {
+            return Promise.resolve({
+              ok: false,
+              status: 401,
+              json: () => Promise.resolve({}),
+            })
+          }
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ id: '2' }) })
+        }
+        if (url.endsWith('/auth/refresh')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+        }
+        if (url.endsWith('/auth/csrf-token')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
+          })
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+      })
+
+      const [first, second] = await Promise.all([
+        apiFetch('/applications/1'),
+        apiFetch('/applications/2'),
+      ])
+
+      expect(first).toEqual({ id: '1' })
+      expect(second).toEqual({ id: '2' })
+
+      const refreshCalls = fetchMock.mock.calls.filter(([url]) =>
+        (url as string).endsWith('/auth/refresh'),
+      )
+      expect(refreshCalls).toHaveLength(1)
+    })
+
+    it('propagates the original 401 and does not retry when the refresh itself fails', async () => {
+      let applicationsCallCount = 0
+      fetchMock.mockImplementation((url: string) => {
+        if (url.endsWith('/applications/1')) {
+          applicationsCallCount += 1
+          return Promise.resolve({
+            ok: false,
+            status: 401,
+            json: () => Promise.resolve({ message: 'Unauthorized' }),
+          })
+        }
+        if (url.endsWith('/auth/refresh')) {
+          return Promise.resolve({
+            ok: false,
+            status: 401,
+            json: () => Promise.resolve({ message: 'Invalid refresh token' }),
+          })
+        }
+        if (url.endsWith('/auth/csrf-token')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
+          })
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+      })
+
+      await expect(apiFetch('/applications/1')).rejects.toMatchObject({
+        status: 401,
+        message: 'Unauthorized',
+      })
+      expect(applicationsCallCount).toBe(1)
+    })
+
+    it('attaches a CSRF token to the refresh call itself', async () => {
+      let applicationsCallCount = 0
+      fetchMock.mockImplementation((url: string) => {
+        if (url.endsWith('/applications/1')) {
+          applicationsCallCount += 1
+          if (applicationsCallCount === 1) {
+            return Promise.resolve({
+              ok: false,
+              status: 401,
+              json: () => Promise.resolve({}),
+            })
+          }
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ id: '1' }) })
+        }
+        if (url.endsWith('/auth/refresh')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+        }
+        if (url.endsWith('/auth/csrf-token')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ csrfToken: 'test-csrf-token' }),
+          })
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+      })
+
+      await apiFetch('/applications/1')
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://api.example.com/auth/refresh',
+        expect.objectContaining({
+          headers: expect.objectContaining({ 'x-csrf-token': 'test-csrf-token' }),
+        }),
+      )
+    })
+
+    it('clears the cached CSRF token after a successful refresh, so a later mutating request fetches a new one', async () => {
+      let csrfTokenCallCount = 0
+      let applicationsCallCount = 0
+      fetchMock.mockImplementation((url: string) => {
+        if (url.endsWith('/auth/csrf-token')) {
+          csrfTokenCallCount += 1
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ csrfToken: `csrf-token-${csrfTokenCallCount}` }),
+          })
+        }
+        if (url.endsWith('/auth/refresh')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+        }
+        if (url.endsWith('/applications')) {
+          applicationsCallCount += 1
+          if (applicationsCallCount === 1) {
+            return Promise.resolve({
+              ok: false,
+              status: 401,
+              json: () => Promise.resolve({}),
+            })
+          }
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+      })
+
+      await apiFetch('/applications', { method: 'POST', body: {} })
+      await apiFetch('/applications', { method: 'POST', body: {} })
+
+      expect(csrfTokenCallCount).toBe(2)
     })
   })
 })
