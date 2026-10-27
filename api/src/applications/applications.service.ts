@@ -171,10 +171,12 @@ export class ApplicationsService {
   async getRecentActivity(
     userId: string,
     limit = 10,
+    now: Date = new Date(),
   ): Promise<RecentActivityItem[]> {
     return this.applicationRepository.findRecentStatusChangesByUser(
       userId,
       limit,
+      now,
     );
   }
 

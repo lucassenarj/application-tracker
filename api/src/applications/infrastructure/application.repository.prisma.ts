@@ -161,9 +161,10 @@ export class PrismaApplicationRepository implements ApplicationRepository {
   async findRecentStatusChangesByUser(
     userId: string,
     limit: number,
+    now: Date,
   ): Promise<RecentActivityItem[]> {
     const rows = await this.prisma.statusChange.findMany({
-      where: { application: { userId } },
+      where: { application: { userId }, eventDate: { lte: now } },
       orderBy: { eventDate: 'desc' },
       take: limit,
       include: {
