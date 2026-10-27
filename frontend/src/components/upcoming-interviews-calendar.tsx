@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getMonthGridDays } from '@/lib/dashboard/calendar-grid'
-import { upcomingInterviewsQueryOptions } from '@/lib/dashboard/upcoming-interviews'
+import { interviewsByMonthQueryOptions } from '@/lib/dashboard/interviews-by-month'
+import type { UpcomingInterview } from '@/lib/dashboard/upcoming-interviews'
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTH_NAMES = [
@@ -27,12 +30,24 @@ function toDateKey(date: Date): string {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
 }
 
+function formatInterviewTime(eventDate: string): string {
+  return new Date(eventDate).toLocaleString(navigator.language, {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
 export function UpcomingInterviewsCalendar({
   today = new Date(),
 }: { today?: Date } = {}) {
-  const query = useQuery(upcomingInterviewsQueryOptions)
+  const navigate = useNavigate()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
+  const query = useQuery(interviewsByMonthQueryOptions(year, month + 1))
+
+  const goToDetail = (id: string) => {
+    navigate({ to: '/applications/$id', params: { id } })
+  }
 
   const goToPreviousMonth = () => {
     setYear((y) => (month === 0 ? y - 1 : y))
@@ -46,11 +61,13 @@ export function UpcomingInterviewsCalendar({
 
   const days = getMonthGridDays(year, month, today)
 
-  const eventDateKeys = query.isSuccess
-    ? new Set(
-        query.data.map((interview) => toDateKey(new Date(interview.eventDate))),
-      )
-    : new Set<string>()
+  const eventsByDateKey = new Map<string, UpcomingInterview[]>()
+  if (query.isSuccess) {
+    for (const interview of query.data) {
+      const key = toDateKey(new Date(interview.eventDate))
+      eventsByDateKey.set(key, [...(eventsByDateKey.get(key) ?? []), interview])
+    }
+  }
 
   return (
     <Card className="flex h-full flex-col">
@@ -119,8 +136,9 @@ export function UpcomingInterviewsCalendar({
               }}
             >
               {days.map((day) => {
-                const hasEvent = eventDateKeys.has(toDateKey(day.date))
-                return (
+                const dayEvents = eventsByDateKey.get(toDateKey(day.date)) ?? []
+                const hasEvent = dayEvents.length > 0
+                const cell = (
                   <div
                     key={day.date.toISOString()}
                     data-slot="calendar-day"
@@ -128,6 +146,8 @@ export function UpcomingInterviewsCalendar({
                     data-current-month={day.isCurrentMonth}
                     data-has-event={hasEvent}
                     className={`relative flex h-full items-center justify-center rounded-lg text-sm ${
+                      hasEvent ? 'cursor-pointer' : ''
+                    } ${
                       day.isToday
                         ? 'bg-primary font-semibold text-primary-foreground'
                         : day.isCurrentMonth
@@ -140,6 +160,37 @@ export function UpcomingInterviewsCalendar({
                       <span className="absolute bottom-0.5 size-1 rounded-full bg-chart-3" />
                     )}
                   </div>
+                )
+
+                if (!hasEvent) {
+                  return cell
+                }
+
+                return (
+                  <Popover key={day.date.toISOString()}>
+                    <PopoverTrigger render={cell} />
+                    <PopoverContent>
+                      <div className="flex flex-col gap-2">
+                        {dayEvents.map((interview) => (
+                          <div
+                            key={interview.statusChangeId}
+                            className="cursor-pointer rounded-md p-1.5 hover:bg-muted"
+                            onClick={() => goToDetail(interview.applicationId)}
+                          >
+                            <p className="font-medium text-foreground">
+                              {interview.applicationTitle}
+                            </p>
+                            <p className="text-muted-foreground">
+                              {interview.companyName}
+                            </p>
+                            <span className="text-xs text-muted-foreground/70">
+                              {formatInterviewTime(interview.eventDate)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 )
               })}
             </div>

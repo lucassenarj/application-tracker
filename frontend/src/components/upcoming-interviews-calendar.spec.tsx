@@ -11,6 +11,7 @@ const TODAY = new Date(2026, 9, 27)
 
 const routeTree = buildRouteTree({
   '/': () => <UpcomingInterviewsCalendar today={TODAY} />,
+  '/applications/$id': () => <div>Application Detail page</div>,
 })
 
 describe('UpcomingInterviewsCalendar', () => {
@@ -24,6 +25,33 @@ describe('UpcomingInterviewsCalendar', () => {
       Promise.resolve({ ok: true, json: () => Promise.resolve([]) }),
     )
   })
+
+  async function openOctober15Popover() {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve([
+            {
+              statusChangeId: '1',
+              applicationId: 'abc123',
+              applicationTitle: 'Senior Backend Engineer',
+              companyName: 'Acme Corp',
+              eventDate: new Date(2026, 9, 15, 14, 0).toISOString(),
+            },
+          ]),
+      }),
+    )
+
+    const { container } = renderWithRouter(routeTree, queryClient, '/')
+
+    await screen.findByText('October 2026')
+    const eventCell = container.querySelector('[data-has-event="true"]')!
+    await user.click(eventCell)
+
+    return user
+  }
 
   it('renders loading skeletons while pending', async () => {
     fetchMock.mockImplementation(() => new Promise(() => {}))
@@ -100,6 +128,41 @@ describe('UpcomingInterviewsCalendar', () => {
 
     await user.click(screen.getByRole('button', { name: 'Previous month' }))
     expect(await screen.findByText('October 2026')).toBeInTheDocument()
+  })
+
+  it('fetches interviews scoped to the currently displayed month, refetching on navigation', async () => {
+    const user = userEvent.setup()
+
+    renderWithRouter(routeTree, queryClient, '/')
+
+    await screen.findByText('October 2026')
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('year=2026&month=10'),
+      expect.anything(),
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Next month' }))
+    await screen.findByText('November 2026')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('year=2026&month=11'),
+      expect.anything(),
+    )
+  })
+
+  it("clicking a day with an interview opens a popover listing that day's interview(s)", async () => {
+    await openOctober15Popover()
+
+    expect(await screen.findByText('Senior Backend Engineer')).toBeInTheDocument()
+    expect(screen.getByText('Acme Corp')).toBeInTheDocument()
+  })
+
+  it('clicking an interview in the popover navigates to its application detail page', async () => {
+    const user = await openOctober15Popover()
+
+    await user.click(await screen.findByText('Senior Backend Engineer'))
+
+    expect(await screen.findByText('Application Detail page')).toBeInTheDocument()
   })
 
   it('shows an error message when the request fails', async () => {
