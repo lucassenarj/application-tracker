@@ -104,6 +104,24 @@ describe('Applications (e2e)', () => {
       where: { email: 'upcoming-interviews-e2e-test@example.com' },
     });
 
+    await prisma.statusChange.deleteMany({
+      where: {
+        application: { title: 'Interviews By Month E2E Test Application' },
+      },
+    });
+    await prisma.application.deleteMany({
+      where: { title: 'Interviews By Month E2E Test Application' },
+    });
+    await prisma.company.deleteMany({
+      where: { name: 'Interviews By Month E2e Test Co' },
+    });
+    await prisma.refreshToken.deleteMany({
+      where: { user: { email: 'interviews-by-month-e2e-test@example.com' } },
+    });
+    await prisma.user.deleteMany({
+      where: { email: 'interviews-by-month-e2e-test@example.com' },
+    });
+
     await app.close();
   });
 
@@ -267,6 +285,60 @@ describe('Applications (e2e)', () => {
     expect(body[0]).toMatchObject({
       applicationTitle: 'Upcoming Interviews E2E Test Application',
       companyName: 'Upcoming Interviews E2e Test Co',
+      interviewCategory: 'TECHNICAL',
+    });
+  });
+
+  it('returns interviews within the given month, including past ones, for the authenticated user', async () => {
+    const agent = request.agent(app.getHttpServer());
+
+    await agent.post('/auth/register').send({
+      email: 'interviews-by-month-e2e-test@example.com',
+      password: 'plain-text-password',
+    });
+    await agent.post('/auth/login').send({
+      email: 'interviews-by-month-e2e-test@example.com',
+      password: 'plain-text-password',
+    });
+
+    const csrfResponse = await agent.get('/auth/csrf-token');
+    const csrfToken = (csrfResponse.body as { csrfToken: string }).csrfToken;
+
+    const createResponse = await agent
+      .post('/applications')
+      .set('x-csrf-token', csrfToken)
+      .send({
+        title: 'Interviews By Month E2E Test Application',
+        companyName: 'Interviews By Month E2E Test Co',
+      })
+      .expect(201);
+
+    const applicationId = (createResponse.body as { id: string }).id;
+
+    await agent
+      .patch(`/applications/${applicationId}/status`)
+      .set('x-csrf-token', csrfToken)
+      .send({
+        status: 'INTERVIEW_SCHEDULED',
+        eventDate: new Date(2020, 0, 15).toISOString(),
+        interviewCategory: 'TECHNICAL',
+      })
+      .expect(200);
+
+    const response = await agent
+      .get('/applications/interviews?year=2020&month=1')
+      .expect(200);
+
+    const body = response.body as Array<{
+      applicationTitle: string;
+      companyName: string;
+      interviewCategory: string;
+    }>;
+
+    expect(body).toHaveLength(1);
+    expect(body[0]).toMatchObject({
+      applicationTitle: 'Interviews By Month E2E Test Application',
+      companyName: 'Interviews By Month E2e Test Co',
       interviewCategory: 'TECHNICAL',
     });
   });

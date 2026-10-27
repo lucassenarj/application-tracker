@@ -33,6 +33,7 @@ import {
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { FindAllApplicationsDto } from './dto/find-all-applications.dto';
+import { FindInterviewsByMonthDto } from './dto/find-interviews-by-month.dto';
 import { FindRecentActivityDto } from './dto/find-recent-activity.dto';
 
 export class ApplicationListItemResponse {
@@ -380,6 +381,19 @@ export class ApplicationsController {
   ): Promise<UpcomingInterviewResponse[]> {
     const interviews = await this.applicationsService.getUpcomingInterviews(
       request.user!.id,
+    );
+    return interviews.map(toUpcomingInterviewResponse);
+  }
+
+  @Get('interviews')
+  async getInterviewsForMonth(
+    @Query() query: FindInterviewsByMonthDto,
+    @Req() request: Request,
+  ): Promise<UpcomingInterviewResponse[]> {
+    const interviews = await this.applicationsService.getInterviewsForMonth(
+      request.user!.id,
+      query.year,
+      query.month,
     );
     return interviews.map(toUpcomingInterviewResponse);
   }

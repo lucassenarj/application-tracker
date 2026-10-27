@@ -803,4 +803,65 @@ describe('PrismaApplicationRepository', () => {
       expect(interviews).toEqual([]);
     });
   });
+
+  describe('findInterviewsByUserInRange', () => {
+    let company: Company;
+    let application: Application;
+
+    beforeEach(async () => {
+      company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+
+      application = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+      });
+      await applicationRepository.save(application);
+    });
+
+    it('includes interviews within the given range, regardless of past or future', async () => {
+      const eventDate = new Date(2020, 0, 15);
+      const updatedApplication = application.changeStatus({
+        status: 'INTERVIEW_SCHEDULED',
+        eventDate,
+        interviewCategory: 'TECHNICAL',
+      });
+      await applicationRepository.save(updatedApplication);
+
+      const interviews =
+        await applicationRepository.findInterviewsByUserInRange(
+          'user-1',
+          new Date(2020, 0, 1),
+          new Date(2020, 1, 1),
+        );
+
+      expect(interviews).toHaveLength(1);
+      expect(interviews[0]).toMatchObject({
+        applicationId: application.id,
+        applicationTitle: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        eventDate,
+        interviewCategory: 'TECHNICAL',
+      });
+    });
+
+    it('excludes interviews outside the given range', async () => {
+      const updatedApplication = application.changeStatus({
+        status: 'INTERVIEW_SCHEDULED',
+        eventDate: new Date(2020, 1, 1),
+        interviewCategory: 'TECHNICAL',
+      });
+      await applicationRepository.save(updatedApplication);
+
+      const interviews =
+        await applicationRepository.findInterviewsByUserInRange(
+          'user-1',
+          new Date(2020, 0, 1),
+          new Date(2020, 1, 1),
+        );
+
+      expect(interviews).toEqual([]);
+    });
+  });
 });
