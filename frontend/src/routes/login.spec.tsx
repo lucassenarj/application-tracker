@@ -27,7 +27,7 @@ describe('LoginPage', () => {
 
     expect(await screen.findByRole('textbox', { name: 'Email' })).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Login' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sign In' })).toBeInTheDocument()
   })
   it('toggles the password field between hidden and visible', async () => {
     const user = userEvent.setup()
@@ -48,7 +48,7 @@ describe('LoginPage', () => {
 
     await user.type(await screen.findByRole('textbox', { name: 'Email' }), 'not-an-email')
     await user.type(screen.getByLabelText('Password'), 'plain-text-password')
-    await user.click(screen.getByRole('button', { name: 'Login' }))
+    await user.click(screen.getByRole('button', { name: 'Sign In' }))
 
     expect(
       await screen.findByText('Enter a valid email address'),
@@ -59,7 +59,7 @@ describe('LoginPage', () => {
     renderWithRouter(routeTree, queryClient, '/login')
 
     await user.type(await screen.findByRole('textbox', { name: 'Email' }), 'jane@example.com')
-    await user.click(screen.getByRole('button', { name: 'Login' }))
+    await user.click(screen.getByRole('button', { name: 'Sign In' }))
 
     expect(await screen.findByText('Password is required')).toBeInTheDocument()
   })
@@ -77,7 +77,7 @@ describe('LoginPage', () => {
 
     await user.type(await screen.findByRole('textbox', { name: 'Email' }), 'jane@example.com')
     await user.type(screen.getByLabelText('Password'), 'wrong-password')
-    await user.click(screen.getByRole('button', { name: 'Login' }))
+    await user.click(screen.getByRole('button', { name: 'Sign In' }))
 
     expect(await screen.findByText('invalid credentials')).toBeInTheDocument()
   })
@@ -99,7 +99,7 @@ describe('LoginPage', () => {
 
     await user.type(await screen.findByRole('textbox', { name: 'Email' }), 'jane@example.com')
     await user.type(screen.getByLabelText('Password'), 'plain-text-password')
-    await user.click(screen.getByRole('button', { name: 'Login' }))
+    await user.click(screen.getByRole('button', { name: 'Sign In' }))
 
     expect(await screen.findByText('Dashboard page')).toBeInTheDocument()
   })
