@@ -22,6 +22,7 @@ const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 interface RegisterInput {
   email: string;
   password: string;
+  name: string;
 }
 
 interface LoginInput {
@@ -63,6 +64,7 @@ export class AuthService {
     const user = User.create({
       email: input.email,
       passwordHash,
+      name: input.name,
     });
 
     await this.userRepository.save(user);

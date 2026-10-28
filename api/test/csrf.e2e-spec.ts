@@ -92,6 +92,7 @@ describe('CSRF protection (e2e)', () => {
     await agent.post('/auth/register').send({
       email: 'csrf-test-2@example.com',
       password: 'plain-text-password',
+      name: 'E2E Test User',
     });
     await agent.post('/auth/login').send({
       email: 'csrf-test-2@example.com',
@@ -113,6 +114,7 @@ describe('CSRF protection (e2e)', () => {
     await agent.post('/auth/register').send({
       email: 'csrf-test-refresh@example.com',
       password: 'plain-text-password',
+      name: 'E2E Test User',
     });
     await agent.post('/auth/login').send({
       email: 'csrf-test-refresh@example.com',
@@ -130,7 +132,11 @@ describe('CSRF protection (e2e)', () => {
   it('allows an unprotected request without any CSRF token', async () => {
     await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email: 'csrf-test@example.com', password: 'plain-text-password' })
+      .send({
+        email: 'csrf-test@example.com',
+        password: 'plain-text-password',
+        name: 'E2E Test User',
+      })
       .expect(201);
   });
 });

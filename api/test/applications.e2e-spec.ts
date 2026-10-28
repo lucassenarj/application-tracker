@@ -131,6 +131,7 @@ describe('Applications (e2e)', () => {
     await agent.post('/auth/register').send({
       email: 'stats-e2e-test@example.com',
       password: 'plain-text-password',
+      name: 'E2E Test User',
     });
     await agent.post('/auth/login').send({
       email: 'stats-e2e-test@example.com',
@@ -165,6 +166,7 @@ describe('Applications (e2e)', () => {
     await agent.post('/auth/register').send({
       email: 'recent-activity-e2e-test@example.com',
       password: 'plain-text-password',
+      name: 'E2E Test User',
     });
     await agent.post('/auth/login').send({
       email: 'recent-activity-e2e-test@example.com',
@@ -209,6 +211,7 @@ describe('Applications (e2e)', () => {
     await agent.post('/auth/register').send({
       email: 'over-time-e2e-test@example.com',
       password: 'plain-text-password',
+      name: 'E2E Test User',
     });
     await agent.post('/auth/login').send({
       email: 'over-time-e2e-test@example.com',
@@ -241,6 +244,7 @@ describe('Applications (e2e)', () => {
     await agent.post('/auth/register').send({
       email: 'upcoming-interviews-e2e-test@example.com',
       password: 'plain-text-password',
+      name: 'E2E Test User',
     });
     await agent.post('/auth/login').send({
       email: 'upcoming-interviews-e2e-test@example.com',
@@ -295,6 +299,7 @@ describe('Applications (e2e)', () => {
     await agent.post('/auth/register').send({
       email: 'interviews-by-month-e2e-test@example.com',
       password: 'plain-text-password',
+      name: 'E2E Test User',
     });
     await agent.post('/auth/login').send({
       email: 'interviews-by-month-e2e-test@example.com',

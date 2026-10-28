@@ -27,6 +27,7 @@ describe('AuthController', () => {
       const userResponse = await authController.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       expect(userResponse.email).toBe('jane@example.com');
@@ -41,6 +42,7 @@ describe('AuthController', () => {
       await authController.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       const mockResponse = { cookie: jest.fn() } as unknown as Response;
@@ -60,6 +62,7 @@ describe('AuthController', () => {
       await authController.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       const mockResponse = { cookie: jest.fn() } as unknown as Response;
@@ -80,6 +83,7 @@ describe('AuthController', () => {
       await authController.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       const mockResponse = { cookie: jest.fn() } as unknown as Response;
@@ -102,6 +106,7 @@ describe('AuthController', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
       const loginResult = await authService.login({
         email: 'jane@example.com',
@@ -121,6 +126,7 @@ describe('AuthController', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
       const loginResult = await authService.login({
         email: 'jane@example.com',
@@ -161,6 +167,7 @@ describe('AuthController', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
       const loginResult = await authService.login({
         email: 'jane@example.com',
@@ -186,6 +193,7 @@ describe('AuthController', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
       const loginResult = await authService.login({
         email: 'jane@example.com',
@@ -213,6 +221,7 @@ describe('AuthController', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
       const loginResult = await authService.login({
         email: 'jane@example.com',
@@ -264,6 +273,7 @@ describe('AuthController', () => {
       const newUser = await authController.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       const mockRequest = {
@@ -284,6 +294,7 @@ describe('AuthController', () => {
       const newUser = await authController.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       const mockRequest = {

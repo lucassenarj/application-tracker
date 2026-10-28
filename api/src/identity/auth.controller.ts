@@ -31,6 +31,7 @@ export class AuthController {
     const user = await this.authService.register({
       email: dto.email,
       password: dto.password,
+      name: dto.name,
     });
 
     return UserResponse.fromDomain(user);

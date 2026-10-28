@@ -37,6 +37,7 @@ describe('AuthService', () => {
       const newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       expect(newUser.email).toBe('jane@example.com');
@@ -46,16 +47,28 @@ describe('AuthService', () => {
       expect(savedUser?.id).toBe(newUser.id);
     });
 
+    it('creates a User with the given name', async () => {
+      const newUser = await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+
+      expect(newUser.name).toBe('Jane Doe');
+    });
+
     it('throws an error when a User with the given email already exists', async () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       await expect(
         authService.register({
           email: 'jane@example.com',
           password: 'another-password',
+          name: 'Jane Doe',
         }),
       ).rejects.toThrow(ConflictException);
     });
@@ -63,12 +76,14 @@ describe('AuthService', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       await expect(
         authService.register({
           email: 'JANE@EXAMPLE.COM',
           password: 'another-password',
+          name: 'Jane Doe',
         }),
       ).rejects.toThrow(ConflictException);
     });
@@ -79,6 +94,7 @@ describe('AuthService', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       const loginResult = await authService.login({
@@ -103,6 +119,7 @@ describe('AuthService', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       await expect(
@@ -116,6 +133,7 @@ describe('AuthService', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       const firstLoginResult = await authService.login({
@@ -145,6 +163,7 @@ describe('AuthService', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
       const loginResult = await authService.login({
         email: 'jane@example.com',
@@ -163,6 +182,7 @@ describe('AuthService', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
       const loginResult = await authService.login({
         email: 'jane@example.com',
@@ -191,6 +211,7 @@ describe('AuthService', () => {
       const newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       const rawRefreshToken = 'raw-refresh-token';
@@ -210,6 +231,7 @@ describe('AuthService', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
       const loginResult = await authService.login({
         email: 'jane@example.com',
@@ -241,6 +263,7 @@ describe('AuthService', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
       const loginResult = await authService.login({
         email: 'jane@example.com',
@@ -272,6 +295,7 @@ describe('AuthService', () => {
       newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
     });
 
@@ -296,6 +320,7 @@ describe('AuthService', () => {
       newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
     });
 
