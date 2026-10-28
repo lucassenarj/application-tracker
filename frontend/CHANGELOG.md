@@ -1,3 +1,10 @@
+# [frontend-v1.2.1](https://github.com/lucassenarj/application-tracker/compare/frontend-v1.2.0...frontend-v1.2.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* **frontend:** add SPA fallback rewrite so page refreshes on deep routes don't 404 ([14a41e5](https://github.com/lucassenarj/application-tracker/commit/14a41e58c0aa94a14f5e77b63f34fe751f165e77))
+
 # [frontend-v1.2.0](https://github.com/lucassenarj/application-tracker/compare/frontend-v1.1.1...frontend-v1.2.0) (2026-10-28)
 
 
