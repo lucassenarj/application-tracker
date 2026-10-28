@@ -1,3 +1,56 @@
+# [frontend-v1.2.0](https://github.com/lucassenarj/application-tracker/compare/frontend-v1.1.1...frontend-v1.2.0) (2026-10-28)
+
+
+### Bug Fixes
+
+* **application:** add a pointer cursor to buttons ([b0e6780](https://github.com/lucassenarj/application-tracker/commit/b0e6780482660b10c690b6f4d70cadff03def667))
+* **application:** add template-matching hover effects and card entrance animation ([1f45ba2](https://github.com/lucassenarj/application-tracker/commit/1f45ba24a8486d397eb3862b67d45a07d0429c9d))
+* **application:** match page title size and section spacing to the template ([dfb6177](https://github.com/lucassenarj/application-tracker/commit/dfb61776cf634d958c5e981e9bc7a1f023511867))
+* **application:** match sidebar nav item sizing and header divider to the template ([10a2bef](https://github.com/lucassenarj/application-tracker/commit/10a2bef714b556709800c15b4d258dbb6b63fa1d))
+* **application:** match sidebar width, nav item colors, and item spacing to the template ([34d6673](https://github.com/lucassenarj/application-tracker/commit/34d6673ab9c9cb9c70a4281476a5488a4b53cd46))
+* **application:** match table padding/colors and restyle the Add Application button to the template ([02003cf](https://github.com/lucassenarj/application-tracker/commit/02003cfeea25195d78173336e56fdf36b20bee8b))
+* **application:** restyle form fields and dialogs to match the template ([c11dff4](https://github.com/lucassenarj/application-tracker/commit/c11dff477664268acb0ed4952876a28c5a149292))
+* **application:** widen the login/register card to match the template ([b814591](https://github.com/lucassenarj/application-tracker/commit/b814591d2aca812648f61f5337f951122d4a745d))
+* **identity:** silently refresh the access token on 401 instead of forcing re-login ([e466927](https://github.com/lucassenarj/application-tracker/commit/e466927400b19ac390cbf564c24051def5b7504d))
+
+
+### Features
+
+* **application:** add a 3D tilt effect to dashboard stat cards ([45d01ed](https://github.com/lucassenarj/application-tracker/commit/45d01ed077840c6b4e7718931306cd41694aeef5))
+* **application:** add a getChartTicks helper for scaling chart Y-axis values ([c098529](https://github.com/lucassenarj/application-tracker/commit/c098529b0a4dc1b85e3364fc5ac63b42c74a8f7e))
+* **application:** add a getMonthGridDays helper for the Upcoming Interviews calendar ([f1ea805](https://github.com/lucassenarj/application-tracker/commit/f1ea805fdb6f978c0cc95b3dbd7bfd79dd15a88b))
+* **application:** add a Recent Activity feed widget ([28fc930](https://github.com/lucassenarj/application-tracker/commit/28fc93060f5c34ba8161f343575a6accd9b9e1e1))
+* **application:** add a Security settings page scaffold (not yet linked) ([34877dc](https://github.com/lucassenarj/application-tracker/commit/34877dcbca82f6faea24e5b85b384046e799ee3f))
+* **application:** add a status breakdown donut chart and category progress bars to the dashboard ([e590b7a](https://github.com/lucassenarj/application-tracker/commit/e590b7aefb15b94298d3fa0e3883260d1795fcc5))
+* **application:** add an animated gradient background ([a742aa3](https://github.com/lucassenarj/application-tracker/commit/a742aa3365c5c2f72e045023d5c6ee93171f9d9e))
+* **application:** add an Applications Over Time bar chart widget ([0138697](https://github.com/lucassenarj/application-tracker/commit/0138697da030982b876bb91a6b15bd94704a287c))
+* **application:** add glass-admin color tokens, fonts, and card/sidebar blur ([4cbef47](https://github.com/lucassenarj/application-tracker/commit/4cbef47eca859ed13d4f93cce4ce78d264b72700))
+* **application:** add Google Analytics with a consent banner ([fd8ec81](https://github.com/lucassenarj/application-tracker/commit/fd8ec81658736aaf658efb4694847d4c610b6083))
+* **application:** add loading feedback for route transitions and auth checks ([1090bc2](https://github.com/lucassenarj/application-tracker/commit/1090bc2dff6bf134f28bf724a4b89591eb5d8570))
+* **application:** add locale-aware currency and relative-time formatting ([19bf431](https://github.com/lucassenarj/application-tracker/commit/19bf431b9276bbac7ebb0eed260475da331fda21))
+* **application:** add page breadcrumbs and box the detail page sections ([fbf0f50](https://github.com/lucassenarj/application-tracker/commit/fbf0f5031e2a22ec3fed41781bfd99d61d5dc6c8))
+* **application:** add Upcoming Interviews calendar and agenda list widgets ([9947b22](https://github.com/lucassenarj/application-tracker/commit/9947b223d708d71a5db50dfa9302f33afec98aeb))
+* **application:** color-code the Recent Activity status text by outcome ([d185ae9](https://github.com/lucassenarj/application-tracker/commit/d185ae9eafe889d9f311ded227565cbb0fc3862c))
+* **application:** move the theme toggle to the page title row and make the sidebar trigger mobile-only ([8d2e6e9](https://github.com/lucassenarj/application-tracker/commit/8d2e6e93c78f21b240d22a217078478acccc557e))
+* **application:** rebuild the Applications List as a bordered table with status badges and relative update times ([752bff7](https://github.com/lucassenarj/application-tracker/commit/752bff7e78ac37aa2674e4d6bbc98d9c529a260d))
+* **application:** rebuild the Dashboard's Latest Applications as a table, drop inline status editing ([4fb2360](https://github.com/lucassenarj/application-tracker/commit/4fb2360b7a2f0bfa1e3f8891233fa9f81ac7479f))
+* **application:** rebuild the Profile page to match the template ([de195ee](https://github.com/lucassenarj/application-tracker/commit/de195ee9785c7bac9df6f019c8a0926010214724))
+* **application:** resize form controls and redesign the login/register pages ([55938e6](https://github.com/lucassenarj/application-tracker/commit/55938e686f787566f513cb27abc401c641c04eda))
+* **application:** restructure the Dashboard layout around the new Upcoming Interviews widgets ([bd7a7df](https://github.com/lucassenarj/application-tracker/commit/bd7a7dfaaf362978f15aa08d1a53c81cde78647c))
+* **application:** restyle the sidebar shell, account menu, and theme toggle ([b91c7c7](https://github.com/lucassenarj/application-tracker/commit/b91c7c7093392e1c956253ee13c21d1ba668c447))
+* **application:** scope the interviews calendar to the displayed month and add a click-triggered day popover ([071759a](https://github.com/lucassenarj/application-tracker/commit/071759af6b04ec17c24ae0d3f2034b63e56fb016))
+* **application:** show the Over Time chart beside Recent Activity ([3720b90](https://github.com/lucassenarj/application-tracker/commit/3720b9098183563397c9c49035fb9a9e6dfc0fb4))
+* **application:** split sidebar nav into Main Menu and Account sections ([c9aced0](https://github.com/lucassenarj/application-tracker/commit/c9aced0d5693ddb8471380893bd36b831def335f))
+* **application:** use semantic HTML for Card titles/descriptions and wire the Recent Activity feed into the Dashboard ([6a29c96](https://github.com/lucassenarj/application-tracker/commit/6a29c96429d20d0cccf71a5700a419962632aec8))
+* **application:** use the real per-application currency instead of hardcoded EUR ([d5dbc14](https://github.com/lucassenarj/application-tracker/commit/d5dbc145c4ce309bf825d46f1fbcc65fe0375f98))
+* **frontend:** add real logo and favicon, replacing placeholders ([7d0ef35](https://github.com/lucassenarj/application-tracker/commit/7d0ef3533cf5579e2d28a839a2b5e4f7ce1c895c))
+* **frontend:** display the release version in a page footer ([c0165e5](https://github.com/lucassenarj/application-tracker/commit/c0165e57439d78d65d6c8cafdae866436a0961b3))
+* **frontend:** redesign the login page to match the glass-admin template ([609b868](https://github.com/lucassenarj/application-tracker/commit/609b8687877912ffc2250e64444a91dab62a0a21))
+* **frontend:** redesign the register page to match the glass-admin template ([b6d6425](https://github.com/lucassenarj/application-tracker/commit/b6d642571442dd0c4f2fb2da085a7294a71b62e0))
+* **frontend:** wire up the remember-me checkbox on login ([09161cc](https://github.com/lucassenarj/application-tracker/commit/09161cc6aaa5c577736a295fa16a8d0fb721796d))
+* **identity:** add a Default Currency profile preference and use it in the create-application form ([e710948](https://github.com/lucassenarj/application-tracker/commit/e7109480fd0faf24926457f4de6561ca77f47ddf))
+* **identity:** wire Profile's phone, bio, and language fields to the real API ([0e28614](https://github.com/lucassenarj/application-tracker/commit/0e28614e3b00f39878a347745ea2dc44ec4cae3a))
+
 # [frontend-v1.1.1](https://github.com/lucassenarj/application-tracker/compare/frontend-v1.1.0...frontend-v1.1.1) (2026-10-02)
 
 
