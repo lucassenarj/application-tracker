@@ -644,6 +644,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fontsource-variable/outfit@npm:^5.3.0":
+  version: 5.3.0
+  resolution: "@fontsource-variable/outfit@npm:5.3.0"
+  checksum: 10c0/e9b29488f79f91f07180ef559beb25b82cf135ae35772271e25498880bb535d1eeab26ef82e820631c06c1a8aa13a25fc5fc432e3a0b70ae94e52e001087ce01
+  languageName: node
+  linkType: hard
+
+"@fontsource/space-mono@npm:^5.3.0":
+  version: 5.3.0
+  resolution: "@fontsource/space-mono@npm:5.3.0"
+  checksum: 10c0/07e6c40108245ed551f81e24e3557336e34942bc0f1b3ab50001043779717f2b3941514bef6c4ac0d6b7781102fee681dabee75eaf7291b60931a1da56f85469
+  languageName: node
+  linkType: hard
+
 "@gar/promise-retry@npm:^1.0.0, @gar/promise-retry@npm:^1.0.2":
   version: 1.0.3
   resolution: "@gar/promise-retry@npm:1.0.3"
@@ -4217,6 +4231,8 @@ __metadata:
   dependencies:
     "@base-ui/react": "npm:^1.8.0"
     "@fontsource-variable/inter": "npm:^5.3.0"
+    "@fontsource-variable/outfit": "npm:^5.3.0"
+    "@fontsource/space-mono": "npm:^5.3.0"
     "@hookform/resolvers": "npm:^5.9.1"
     "@semantic-release/changelog": "npm:^7.0.0"
     "@semantic-release/git": "npm:^11.0.1"

@@ -5,6 +5,10 @@ import { userQueryOptions, type User } from './user-query'
 interface UpdateProfileInput {
   name?: string
   avatar?: string
+  phone?: string
+  bio?: string
+  language?: string
+  defaultCurrency?: string
 }
 
 export function useUpdateProfileMutation() {

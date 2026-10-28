@@ -10,6 +10,7 @@ export type Theme = 'light' | 'dark' | 'system'
 
 interface ThemeContextValue {
   theme: Theme
+  resolvedTheme: 'light' | 'dark'
   setTheme: (theme: Theme) => void
 }
 
@@ -30,11 +31,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(
     () => (localStorage.getItem(STORAGE_KEY) as Theme | null) ?? 'system',
   )
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(() =>
+    resolveTheme(theme),
+  )
 
   useEffect(() => {
     const root = document.documentElement
     const apply = () => {
-      root.classList.toggle('dark', resolveTheme(theme) === 'dark')
+      const resolved = resolveTheme(theme)
+      root.classList.toggle('dark', resolved === 'dark')
+      setResolvedTheme(resolved)
     }
     apply()
 
@@ -51,7 +57,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   )

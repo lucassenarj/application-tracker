@@ -1,7 +1,13 @@
 const API_URL = import.meta.env.VITE_API_URL
 const MUTATING_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE'])
+const AUTH_ENDPOINTS_WITHOUT_REFRESH = new Set([
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh',
+])
 
 let cachedCsrfToken: string | undefined
+let inFlightRefresh: Promise<boolean> | undefined
 
 async function getCsrfToken(): Promise<string> {
   const response = await fetch(`${API_URL}/auth/csrf-token`, {
@@ -10,6 +16,25 @@ async function getCsrfToken(): Promise<string> {
   const data = await response.json()
 
   return data.csrfToken
+}
+
+function refreshAccessToken(): Promise<boolean> {
+  inFlightRefresh ??= (async () => {
+    cachedCsrfToken ??= await getCsrfToken()
+    const response = await fetch(`${API_URL}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'x-csrf-token': cachedCsrfToken },
+    })
+    if (response.ok) {
+      cachedCsrfToken = undefined
+    }
+    return response.ok
+  })().finally(() => {
+    inFlightRefresh = undefined
+  })
+
+  return inFlightRefresh
 }
 
 interface ApiFetchOptions extends Omit<RequestInit, 'body' | 'headers'> {
@@ -43,12 +68,22 @@ export async function apiFetch<T>(
     headers['x-csrf-token'] = cachedCsrfToken
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    credentials: 'include',
-    headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  })
+  const doFetch = () =>
+    fetch(`${API_URL}${path}`, {
+      ...options,
+      credentials: 'include',
+      headers,
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    })
+
+  let response = await doFetch()
+
+  if (response.status === 401 && !AUTH_ENDPOINTS_WITHOUT_REFRESH.has(path)) {
+    const refreshed = await refreshAccessToken()
+    if (refreshed) {
+      response = await doFetch()
+    }
+  }
 
   let data: unknown
   try {

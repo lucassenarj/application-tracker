@@ -32,6 +32,7 @@ export interface ApplicationListItem {
   currentStatus: ApplicationStatus
   availableTransitions: ApplicationStatus[]
   createdAt: string
+  updatedAt: string
 }
 
 export interface PaginatedResult<T> {

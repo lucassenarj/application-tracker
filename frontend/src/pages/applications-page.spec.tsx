@@ -1,12 +1,14 @@
 import { QueryClient } from '@tanstack/react-query'
-import { act, screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createRootRoute, createRoute } from '@tanstack/react-router'
 import { zodValidator } from '@tanstack/zod-adapter'
 import { ApplicationsPage } from '@/pages/applications-page'
 import { applicationsSearchSchema } from '@/routes/_authenticated.applications'
 import { renderWithRouter } from '@/test-utils/render-with-router'
+import { formatRelativeTime } from '@/lib/relative-time'
 import type { ApplicationListItem } from '@/lib/applications/applications-list'
+import { fetchMock } from '@/test-setup'
 
 const rootRoute = createRootRoute()
 const authenticatedRoute = createRoute({
@@ -38,32 +40,24 @@ function buildApplicationListItem(
     currentStatus: 'APPLIED',
     availableTransitions: [],
     createdAt: '2026-01-15T10:00:00.000Z',
+    updatedAt: '2026-01-15T10:00:00.000Z',
     ...overrides,
   }
 }
 
 describe('ApplicationsPage', () => {
   let queryClient: QueryClient
-  const fetchMock = vi.fn()
 
   beforeEach(() => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
-    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
-    fetchMock.mockReset()
     fetchMock.mockImplementation(() =>
       Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ items: [], total: 0 }),
       }),
     )
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllEnvs()
-    vi.unstubAllGlobals()
   })
 
   describe('table', () => {
@@ -76,7 +70,7 @@ describe('ApplicationsPage', () => {
         '/applications?page=1',
       )
 
-      await screen.findByText('Applications')
+      await screen.findByRole('heading', { name: 'Applications' })
       expect(
         container.querySelectorAll('[data-slot="skeleton"]').length,
       ).toBeGreaterThan(0)
@@ -91,6 +85,7 @@ describe('ApplicationsPage', () => {
           companyName: 'Globex',
           currentStatus: 'APPLIED',
           createdAt: '2026-02-01T10:00:00.000Z',
+          updatedAt: '2026-02-01T10:00:00.000Z',
         }),
       ]
       fetchMock.mockImplementation(() =>
@@ -102,20 +97,31 @@ describe('ApplicationsPage', () => {
 
       renderWithRouter(routeTree, queryClient, '/applications?page=1')
 
+      const firstRow = (
+        await screen.findByText('Senior Backend Engineer')
+      ).closest('tr')!
+      expect(within(firstRow).getByText('Acme Corp')).toBeInTheDocument()
       expect(
-        await screen.findByText('Senior Backend Engineer'),
+        within(firstRow).getByText('Interview Scheduled'),
       ).toBeInTheDocument()
-      expect(screen.getByText('Acme Corp')).toBeInTheDocument()
-      expect(screen.getByText('Interview Scheduled')).toBeInTheDocument()
       expect(
-        screen.getByText(new Date(items[0].createdAt).toLocaleDateString()),
+        within(firstRow).getByText(
+          new Date(items[0].createdAt).toLocaleDateString(),
+        ),
+      ).toBeInTheDocument()
+      expect(
+        within(firstRow).getByText(
+          formatRelativeTime(new Date(items[0].updatedAt)),
+        ),
       ).toBeInTheDocument()
 
-      expect(screen.getByText('Frontend Developer')).toBeInTheDocument()
-      expect(screen.getByText('Globex')).toBeInTheDocument()
-      expect(screen.getByText('Applied')).toBeInTheDocument()
+      const secondRow = screen.getByText('Frontend Developer').closest('tr')!
+      expect(within(secondRow).getByText('Globex')).toBeInTheDocument()
+      expect(within(secondRow).getByText('Applied')).toBeInTheDocument()
       expect(
-        screen.getByText(new Date(items[1].createdAt).toLocaleDateString()),
+        within(secondRow).getByText(
+          new Date(items[1].createdAt).toLocaleDateString(),
+        ),
       ).toBeInTheDocument()
     })
     it('shows "No applications yet." when the list is empty', async () => {
@@ -148,7 +154,7 @@ describe('ApplicationsPage', () => {
     it('renders All, In Progress, Offers, and Rejections tabs', async () => {
       renderWithRouter(routeTree, queryClient, '/applications?page=1')
 
-      await screen.findByText('Applications')
+      await screen.findByRole('heading', { name: 'Applications' })
 
       expect(screen.getByRole('tab', { name: 'All' })).toBeInTheDocument()
       expect(
@@ -255,107 +261,26 @@ describe('ApplicationsPage', () => {
     ).toBeInTheDocument()
   })
 
-  describe('inline status editing', () => {
-    it('shows a status select for an application with available transitions, and plain text for a terminal one', async () => {
-      const items = [
-        buildApplicationListItem({
-          availableTransitions: ['WAITING_FEEDBACK', 'OFFER', 'REJECTED'],
-        }),
-        buildApplicationListItem({
-          id: '2',
-          title: 'Frontend Developer',
-          companyName: 'Globex',
-          currentStatus: 'REJECTED',
-          createdAt: '2026-02-01T10:00:00.000Z',
-        }),
-      ]
-      fetchMock.mockImplementation(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ items, total: items.length }),
-        }),
-      )
+  it('clicking the View button navigates to the application\'s detail page', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            items: [buildApplicationListItem({ id: 'abc123' })],
+            total: 1,
+          }),
+      }),
+    )
 
-      renderWithRouter(routeTree, queryClient, '/applications?page=1')
+    renderWithRouter(routeTree, queryClient, '/applications?page=1')
 
-      expect(
-        await screen.findByRole('combobox', {
-          name: 'Change status for Senior Backend Engineer',
-        }),
-      ).toHaveTextContent('Applied')
-      expect(
-        screen.queryByRole('combobox', {
-          name: 'Change status for Frontend Developer',
-        }),
-      ).not.toBeInTheDocument()
-      expect(screen.getByText('Rejected')).toBeInTheDocument()
-    })
+    await user.click(await screen.findByRole('button', { name: 'View' }))
 
-    it('selecting a new status opens the Change Status dialog pre-filled with that status', async () => {
-      const user = userEvent.setup()
-      const items = [
-        buildApplicationListItem({
-          availableTransitions: ['WAITING_FEEDBACK', 'OFFER', 'REJECTED'],
-        }),
-      ]
-      fetchMock.mockImplementation(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ items, total: items.length }),
-        }),
-      )
-
-      renderWithRouter(routeTree, queryClient, '/applications?page=1')
-
-      await user.click(
-        await screen.findByRole('combobox', {
-          name: 'Change status for Senior Backend Engineer',
-        }),
-      )
-      await user.click(await screen.findByRole('option', { name: 'Offer' }))
-
-      expect(
-        screen.getByRole('combobox', { name: 'Status' }),
-      ).toHaveTextContent('Offer')
-    })
-
-    it("navigates to the application's detail page after a successful status change", async () => {
-      const user = userEvent.setup()
-      const items = [
-        buildApplicationListItem({
-          id: 'abc123',
-          availableTransitions: ['WAITING_FEEDBACK', 'OFFER', 'REJECTED'],
-        }),
-      ]
-      fetchMock.mockImplementation((url: string) => {
-        if (url.includes('/applications/abc123/status')) {
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({}),
-          })
-        }
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ items, total: items.length }),
-        })
-      })
-
-      renderWithRouter(routeTree, queryClient, '/applications?page=1')
-
-      await user.click(
-        await screen.findByRole('combobox', {
-          name: 'Change status for Senior Backend Engineer',
-        }),
-      )
-      await user.click(await screen.findByRole('option', { name: 'Offer' }))
-      await user.click(
-        await screen.findByRole('button', { name: 'Update Status' }),
-      )
-
-      expect(
-        await screen.findByText('Application Detail page'),
-      ).toBeInTheDocument()
-    })
+    expect(
+      await screen.findByText('Application Detail page'),
+    ).toBeInTheDocument()
   })
 
   describe('search', () => {
@@ -412,11 +337,17 @@ describe('ApplicationsPage', () => {
 
     it('shows a loading indicator while a search request is in flight', async () => {
       const user = userEvent.setup()
-      let callCount = 0
+      let listCallCount = 0
       let resolveSearchFetch: (() => void) | undefined
-      fetchMock.mockImplementation(() => {
-        callCount += 1
-        if (callCount === 1) {
+      fetchMock.mockImplementation((url: string) => {
+        if (!url.includes('/applications?')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ items: [], total: 0 }),
+          })
+        }
+        listCallCount += 1
+        if (listCallCount === 1) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ items: [], total: 0 }),

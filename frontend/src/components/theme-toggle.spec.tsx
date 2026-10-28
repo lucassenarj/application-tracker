@@ -21,7 +21,7 @@ describe('ThemeToggle', () => {
     ).toBeInTheDocument()
   })
 
-  it('selecting Dark from the menu switches the app to dark mode', async () => {
+  it('clicking the toggle switches to dark mode', async () => {
     const user = userEvent.setup()
     render(
       <ThemeProvider>
@@ -32,8 +32,22 @@ describe('ThemeToggle', () => {
     await user.click(
       await screen.findByRole('button', { name: 'Toggle theme' }),
     )
-    await user.click(await screen.findByRole('menuitem', { name: 'Dark' }))
 
     expect(document.documentElement.classList.contains('dark')).toBe(true)
+  })
+
+  it('clicking the toggle again switches back to light mode', async () => {
+    const user = userEvent.setup()
+    render(
+      <ThemeProvider>
+        <ThemeToggle />
+      </ThemeProvider>,
+    )
+
+    const toggle = await screen.findByRole('button', { name: 'Toggle theme' })
+    await user.click(toggle)
+    await user.click(toggle)
+
+    expect(document.documentElement.classList.contains('dark')).toBe(false)
   })
 })

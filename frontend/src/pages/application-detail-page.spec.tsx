@@ -5,6 +5,7 @@ import { createRootRoute, createRoute } from '@tanstack/react-router'
 import { ApplicationDetailPage } from '@/pages/application-detail-page'
 import type { ApplicationDetail } from '@/lib/applications/application-detail'
 import { renderWithRouter } from '@/test-utils/render-with-router'
+import { fetchMock } from '@/test-setup'
 
 const rootRoute = createRootRoute()
 const authenticatedRoute = createRoute({
@@ -30,7 +31,6 @@ const routeTree = rootRoute.addChildren([
 
 describe('ApplicationDetailPage', () => {
   let queryClient: QueryClient
-  const fetchMock = vi.fn()
 
   const baseDetailResponse: ApplicationDetail = {
     id: 'abc123',
@@ -55,14 +55,6 @@ describe('ApplicationDetailPage', () => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
-    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
-    fetchMock.mockReset()
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllEnvs()
-    vi.unstubAllGlobals()
   })
 
   it('renders loading skeletons while the detail query is pending', async () => {
@@ -81,6 +73,14 @@ describe('ApplicationDetailPage', () => {
     })
   })
 
+  it("renders the salary using the application's own currency", async () => {
+    mockDetailResponse({ salary: 90000, currency: 'USD' })
+
+    renderWithRouter(routeTree, queryClient, '/applications/abc123')
+
+    expect(await screen.findByText('$90,000')).toBeInTheDocument()
+  })
+
   it('renders the salary, a link to the job posting, and the description when present', async () => {
     mockDetailResponse({
       salary: 90000,
@@ -90,7 +90,11 @@ describe('ApplicationDetailPage', () => {
 
     renderWithRouter(routeTree, queryClient, '/applications/abc123')
 
-    expect(await screen.findByText('Salary: €90,000')).toBeInTheDocument()
+    expect(
+      await screen.findByText(
+        (_, element) => element?.textContent === 'Salary: €90,000',
+      ),
+    ).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: 'View job posting' }),
     ).toHaveAttribute('href', 'https://example.com/jobs/123')
@@ -117,7 +121,7 @@ describe('ApplicationDetailPage', () => {
 
     renderWithRouter(routeTree, queryClient, '/applications/abc123')
 
-    await screen.findByText('Senior Backend Engineer')
+    await screen.findByRole('heading', { name: 'Senior Backend Engineer' })
 
     expect(screen.queryByText(/Salary:/)).not.toBeInTheDocument()
     expect(
@@ -131,7 +135,7 @@ describe('ApplicationDetailPage', () => {
     renderWithRouter(routeTree, queryClient, '/applications/abc123')
 
     expect(
-      await screen.findByText('Senior Backend Engineer'),
+      await screen.findByRole('heading', { name: 'Senior Backend Engineer' }),
     ).toBeInTheDocument()
     expect(screen.getByText('Acme Corp')).toBeInTheDocument()
     expect(screen.getByText('Interview Scheduled')).toBeInTheDocument()
@@ -293,29 +297,15 @@ describe('ApplicationDetailPage', () => {
     expect(timeline.getByText('Offer')).toBeInTheDocument()
   })
 
-  it('navigates to the Applications list when there is no previous page to go back to', async () => {
+  it('navigates to the Applications list when the Applications breadcrumb is clicked', async () => {
     const user = userEvent.setup()
     mockDetailResponse()
 
     renderWithRouter(routeTree, queryClient, '/applications/abc123')
 
-    await user.click(await screen.findByRole('button', { name: 'Back' }))
-
-    expect(
-      await screen.findByText('Applications List page'),
-    ).toBeInTheDocument()
-  })
-
-  it('returns to the previous page when one exists in history', async () => {
-    const user = userEvent.setup()
-    mockDetailResponse()
-
-    renderWithRouter(routeTree, queryClient, [
-      '/applications',
-      '/applications/abc123',
-    ])
-
-    await user.click(await screen.findByRole('button', { name: 'Back' }))
+    await user.click(
+      await screen.findByRole('link', { name: 'Applications' }),
+    )
 
     expect(
       await screen.findByText('Applications List page'),

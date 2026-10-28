@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { buildRouteTree } from '@/test-utils/build-route-tree'
 import { renderWithRouter } from '@/test-utils/render-with-router'
 import { LoginPage } from '@/pages/login-page'
+import { fetchMock } from '@/test-setup'
 
 const routeTree = buildRouteTree({
   '/login': LoginPage,
@@ -13,21 +14,12 @@ const routeTree = buildRouteTree({
 
 describe('LoginPage', () => {
   let queryClient: QueryClient
-  const fetchMock = vi.fn()
 
   beforeEach(() => {
     queryClient = new QueryClient()
-    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
-    fetchMock.mockReset()
     fetchMock.mockImplementation(() =>
       Promise.resolve({ ok: true, json: () => Promise.resolve({}) }),
     )
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllEnvs()
-    vi.unstubAllGlobals()
   })
 
   it('renders the email and password fields and a submit button', async () => {
@@ -35,7 +27,7 @@ describe('LoginPage', () => {
 
     expect(await screen.findByRole('textbox', { name: 'Email' })).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Login' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sign In' })).toBeInTheDocument()
   })
   it('toggles the password field between hidden and visible', async () => {
     const user = userEvent.setup()
@@ -56,7 +48,7 @@ describe('LoginPage', () => {
 
     await user.type(await screen.findByRole('textbox', { name: 'Email' }), 'not-an-email')
     await user.type(screen.getByLabelText('Password'), 'plain-text-password')
-    await user.click(screen.getByRole('button', { name: 'Login' }))
+    await user.click(screen.getByRole('button', { name: 'Sign In' }))
 
     expect(
       await screen.findByText('Enter a valid email address'),
@@ -67,7 +59,7 @@ describe('LoginPage', () => {
     renderWithRouter(routeTree, queryClient, '/login')
 
     await user.type(await screen.findByRole('textbox', { name: 'Email' }), 'jane@example.com')
-    await user.click(screen.getByRole('button', { name: 'Login' }))
+    await user.click(screen.getByRole('button', { name: 'Sign In' }))
 
     expect(await screen.findByText('Password is required')).toBeInTheDocument()
   })
@@ -85,7 +77,7 @@ describe('LoginPage', () => {
 
     await user.type(await screen.findByRole('textbox', { name: 'Email' }), 'jane@example.com')
     await user.type(screen.getByLabelText('Password'), 'wrong-password')
-    await user.click(screen.getByRole('button', { name: 'Login' }))
+    await user.click(screen.getByRole('button', { name: 'Sign In' }))
 
     expect(await screen.findByText('invalid credentials')).toBeInTheDocument()
   })
@@ -107,7 +99,7 @@ describe('LoginPage', () => {
 
     await user.type(await screen.findByRole('textbox', { name: 'Email' }), 'jane@example.com')
     await user.type(screen.getByLabelText('Password'), 'plain-text-password')
-    await user.click(screen.getByRole('button', { name: 'Login' }))
+    await user.click(screen.getByRole('button', { name: 'Sign In' }))
 
     expect(await screen.findByText('Dashboard page')).toBeInTheDocument()
   })

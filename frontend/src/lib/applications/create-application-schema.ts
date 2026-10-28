@@ -13,6 +13,7 @@ export const createApplicationSchema = z.object({
       (value) => !value || (!Number.isNaN(Number(value)) && Number(value) > 0),
       { message: 'Salary must be a positive number' },
     ),
+  currency: z.string().optional(),
   companyName: z.string().trim().min(1, 'Company is required'),
 })
 

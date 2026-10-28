@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { zodValidator } from '@tanstack/zod-adapter'
 import { z } from 'zod'
+import { SkeletonList } from '@/components/skeleton-list'
 import { APPLICATION_STATUS_CATEGORIES } from '@/lib/applications/applications-list'
 import { ApplicationsPage } from '@/pages/applications-page'
 
@@ -15,5 +16,6 @@ export const Route = createFileRoute('/_authenticated/applications')({
     meta: [{ title: 'Applications - Application Tracker' }],
   }),
   validateSearch: zodValidator(applicationsSearchSchema),
+  pendingComponent: () => <SkeletonList />,
   component: ApplicationsPage,
 })

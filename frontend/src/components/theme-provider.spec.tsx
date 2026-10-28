@@ -3,10 +3,11 @@ import userEvent from '@testing-library/user-event'
 import { ThemeProvider, useTheme } from '@/components/theme-provider'
 
 function ThemeConsumer() {
-  const { theme, setTheme } = useTheme()
+  const { theme, resolvedTheme, setTheme } = useTheme()
   return (
     <div>
-      <span>{theme}</span>
+      <span data-testid="theme">{theme}</span>
+      <span data-testid="resolved">{resolvedTheme}</span>
       <button onClick={() => setTheme('light')}>light</button>
       <button onClick={() => setTheme('dark')}>dark</button>
       <button onClick={() => setTheme('system')}>system</button>
@@ -89,7 +90,7 @@ describe('ThemeProvider / useTheme', () => {
       </ThemeProvider>,
     )
 
-    expect(screen.getByText('dark', { selector: 'span' })).toBeInTheDocument()
+    expect(screen.getByTestId('theme')).toHaveTextContent('dark')
   })
 
   it('resolves "system" to the OS preference via matchMedia', () => {
@@ -139,5 +140,16 @@ describe('ThemeProvider / useTheme', () => {
     changeListener?.()
 
     expect(document.documentElement.classList.contains('dark')).toBe(true)
+  })
+
+  it('exposes the resolved theme separately from the raw preference', () => {
+    render(
+      <ThemeProvider>
+        <ThemeConsumer />
+      </ThemeProvider>,
+    )
+
+    expect(screen.getByText('system', { selector: 'span' })).toBeInTheDocument()
+    expect(screen.getByTestId('resolved')).toHaveTextContent('light')
   })
 })

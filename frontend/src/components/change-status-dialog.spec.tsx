@@ -4,6 +4,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ChangeStatusDialog } from '@/components/change-status-dialog'
 import type { ApplicationStatus } from '@/lib/applications/applications-list'
+import { fetchMock } from '@/test-setup'
 
 function renderDialog(
   queryClient: QueryClient,
@@ -28,23 +29,14 @@ function renderDialog(
 
 describe('ChangeStatusDialog', () => {
   let queryClient: QueryClient
-  const fetchMock = vi.fn()
 
   beforeEach(() => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
-    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
-    fetchMock.mockReset()
     fetchMock.mockImplementation(() =>
       Promise.resolve({ ok: true, json: () => Promise.resolve({}) }),
     )
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllEnvs()
-    vi.unstubAllGlobals()
   })
 
   it('renders a "Change Status" trigger button', () => {

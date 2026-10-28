@@ -3,6 +3,7 @@ import { apiFetch } from '../api-client'
 import type { User } from './user-query'
 
 interface RegisterInput {
+  name: string
   email: string
   password: string
 }

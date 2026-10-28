@@ -1,17 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { ChangeStatusDialog } from '@/components/change-status-dialog'
 import { NewApplicationDialog } from '@/components/new-application-dialog'
+import { PageHeader } from '@/components/page-header'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
@@ -26,16 +21,11 @@ import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import {
   APPLICATIONS_PAGE_SIZE,
   applicationsListQueryOptions,
-  type ApplicationStatus,
   type ApplicationStatusCategory,
 } from '@/lib/applications/applications-list'
 import { formatStatus } from '@/lib/dashboard/applications-list'
-
-interface ChangeStatusTarget {
-  applicationId: string
-  availableTransitions: ApplicationStatus[]
-  initialStatus: ApplicationStatus
-}
+import { getStatusBadgeStyle } from '@/lib/dashboard/status-badge'
+import { formatRelativeTime } from '@/lib/relative-time'
 
 export function ApplicationsPage() {
   const { page, category, search } = useSearch({
@@ -44,8 +34,6 @@ export function ApplicationsPage() {
   const navigate = useNavigate()
   const [searchInput, setSearchInput] = useState(search ?? '')
   const debouncedSearchInput = useDebouncedValue(searchInput, 400)
-  const [changeStatusTarget, setChangeStatusTarget] =
-    useState<ChangeStatusTarget | null>(null)
   const query = useQuery(applicationsListQueryOptions(page, category, search))
 
   useEffect(() => {
@@ -80,16 +68,17 @@ export function ApplicationsPage() {
     })
   }
 
+  const goToDetail = (id: string) => {
+    navigate({ to: '/applications/$id', params: { id } })
+  }
+
   const totalPages = query.data
     ? Math.ceil(query.data.total / APPLICATIONS_PAGE_SIZE)
     : 0
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-heading font-medium">Applications</h1>
-        <NewApplicationDialog />
-      </div>
+    <div className="flex flex-col gap-[30px]">
+      <PageHeader title="Applications" />
 
       <Tabs value={category ?? 'ALL'} onValueChange={setCategory}>
         <TabsList>
@@ -111,128 +100,111 @@ export function ApplicationsPage() {
         <p className="text-sm text-muted-foreground">Searching...</p>
       )}
 
-      {query.isPending && (
-        <div className="flex flex-col gap-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-10 w-full" />
-          ))}
-        </div>
-      )}
-
-      {query.isError && (
-        <p className="text-sm text-destructive">
-          Couldn't load your applications. Try refreshing the page.
-        </p>
-      )}
-
-      {query.isSuccess && query.data.items.length === 0 && (
-        <p className="text-sm text-muted-foreground">No applications yet.</p>
-      )}
-
-      {query.isSuccess && query.data.items.length > 0 && (
-        <>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Company</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {query.data.items.map((item) => (
-                <TableRow
-                  key={item.id}
-                  className="cursor-pointer"
-                  onClick={() =>
-                    navigate({
-                      to: '/applications/$id',
-                      params: { id: item.id },
-                    })
-                  }
-                >
-                  <TableCell>{item.title}</TableCell>
-                  <TableCell>{item.companyName}</TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    {item.availableTransitions.length > 0 ? (
-                      <Select
-                        value={item.currentStatus}
-                        onValueChange={(value) => {
-                          if (!value || value === item.currentStatus) return
-                          setChangeStatusTarget({
-                            applicationId: item.id,
-                            availableTransitions: item.availableTransitions,
-                            initialStatus: value as ApplicationStatus,
-                          })
-                        }}
-                      >
-                        <SelectTrigger
-                          aria-label={`Change status for ${item.title}`}
-                        >
-                          <SelectValue>
-                            {() => formatStatus(item.currentStatus)}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {item.availableTransitions.map((s) => (
-                            <SelectItem key={s} value={s}>
-                              {formatStatus(s)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      formatStatus(item.currentStatus)
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(item.createdAt).toLocaleDateString()}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              disabled={page <= 1}
-              onClick={() => goToPage(page - 1)}
-            >
-              Previous
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              disabled={page >= totalPages}
-              onClick={() => goToPage(page + 1)}
-            >
-              Next
-            </Button>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>All Applications</CardTitle>
+            <CardDescription>Manage your job applications</CardDescription>
           </div>
-        </>
-      )}
+          <NewApplicationDialog />
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {query.isPending && (
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full" />
+              ))}
+            </div>
+          )}
 
-      {changeStatusTarget && (
-        <ChangeStatusDialog
-          applicationId={changeStatusTarget.applicationId}
-          availableTransitions={changeStatusTarget.availableTransitions}
-          initialStatus={changeStatusTarget.initialStatus}
-          open={changeStatusTarget !== null}
-          onOpenChange={(open) => {
-            if (!open) setChangeStatusTarget(null)
-          }}
-          onSuccess={() => {
-            navigate({
-              to: '/applications/$id',
-              params: { id: changeStatusTarget.applicationId },
-            })
-          }}
-        />
-      )}
+          {query.isError && (
+            <p className="text-sm text-destructive">
+              Couldn't load your applications. Try refreshing the page.
+            </p>
+          )}
+
+          {query.isSuccess && query.data.items.length === 0 && (
+            <p className="text-sm text-muted-foreground">No applications yet.</p>
+          )}
+
+          {query.isSuccess && query.data.items.length > 0 && (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Updated</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {query.data.items.map((item) => {
+                    const badgeStyle = getStatusBadgeStyle(item.currentStatus)
+                    return (
+                      <TableRow
+                        key={item.id}
+                        className="cursor-pointer"
+                        onClick={() => goToDetail(item.id)}
+                      >
+                        <TableCell className="font-medium text-foreground">
+                          {item.title}
+                        </TableCell>
+                        <TableCell>{item.companyName}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={badgeStyle.variant}
+                            className={badgeStyle.className}
+                          >
+                            {formatStatus(item.currentStatus)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(item.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          {formatRelativeTime(new Date(item.updatedAt))}
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => goToDetail(item.id)}
+                          >
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="outline"
+                  disabled={page <= 1}
+                  onClick={() => goToPage(page - 1)}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {page} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  disabled={page >= totalPages}
+                  onClick={() => goToPage(page + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

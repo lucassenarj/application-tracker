@@ -9,6 +9,7 @@ import {
 import { AuthenticatedLayout } from '@/components/authenticated-layout'
 import { userQueryOptions, type User } from '@/lib/auth/user-query'
 import { renderWithRouter } from '@/test-utils/render-with-router'
+import { fetchMock } from '@/test-setup'
 
 interface RouterContext {
   queryClient: QueryClient
@@ -59,13 +60,10 @@ const fakeUser: User = {
 
 describe('AuthenticatedLayout', () => {
   let queryClient: QueryClient
-  const fetchMock = vi.fn()
 
   beforeEach(() => {
     queryClient = new QueryClient()
     queryClient.setQueryData(userQueryOptions.queryKey, fakeUser)
-    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
-    fetchMock.mockReset()
     fetchMock.mockImplementation((url: string) => {
       if (url.endsWith('/auth/logout')) {
         return Promise.resolve({
@@ -80,12 +78,6 @@ describe('AuthenticatedLayout', () => {
         json: () => Promise.resolve({ message: 'Unauthorized' }),
       })
     })
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllEnvs()
-    vi.unstubAllGlobals()
   })
 
   it('renders the sidebar nav and the header', async () => {
@@ -105,6 +97,15 @@ describe('AuthenticatedLayout', () => {
     expect(
       screen.getByRole('link', { name: 'Application Tracker' }),
     ).toHaveAttribute('href', '/dashboard')
+  })
+
+  it('shows the loading bar while the user is loading', async () => {
+    const pendingQueryClient = new QueryClient()
+    renderWithRouter(routeTree, pendingQueryClient, '/dashboard')
+
+    expect(
+      await screen.findByRole('status', { name: 'Loading' }),
+    ).toBeInTheDocument()
   })
 
   it('logs out and navigates to /login when Logout is clicked', async () => {

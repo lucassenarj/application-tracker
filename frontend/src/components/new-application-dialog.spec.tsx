@@ -2,6 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NewApplicationDialog } from '@/components/new-application-dialog'
+import { userQueryOptions } from '@/lib/auth/user-query'
+import { fetchMock } from '@/test-setup'
 
 function renderDialog(queryClient: QueryClient) {
   return render(
@@ -13,14 +15,11 @@ function renderDialog(queryClient: QueryClient) {
 
 describe('NewApplicationDialog', () => {
   let queryClient: QueryClient
-  const fetchMock = vi.fn()
 
   beforeEach(() => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
-    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
-    fetchMock.mockReset()
     fetchMock.mockImplementation((url: string) => {
       if (url.includes('/companies/search')) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
@@ -30,19 +29,13 @@ describe('NewApplicationDialog', () => {
         json: () => Promise.resolve({ id: '1' }),
       })
     })
-    vi.stubGlobal('fetch', fetchMock)
   })
 
-  afterEach(() => {
-    vi.unstubAllEnvs()
-    vi.unstubAllGlobals()
-  })
-
-  it('renders the New Application trigger button', () => {
+  it('renders the Add Application trigger button', () => {
     renderDialog(queryClient)
 
     expect(
-      screen.getByRole('button', { name: 'New Application' }),
+      screen.getByRole('button', { name: 'Add Application' }),
     ).toBeInTheDocument()
   })
 
@@ -50,7 +43,7 @@ describe('NewApplicationDialog', () => {
     const user = userEvent.setup()
     renderDialog(queryClient)
 
-    await user.click(screen.getByRole('button', { name: 'New Application' }))
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
 
     expect(
       await screen.findByRole('textbox', { name: 'Title' }),
@@ -67,13 +60,16 @@ describe('NewApplicationDialog', () => {
     expect(
       screen.getByRole('spinbutton', { name: 'Salary' }),
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('combobox', { name: 'Currency' }),
+    ).toHaveTextContent('EUR')
     expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument()
   })
   it('shows a validation error when submitting with an empty title', async () => {
     const user = userEvent.setup()
     renderDialog(queryClient)
 
-    await user.click(screen.getByRole('button', { name: 'New Application' }))
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
     await user.click(await screen.findByRole('button', { name: 'Create' }))
 
     expect(await screen.findByText('Title is required')).toBeInTheDocument()
@@ -82,7 +78,7 @@ describe('NewApplicationDialog', () => {
     const user = userEvent.setup()
     renderDialog(queryClient)
 
-    await user.click(screen.getByRole('button', { name: 'New Application' }))
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
     await user.type(
       await screen.findByRole('textbox', { name: 'Title' }),
       'Senior Backend Engineer',
@@ -95,7 +91,7 @@ describe('NewApplicationDialog', () => {
     const user = userEvent.setup()
     renderDialog(queryClient)
 
-    await user.click(screen.getByRole('button', { name: 'New Application' }))
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
     await user.type(
       await screen.findByRole('textbox', { name: 'Title' }),
       'Senior Backend Engineer',
@@ -116,7 +112,7 @@ describe('NewApplicationDialog', () => {
     const user = userEvent.setup()
     renderDialog(queryClient)
 
-    const trigger = screen.getByRole('button', { name: 'New Application' })
+    const trigger = screen.getByRole('button', { name: 'Add Application' })
     await user.click(trigger)
     await user.type(
       await screen.findByRole('textbox', { name: 'Title' }),
@@ -144,7 +140,7 @@ describe('NewApplicationDialog', () => {
 
     renderDialog(queryClient)
 
-    await user.click(screen.getByRole('button', { name: 'New Application' }))
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
     await user.type(
       await screen.findByRole('textbox', { name: 'Title' }),
       'Senior Backend Engineer',
@@ -178,7 +174,7 @@ describe('NewApplicationDialog', () => {
 
     renderDialog(queryClient)
 
-    await user.click(screen.getByRole('button', { name: 'New Application' }))
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
     await user.type(
       await screen.findByRole('textbox', { name: 'Title' }),
       'Senior Backend Engineer',
@@ -189,11 +185,83 @@ describe('NewApplicationDialog', () => {
 
     await waitFor(() => {
       const createCall = fetchMock.mock.calls.find(
-        ([url]) =>
-          !url.includes('csrf-token') && !url.includes('companies/search'),
+        ([url, options]) =>
+          (options as RequestInit | undefined)?.method === 'POST' &&
+          !url.includes('companies/search'),
       )
       const body = JSON.parse(createCall?.[1]?.body as string)
       expect(body.companyId).toBe('company-1')
+    })
+  })
+
+  it("defaults the currency select to the user's preferred currency when set", async () => {
+    const user = userEvent.setup()
+    queryClient.setQueryData(userQueryOptions.queryKey, {
+      id: '1',
+      email: 'jane@example.com',
+      defaultCurrency: 'USD',
+      createdAt: '2026-01-01T00:00:00.000Z',
+    })
+    renderDialog(queryClient)
+
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
+
+    expect(
+      await screen.findByRole('combobox', { name: 'Currency' }),
+    ).toHaveTextContent('USD')
+  })
+
+  it('sends the default currency (EUR) when creating an application', async () => {
+    const user = userEvent.setup()
+    renderDialog(queryClient)
+
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
+    await user.type(
+      await screen.findByRole('textbox', { name: 'Title' }),
+      'Senior Backend Engineer',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Company' }),
+      'Acme Corp',
+    )
+    await user.click(screen.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      const createCall = fetchMock.mock.calls.find(
+        ([url, options]) =>
+          (options as RequestInit | undefined)?.method === 'POST' &&
+          !url.includes('companies/search'),
+      )
+      const body = JSON.parse(createCall?.[1]?.body as string)
+      expect(body.currency).toBe('EUR')
+    })
+  })
+
+  it('sends the selected currency when changed', async () => {
+    const user = userEvent.setup()
+    renderDialog(queryClient)
+
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
+    await user.type(
+      await screen.findByRole('textbox', { name: 'Title' }),
+      'Senior Backend Engineer',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Company' }),
+      'Acme Corp',
+    )
+    await user.click(screen.getByRole('combobox', { name: 'Currency' }))
+    await user.click(await screen.findByRole('option', { name: 'USD' }))
+    await user.click(screen.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      const createCall = fetchMock.mock.calls.find(
+        ([url, options]) =>
+          (options as RequestInit | undefined)?.method === 'POST' &&
+          !url.includes('companies/search'),
+      )
+      const body = JSON.parse(createCall?.[1]?.body as string)
+      expect(body.currency).toBe('USD')
     })
   })
 })

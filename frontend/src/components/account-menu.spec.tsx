@@ -3,8 +3,10 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createRootRoute, createRoute } from '@tanstack/react-router'
 import { AccountMenu } from '@/components/account-menu'
+import { SidebarProvider } from '@/components/ui/sidebar'
 import type { User } from '@/lib/auth/user-query'
 import { renderWithRouter } from '@/test-utils/render-with-router'
+import { fetchMock } from '@/test-setup'
 
 const fakeUser: User = {
   id: '1',
@@ -17,7 +19,11 @@ const rootRoute = createRootRoute()
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/dashboard',
-  component: () => <AccountMenu user={fakeUser} />,
+  component: () => (
+    <SidebarProvider>
+      <AccountMenu user={fakeUser} />
+    </SidebarProvider>
+  ),
 })
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -37,23 +43,14 @@ const routeTree = rootRoute.addChildren([
 
 describe('AccountMenu', () => {
   let queryClient: QueryClient
-  const fetchMock = vi.fn()
 
   beforeEach(() => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
-    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
-    fetchMock.mockReset()
     fetchMock.mockImplementation(() =>
       Promise.resolve({ ok: true, json: () => Promise.resolve({}) }),
     )
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllEnvs()
-    vi.unstubAllGlobals()
   })
 
   it('shows Profile and Logout options', async () => {
