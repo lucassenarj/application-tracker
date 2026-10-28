@@ -1,3 +1,10 @@
+# [api-v1.12.5](https://github.com/lucassenarj/application-tracker/compare/api-v1.12.4...api-v1.12.5) (2026-10-28)
+
+
+### Bug Fixes
+
+* **infrastructure:** restore dist/main.js production build path ([739d52d](https://github.com/lucassenarj/application-tracker/commit/739d52dbcbbda320362d1cf772011d44a7319157))
+
 # [api-v1.12.4](https://github.com/lucassenarj/application-tracker/compare/api-v1.12.3...api-v1.12.4) (2026-10-28)
 
 
