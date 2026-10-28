@@ -81,7 +81,7 @@ export function NewApplicationDialog() {
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5 bg-background/40 text-[13px] text-muted-foreground backdrop-blur-sm hover:border-emerald-light hover:bg-sidebar-accent hover:text-foreground"
+            className="h-[45px] gap-1.5 bg-background/40 text-[13px] text-muted-foreground backdrop-blur-sm hover:border-emerald-light hover:bg-sidebar-accent hover:text-foreground"
           >
             <Plus />
             Add Application
