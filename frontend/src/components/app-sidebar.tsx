@@ -1,7 +1,6 @@
 import { Link, useLocation } from '@tanstack/react-router'
 import { FileText, LayoutDashboard, User as UserIcon } from 'lucide-react'
 import { AccountMenu } from '@/components/account-menu'
-import { BrandMark } from '@/components/brand-mark'
 import {
   Sidebar,
   SidebarContent,
@@ -36,11 +35,8 @@ export function AppSidebar({ user }: AppSidebarProps) {
   return (
     <Sidebar>
       <SidebarHeader>
-        <Link to="/dashboard" className="flex items-center gap-3 px-2 py-1">
-          <BrandMark />
-          <span className="truncate bg-linear-to-br from-primary to-accent bg-clip-text font-heading text-lg font-semibold text-transparent">
-            Application Tracker
-          </span>
+        <Link to="/dashboard" className="flex items-center px-2 py-1">
+          <img src="/logo.png" alt="Application Tracker" className="h-auto w-full" />
         </Link>
       </SidebarHeader>
       <SidebarContent>
