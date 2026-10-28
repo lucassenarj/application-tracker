@@ -1,3 +1,11 @@
+# [api-v1.12.4](https://github.com/lucassenarj/application-tracker/compare/api-v1.12.3...api-v1.12.4) (2026-10-28)
+
+
+### Bug Fixes
+
+* **identity:** accept a required name field on registration ([7fff565](https://github.com/lucassenarj/application-tracker/commit/7fff5658c9b2e2c7b90035ff9afc1b43583d9dd9))
+* **identity:** add a remember-me option to login ([9aba8c2](https://github.com/lucassenarj/application-tracker/commit/9aba8c26c501bf810d4e5d993b196f4b01b80117))
+
 # [api-v1.12.3](https://github.com/lucassenarj/application-tracker/compare/api-v1.12.2...api-v1.12.3) (2026-10-27)
 
 
