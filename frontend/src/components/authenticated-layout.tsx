@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Outlet } from '@tanstack/react-router'
+import { AppFooter } from '@/components/app-footer'
 import { AppHeader } from '@/components/app-header'
 import { AppSidebar } from '@/components/app-sidebar'
 import { FullPageLoader } from '@/components/full-page-loader'
@@ -22,6 +23,7 @@ export function AuthenticatedLayout() {
         <div className="flex flex-1 flex-col p-[30px]">
           <Outlet />
         </div>
+        <AppFooter />
       </SidebarInset>
     </SidebarProvider>
   )
