@@ -6,6 +6,7 @@ import { userQueryOptions, type User } from './user-query'
 interface LoginInput {
   email: string
   password: string
+  rememberMe: boolean
 }
 
 export function useLoginMutation() {

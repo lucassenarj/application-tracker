@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from '@tanstack/react-router'
 import { ArrowRight } from 'lucide-react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { AppFooter } from '@/components/app-footer'
 import { FullPageLoader } from '@/components/full-page-loader'
 import { PasswordInput } from '@/components/password-input'
@@ -27,9 +27,11 @@ export function LoginPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
+    defaultValues: { rememberMe: false },
   })
 
   return (
@@ -95,8 +97,17 @@ export function LoginPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <label className="flex cursor-not-allowed items-center gap-2 text-sm text-muted-foreground/50">
-                  <Checkbox disabled />
+                <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Controller
+                    name="rememberMe"
+                    control={control}
+                    render={({ field }) => (
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    )}
+                  />
                   Remember me
                 </label>
                 <span className="cursor-not-allowed text-sm text-muted-foreground/50">

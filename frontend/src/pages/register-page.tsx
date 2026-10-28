@@ -43,7 +43,11 @@ export function RegisterPage() {
     const { confirmPassword, ...registerInput } = values
     registerMutation.mutate(registerInput, {
       onSuccess: () =>
-        loginMutation.mutate({ email: values.email, password: values.password }),
+        loginMutation.mutate({
+          email: values.email,
+          password: values.password,
+          rememberMe: false,
+        }),
     })
   }
 
