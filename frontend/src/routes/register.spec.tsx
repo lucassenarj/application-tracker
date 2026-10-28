@@ -22,15 +22,35 @@ describe('RegisterPage', () => {
     )
   })
 
-  it('renders the email and password fields and a submit button', async () => {
+  async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
+    await user.type(
+      await screen.findByRole('textbox', { name: 'Full Name' }),
+      'Jane Doe',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Email' }),
+      'jane@example.com',
+    )
+    await user.type(screen.getByLabelText('Password'), 'plain-text-password')
+    await user.type(
+      screen.getByLabelText('Confirm Password'),
+      'plain-text-password',
+    )
+  }
+
+  it('renders the name, email, password, and confirm password fields and a submit button', async () => {
     renderWithRouter(routeTree, queryClient, '/register')
 
     expect(
-      await screen.findByRole('textbox', { name: 'Email' }),
+      await screen.findByRole('textbox', { name: 'Full Name' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('textbox', { name: 'Email' }),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
+    expect(screen.getByLabelText('Confirm Password')).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Register' }),
+      screen.getByRole('button', { name: 'Create Account' }),
     ).toBeInTheDocument()
   })
   it('toggles the password field between hidden and visible', async () => {
@@ -42,20 +62,48 @@ describe('RegisterPage', () => {
       'password',
     )
 
-    await user.click(screen.getByRole('button', { name: 'Show password' }))
+    const [showPasswordButton] = screen.getAllByRole('button', {
+      name: 'Show password',
+    })
+    await user.click(showPasswordButton)
 
     expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'text')
+  })
+  it('shows a validation error when submitting without a full name', async () => {
+    const user = userEvent.setup()
+    renderWithRouter(routeTree, queryClient, '/register')
+
+    await user.type(
+      await screen.findByRole('textbox', { name: 'Email' }),
+      'jane@example.com',
+    )
+    await user.type(screen.getByLabelText('Password'), 'plain-text-password')
+    await user.type(
+      screen.getByLabelText('Confirm Password'),
+      'plain-text-password',
+    )
+    await user.click(screen.getByRole('button', { name: 'Create Account' }))
+
+    expect(await screen.findByText('Name is required')).toBeInTheDocument()
   })
   it('shows a validation error when submitting with an invalid email', async () => {
     const user = userEvent.setup()
     renderWithRouter(routeTree, queryClient, '/register')
 
     await user.type(
-      await screen.findByRole('textbox', { name: 'Email' }),
+      await screen.findByRole('textbox', { name: 'Full Name' }),
+      'Jane Doe',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Email' }),
       'not-an-email',
     )
     await user.type(screen.getByLabelText('Password'), 'plain-text-password')
-    await user.click(screen.getByRole('button', { name: 'Register' }))
+    await user.type(
+      screen.getByLabelText('Confirm Password'),
+      'plain-text-password',
+    )
+    await user.click(screen.getByRole('button', { name: 'Create Account' }))
 
     expect(
       await screen.findByText('Enter a valid email address'),
@@ -66,14 +114,39 @@ describe('RegisterPage', () => {
     renderWithRouter(routeTree, queryClient, '/register')
 
     await user.type(
-      await screen.findByRole('textbox', { name: 'Email' }),
+      await screen.findByRole('textbox', { name: 'Full Name' }),
+      'Jane Doe',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Email' }),
       'jane@example.com',
     )
     await user.type(screen.getByLabelText('Password'), 'short')
-    await user.click(screen.getByRole('button', { name: 'Register' }))
+    await user.type(screen.getByLabelText('Confirm Password'), 'short')
+    await user.click(screen.getByRole('button', { name: 'Create Account' }))
 
     expect(
       await screen.findByText('Password must be at least 8 characters'),
+    ).toBeInTheDocument()
+  })
+  it('shows a validation error when the confirm password does not match', async () => {
+    const user = userEvent.setup()
+    renderWithRouter(routeTree, queryClient, '/register')
+
+    await user.type(
+      await screen.findByRole('textbox', { name: 'Full Name' }),
+      'Jane Doe',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Email' }),
+      'jane@example.com',
+    )
+    await user.type(screen.getByLabelText('Password'), 'plain-text-password')
+    await user.type(screen.getByLabelText('Confirm Password'), 'different')
+    await user.click(screen.getByRole('button', { name: 'Create Account' }))
+
+    expect(
+      await screen.findByText('Passwords do not match'),
     ).toBeInTheDocument()
   })
   it('shows an error alert when the register request fails', async () => {
@@ -88,13 +161,9 @@ describe('RegisterPage', () => {
 
     const user = userEvent.setup()
     renderWithRouter(routeTree, queryClient, '/register')
+    await fillValidForm(user)
 
-    await user.type(
-      await screen.findByRole('textbox', { name: 'Email' }),
-      'jane@example.com',
-    )
-    await user.type(screen.getByLabelText('Password'), 'plain-text-password')
-    await user.click(screen.getByRole('button', { name: 'Register' }))
+    await user.click(screen.getByRole('button', { name: 'Create Account' }))
 
     expect(
       await screen.findByText('a User with this email already exists'),
@@ -115,13 +184,9 @@ describe('RegisterPage', () => {
 
     const user = userEvent.setup()
     renderWithRouter(routeTree, queryClient, '/register')
+    await fillValidForm(user)
 
-    await user.type(
-      await screen.findByRole('textbox', { name: 'Email' }),
-      'jane@example.com',
-    )
-    await user.type(screen.getByLabelText('Password'), 'plain-text-password')
-    await user.click(screen.getByRole('button', { name: 'Register' }))
+    await user.click(screen.getByRole('button', { name: 'Create Account' }))
 
     expect(await screen.findByText('Dashboard page')).toBeInTheDocument()
   })
