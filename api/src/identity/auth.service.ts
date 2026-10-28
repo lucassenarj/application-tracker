@@ -17,7 +17,7 @@ import {
   hashRefreshToken,
 } from './infrastructure/refresh-token-crypto';
 
-const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+export const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 interface RegisterInput {
   email: string;
@@ -28,11 +28,13 @@ interface RegisterInput {
 interface LoginInput {
   email: string;
   password: string;
+  rememberMe: boolean;
 }
 
 interface RefreshResult {
   accessToken: string;
   refreshToken: string;
+  rememberMe: boolean;
 }
 
 interface LoginResult extends RefreshResult {
@@ -97,10 +99,16 @@ export class AuthService {
       tokenHash: hashRefreshToken(rawRefreshToken),
       familyId: randomUUID(),
       expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+      rememberMe: input.rememberMe,
     });
     await this.refreshTokenRepository.save(refreshToken);
 
-    return { accessToken, refreshToken: rawRefreshToken, user };
+    return {
+      accessToken,
+      refreshToken: rawRefreshToken,
+      user,
+      rememberMe: input.rememberMe,
+    };
   }
 
   async refresh(rawRefreshToken: string): Promise<RefreshResult> {
@@ -148,10 +156,15 @@ export class AuthService {
       tokenHash: hashRefreshToken(newRawRefreshToken),
       familyId: existingRefreshToken.familyId,
       expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+      rememberMe: existingRefreshToken.rememberMe,
     });
     await this.refreshTokenRepository.save(newRefreshToken);
 
-    return { accessToken, refreshToken: newRawRefreshToken };
+    return {
+      accessToken,
+      refreshToken: newRawRefreshToken,
+      rememberMe: existingRefreshToken.rememberMe,
+    };
   }
 
   async logout(rawRefreshToken: string): Promise<void> {

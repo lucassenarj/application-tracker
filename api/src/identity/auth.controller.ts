@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { generateCsrfToken } from '../csrf.config';
-import { AuthService } from './auth.service';
+import { AuthService, REFRESH_TOKEN_TTL_MS } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -45,6 +45,7 @@ export class AuthController {
     const loginResult = await this.authService.login({
       email: dto.email,
       password: dto.password,
+      rememberMe: dto.rememberMe ?? false,
     });
 
     response.cookie('accessToken', loginResult.accessToken, {
@@ -58,6 +59,7 @@ export class AuthController {
       secure: !isDev,
       sameSite: 'strict',
       path: '/auth/refresh',
+      ...(loginResult.rememberMe ? { maxAge: REFRESH_TOKEN_TTL_MS } : {}),
     });
 
     return UserResponse.fromDomain(loginResult.user);
@@ -87,6 +89,7 @@ export class AuthController {
       secure: !isDev,
       sameSite: 'strict',
       path: '/auth/refresh',
+      ...(refreshResult.rememberMe ? { maxAge: REFRESH_TOKEN_TTL_MS } : {}),
     });
   }
 

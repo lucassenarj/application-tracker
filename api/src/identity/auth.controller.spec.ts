@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { instanceToPlain } from 'class-transformer';
 import { Request, Response } from 'express';
 import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { AuthService, REFRESH_TOKEN_TTL_MS } from './auth.service';
 import { FakePasswordHasher } from './test-utils/fakes/password-hasher.fake';
 import { FakeRefreshTokenRepository } from './test-utils/fakes/refresh-token.repository.fake';
 import { FakeUserRepository } from './test-utils/fakes/user.repository.fake';
@@ -99,6 +99,52 @@ describe('AuthController', () => {
         expect.objectContaining({ httpOnly: true }),
       );
     });
+
+    it('sets a persistent refresh token cookie when rememberMe is true', async () => {
+      await authController.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+
+      const mockResponse = { cookie: jest.fn() } as unknown as Response;
+
+      await authController.login(
+        {
+          email: 'jane@example.com',
+          password: 'plain-text-password',
+          rememberMe: true,
+        },
+        mockResponse,
+      );
+
+      expect(mockResponse.cookie).toHaveBeenCalledWith(
+        'refreshToken',
+        expect.any(String),
+        expect.objectContaining({ maxAge: REFRESH_TOKEN_TTL_MS }),
+      );
+    });
+
+    it('sets a session-only refresh token cookie when rememberMe is false or omitted', async () => {
+      await authController.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+
+      const mockResponse = { cookie: jest.fn() } as unknown as Response;
+
+      await authController.login(
+        { email: 'jane@example.com', password: 'plain-text-password' },
+        mockResponse,
+      );
+
+      expect(mockResponse.cookie).toHaveBeenCalledWith(
+        'refreshToken',
+        expect.any(String),
+        expect.not.objectContaining({ maxAge: REFRESH_TOKEN_TTL_MS }),
+      );
+    });
   });
 
   describe('refresh', () => {
@@ -111,6 +157,7 @@ describe('AuthController', () => {
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        rememberMe: true,
       });
 
       const mockRequest = {
@@ -131,6 +178,7 @@ describe('AuthController', () => {
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        rememberMe: true,
       });
 
       const mockRequest = {
@@ -172,6 +220,7 @@ describe('AuthController', () => {
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        rememberMe: true,
       });
 
       const mockRequest = {
@@ -198,6 +247,7 @@ describe('AuthController', () => {
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        rememberMe: true,
       });
 
       const mockRequest = {
@@ -226,6 +276,7 @@ describe('AuthController', () => {
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        rememberMe: true,
       });
 
       const mockRequest = {
