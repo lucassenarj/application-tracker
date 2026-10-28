@@ -13,7 +13,8 @@ import {
 import { AuthService } from '../src/identity/auth.service';
 
 const SMOKE_TEST_EMAIL = 'smoke-test@example.com';
-const SMOKE_TEST_PASSWORD = 'SmokeTest123!';
+const SMOKE_TEST_PASSWORD = 'plain-text-password';
+const SMOKE_TEST_NAME = 'Smoke Test';
 const APPLICATION_COUNT = 30;
 
 const COMPANY_NAMES = [
@@ -224,6 +225,7 @@ async function main() {
     const user = await authService.register({
       email: SMOKE_TEST_EMAIL,
       password: SMOKE_TEST_PASSWORD,
+      name: SMOKE_TEST_NAME,
     });
 
     const companyIds: string[] = [];

@@ -107,6 +107,7 @@ model RefreshToken {
   expiresAt DateTime
   createdAt DateTime  @default(now())
   revokedAt DateTime?
+  rememberMe Boolean  @default(false)
 
   user User @relation(fields: [userId], references: [id])
 

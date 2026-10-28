@@ -11,12 +11,14 @@ describe('RefreshToken', () => {
         tokenHash: 'hashed-token',
         familyId: 'family-1',
         expiresAt,
+        rememberMe: true,
       });
 
       expect(refreshToken.userId).toBe('user-1');
       expect(refreshToken.tokenHash).toBe('hashed-token');
       expect(refreshToken.familyId).toBe('family-1');
       expect(refreshToken.expiresAt).toBe(expiresAt);
+      expect(refreshToken.rememberMe).toBe(true);
     });
 
     it('throws an error when userId is missing', () => {
@@ -26,6 +28,7 @@ describe('RefreshToken', () => {
           tokenHash: 'hashed-token',
           familyId: 'family-1',
           expiresAt: daysFromNow(30),
+          rememberMe: true,
         }),
       ).toThrow();
     });
@@ -37,6 +40,7 @@ describe('RefreshToken', () => {
           tokenHash: '',
           familyId: 'family-1',
           expiresAt: daysFromNow(30),
+          rememberMe: true,
         }),
       ).toThrow();
     });
@@ -48,6 +52,7 @@ describe('RefreshToken', () => {
           tokenHash: 'hashed-token',
           familyId: '',
           expiresAt: daysFromNow(30),
+          rememberMe: true,
         }),
       ).toThrow();
     });
@@ -59,6 +64,7 @@ describe('RefreshToken', () => {
           tokenHash: 'hashed-token',
           familyId: 'family-1',
           expiresAt: undefined as unknown as Date,
+          rememberMe: true,
         }),
       ).toThrow();
     });
@@ -69,6 +75,7 @@ describe('RefreshToken', () => {
         tokenHash: 'hashed-token',
         familyId: 'family-1',
         expiresAt: daysFromNow(30),
+        rememberMe: true,
       });
 
       expect(refreshToken.revokedAt).toBeUndefined();
@@ -80,12 +87,14 @@ describe('RefreshToken', () => {
         tokenHash: 'hashed-token',
         familyId: 'family-1',
         expiresAt: daysFromNow(30),
+        rememberMe: true,
       });
       const secondRefreshToken = RefreshToken.create({
         userId: 'user-1',
         tokenHash: 'hashed-token',
         familyId: 'family-1',
         expiresAt: daysFromNow(30),
+        rememberMe: true,
       });
 
       expect(firstRefreshToken.id).toEqual(expect.any(String));
@@ -109,11 +118,13 @@ describe('RefreshToken', () => {
         expiresAt,
         createdAt,
         revokedAt,
+        rememberMe: true,
       });
 
       expect(refreshToken.id).toBe('existing-id');
       expect(refreshToken.createdAt).toBe(createdAt);
       expect(refreshToken.revokedAt).toBe(revokedAt);
+      expect(refreshToken.rememberMe).toBe(true);
     });
   });
 
@@ -126,6 +137,7 @@ describe('RefreshToken', () => {
         tokenHash: 'hashed-token',
         familyId: 'family-1',
         expiresAt: daysFromNow(30),
+        rememberMe: true,
       });
     });
 
@@ -136,6 +148,7 @@ describe('RefreshToken', () => {
       const revokedRefreshToken = refreshToken.revoke();
 
       expect(revokedRefreshToken.revokedAt).toEqual(now);
+      expect(revokedRefreshToken.rememberMe).toBe(true);
 
       jest.useRealTimers();
     });

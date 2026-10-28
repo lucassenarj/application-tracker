@@ -5,6 +5,7 @@ export interface CreateRefreshTokenProps {
   tokenHash: string;
   familyId: string;
   expiresAt: Date;
+  rememberMe: boolean;
 }
 
 export class RefreshToken {
@@ -15,6 +16,7 @@ export class RefreshToken {
   readonly expiresAt: Date;
   readonly createdAt: Date;
   readonly revokedAt?: Date;
+  readonly rememberMe: boolean;
 
   private constructor(props: {
     id: string;
@@ -24,6 +26,7 @@ export class RefreshToken {
     expiresAt: Date;
     createdAt: Date;
     revokedAt?: Date;
+    rememberMe: boolean;
   }) {
     this.id = props.id;
     this.userId = props.userId;
@@ -32,6 +35,7 @@ export class RefreshToken {
     this.expiresAt = props.expiresAt;
     this.createdAt = props.createdAt;
     this.revokedAt = props.revokedAt;
+    this.rememberMe = props.rememberMe;
   }
 
   static create(input: CreateRefreshTokenProps): RefreshToken {
@@ -58,6 +62,7 @@ export class RefreshToken {
       familyId: input.familyId,
       expiresAt: input.expiresAt,
       createdAt: new Date(),
+      rememberMe: input.rememberMe,
     });
   }
 
@@ -69,6 +74,7 @@ export class RefreshToken {
     expiresAt: Date;
     createdAt: Date;
     revokedAt?: Date;
+    rememberMe: boolean;
   }): RefreshToken {
     return new RefreshToken(props);
   }
@@ -86,6 +92,7 @@ export class RefreshToken {
       expiresAt: this.expiresAt,
       createdAt: this.createdAt,
       revokedAt: new Date(),
+      rememberMe: this.rememberMe,
     });
   }
 }
