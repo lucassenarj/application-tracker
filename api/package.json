@@ -21,8 +21,8 @@
     "test:e2e": "NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-e2e.json",
     "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-integration.json",
     "test:all": "yarn test && yarn test:integration && yarn test:e2e",
-    "seed:smoke-test": "nest build && node dist/scripts/seed-smoke-test-data.js",
-    "unseed:smoke-test": "nest build && node dist/scripts/unseed-smoke-test-data.js"
+    "seed:smoke-test": "nest build -p tsconfig.scripts.json && node dist/scripts/seed-smoke-test-data.js",
+    "unseed:smoke-test": "nest build -p tsconfig.scripts.json && node dist/scripts/unseed-smoke-test-data.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
