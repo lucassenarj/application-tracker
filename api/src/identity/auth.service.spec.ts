@@ -37,6 +37,7 @@ describe('AuthService', () => {
       const newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       expect(newUser.email).toBe('jane@example.com');
@@ -46,16 +47,28 @@ describe('AuthService', () => {
       expect(savedUser?.id).toBe(newUser.id);
     });
 
+    it('creates a User with the given name', async () => {
+      const newUser = await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+
+      expect(newUser.name).toBe('Jane Doe');
+    });
+
     it('throws an error when a User with the given email already exists', async () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       await expect(
         authService.register({
           email: 'jane@example.com',
           password: 'another-password',
+          name: 'Jane Doe',
         }),
       ).rejects.toThrow(ConflictException);
     });
@@ -63,12 +76,14 @@ describe('AuthService', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       await expect(
         authService.register({
           email: 'JANE@EXAMPLE.COM',
           password: 'another-password',
+          name: 'Jane Doe',
         }),
       ).rejects.toThrow(ConflictException);
     });
@@ -79,11 +94,13 @@ describe('AuthService', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        rememberMe: true,
       });
 
       expect(loginResult.accessToken).toEqual(expect.any(String));
@@ -91,11 +108,27 @@ describe('AuthService', () => {
       expect(loginResult.refreshToken).toEqual(expect.any(String));
       expect(loginResult.refreshToken).not.toBe('');
     });
+    it('includes rememberMe in the result, matching the input', async () => {
+      await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+
+      const loginResult = await authService.login({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        rememberMe: true,
+      });
+
+      expect(loginResult.rememberMe).toBe(true);
+    });
     it('throws an error when no User exists for the given email', async () => {
       await expect(
         authService.login({
           email: 'jane@example.com',
           password: 'plain-text-password',
+          rememberMe: true,
         }),
       ).rejects.toThrow(UnauthorizedException);
     });
@@ -103,12 +136,14 @@ describe('AuthService', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       await expect(
         authService.login({
           email: 'jane@example.com',
           password: 'wrong-password',
+          rememberMe: true,
         }),
       ).rejects.toThrow(UnauthorizedException);
     });
@@ -116,15 +151,18 @@ describe('AuthService', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       const firstLoginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        rememberMe: true,
       });
       const secondLoginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        rememberMe: true,
       });
 
       const firstRefreshToken = await refreshTokenRepository.findByTokenHash(
@@ -145,10 +183,12 @@ describe('AuthService', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        rememberMe: true,
       });
 
       const refreshResult = await authService.refresh(loginResult.refreshToken);
@@ -163,10 +203,12 @@ describe('AuthService', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        rememberMe: true,
       });
 
       const now = new Date();
@@ -191,6 +233,7 @@ describe('AuthService', () => {
       const newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
 
       const rawRefreshToken = 'raw-refresh-token';
@@ -199,6 +242,7 @@ describe('AuthService', () => {
         tokenHash: hashRefreshToken(rawRefreshToken),
         familyId: 'family-1',
         expiresAt: new Date(Date.now() - 1000),
+        rememberMe: true,
       });
       await refreshTokenRepository.save(expiredRefreshToken);
 
@@ -210,10 +254,12 @@ describe('AuthService', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        rememberMe: true,
       });
 
       const firstRefreshResult = await authService.refresh(
@@ -241,10 +287,12 @@ describe('AuthService', () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        rememberMe: true,
       });
 
       const now = new Date();
@@ -272,6 +320,7 @@ describe('AuthService', () => {
       newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
     });
 
@@ -296,6 +345,7 @@ describe('AuthService', () => {
       newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
+        name: 'Jane Doe',
       });
     });
 

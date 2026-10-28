@@ -45,6 +45,7 @@ describe('PrismaRefreshTokenRepository', () => {
         tokenHash: 'hashed-token',
         familyId: 'family-1',
         expiresAt: daysFromNow(30),
+        rememberMe: true,
       });
       await refreshTokenRepository.save(refreshToken);
 
@@ -67,6 +68,7 @@ describe('PrismaRefreshTokenRepository', () => {
         tokenHash: 'hashed-token',
         familyId: 'family-1',
         expiresAt: daysFromNow(30),
+        rememberMe: true,
       });
       await refreshTokenRepository.save(refreshToken);
 
@@ -103,6 +105,7 @@ describe('PrismaRefreshTokenRepository', () => {
         tokenHash: 'hashed-token-1',
         familyId: 'family-1',
         expiresAt: daysFromNow(30),
+        rememberMe: true,
       });
       await refreshTokenRepository.save(firstRefreshToken);
 
@@ -111,6 +114,7 @@ describe('PrismaRefreshTokenRepository', () => {
         tokenHash: 'hashed-token-2',
         familyId: 'family-1',
         expiresAt: daysFromNow(30),
+        rememberMe: true,
       });
       await refreshTokenRepository.save(secondRefreshToken);
 
@@ -119,6 +123,7 @@ describe('PrismaRefreshTokenRepository', () => {
         tokenHash: 'hashed-token-3',
         familyId: 'family-2',
         expiresAt: daysFromNow(30),
+        rememberMe: true,
       });
       await refreshTokenRepository.save(otherFamilyRefreshToken);
 

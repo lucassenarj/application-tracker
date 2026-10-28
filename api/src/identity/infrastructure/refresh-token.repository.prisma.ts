@@ -11,6 +11,7 @@ type PersistedRefreshToken = {
   expiresAt: Date;
   createdAt: Date;
   revokedAt: Date | null;
+  rememberMe: boolean;
 };
 
 @Injectable()
@@ -31,6 +32,7 @@ export class PrismaRefreshTokenRepository implements RefreshTokenRepository {
         expiresAt: refreshToken.expiresAt,
         createdAt: refreshToken.createdAt,
         revokedAt: refreshToken.revokedAt,
+        rememberMe: refreshToken.rememberMe,
       },
     });
   }
@@ -59,5 +61,6 @@ function toRefreshToken(row: PersistedRefreshToken): RefreshToken {
     expiresAt: row.expiresAt,
     createdAt: row.createdAt,
     revokedAt: row.revokedAt ?? undefined,
+    rememberMe: row.rememberMe,
   });
 }
