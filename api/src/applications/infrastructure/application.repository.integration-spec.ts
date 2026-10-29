@@ -1,8 +1,8 @@
 import { PrismaService } from '../../prisma/prisma.service';
+import { Company } from '../../companies/domain/company';
+import { PrismaCompanyRepository } from '../../companies/infrastructure/company.repository.prisma';
 import { Application } from '../domain/application';
-import { Company } from '../domain/company';
 import { PrismaApplicationRepository } from './application.repository.prisma';
-import { PrismaCompanyRepository } from './company.repository.prisma';
 
 describe('PrismaApplicationRepository', () => {
   let prisma: PrismaService;

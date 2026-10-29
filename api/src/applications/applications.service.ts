@@ -20,8 +20,8 @@ import {
   bucketApplicationsByWeek,
   type ApplicationsOverTimeBucket,
 } from './domain/applications-over-time';
-import { CompaniesService } from './companies.service';
-import type { Company } from './domain/company';
+import { CompaniesService } from '../companies/companies.service';
+import type { Company } from '../companies/domain/company';
 import { getMonthDateRange } from './domain/month-date-range';
 import { Contact, InterviewCategory } from './domain/status-change';
 

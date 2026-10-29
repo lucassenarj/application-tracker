@@ -15,7 +15,7 @@ import type {
   UpcomingInterview,
 } from '../domain/application.repository';
 import { Contact, StatusChange } from '../domain/status-change';
-import { toPrefixTsQuery } from './postgres-search';
+import { toPrefixTsQuery } from '../../utils/postgres-search';
 
 type PersistedStatusChange = {
   id: string;

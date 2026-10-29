@@ -1,9 +1,9 @@
 import { NotFoundException } from '@nestjs/common';
 import { ApplicationsService } from './applications.service';
-import { CompaniesService } from './companies.service';
+import { CompaniesService } from '../companies/companies.service';
+import { FakeCompanyRepository } from '../companies/test-utils/fakes/company.repository.fake';
 import type { Application } from './domain/application';
 import { FakeApplicationRepository } from './test-utils/fakes/application.repository.fake';
-import { FakeCompanyRepository } from './test-utils/fakes/company.repository.fake';
 
 describe('ApplicationsService', () => {
   let applicationService: ApplicationsService;

@@ -13,7 +13,7 @@ import type {
   UpcomingInterview,
 } from '../../domain/application.repository';
 import type { StatusChange } from '../../domain/status-change';
-import type { FakeCompanyRepository } from './company.repository.fake';
+import type { FakeCompanyRepository } from '../../../companies/test-utils/fakes/company.repository.fake';
 
 export class FakeApplicationRepository implements ApplicationRepository {
   private readonly applications = new Map<string, Application>();
