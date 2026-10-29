@@ -19,7 +19,9 @@ describe('PrismaCompanyRepository', () => {
     await prisma.application.deleteMany({
       where: { company: { name: 'Acme Corp' } },
     });
-    await prisma.company.deleteMany({ where: { name: 'Acme Corp' } });
+    await prisma.company.deleteMany({
+      where: { name: { in: ['Acme Corp', 'Acme Corp Renamed'] } },
+    });
     await prisma.$disconnect();
   });
 
@@ -30,7 +32,9 @@ describe('PrismaCompanyRepository', () => {
     await prisma.application.deleteMany({
       where: { company: { name: 'Acme Corp' } },
     });
-    await prisma.company.deleteMany({ where: { name: 'Acme Corp' } });
+    await prisma.company.deleteMany({
+      where: { name: { in: ['Acme Corp', 'Acme Corp Renamed'] } },
+    });
   });
 
   describe('save', () => {
@@ -45,22 +49,20 @@ describe('PrismaCompanyRepository', () => {
       expect(foundCompany?.name).toBe('Acme Corp');
     });
 
-    it('updates the existing row instead of creating a duplicate when saving with a name that already exists', async () => {
-      const firstCompany = Company.create({ name: 'Acme Corp' });
-      await companyRepository.save(firstCompany);
+    it('updates the name of the existing row when saving a renamed Company with the same id', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
 
-      const secondCompany = Company.create({
-        name: 'Acme Corp',
-        website: 'https://acme.example',
-      });
-      await companyRepository.save(secondCompany);
+      const renamed = company.rename('Acme Corp Renamed');
+      await companyRepository.save(renamed);
 
-      const foundCompany =
+      const foundByOldName =
         await companyRepository.findByNormalizedName('Acme Corp');
+      const foundByNewName = await companyRepository.findById(company.id);
 
-      expect(foundCompany?.id).toBe(firstCompany.id);
-      expect(foundCompany?.id).not.toBe(secondCompany.id);
-      expect(foundCompany?.website).toBe('https://acme.example');
+      expect(foundByOldName).toBeNull();
+      expect(foundByNewName?.id).toBe(company.id);
+      expect(foundByNewName?.name).toBe('Acme Corp Renamed');
     });
 
     it('persists a non-empty website and returns it via findByNormalizedName', async () => {

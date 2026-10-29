@@ -16,8 +16,8 @@ export class PrismaCompanyRepository implements CompanyRepository {
 
   async save(company: Company): Promise<void> {
     await this.prisma.company.upsert({
-      where: { name: company.name },
-      update: { website: company.website },
+      where: { id: company.id },
+      update: { name: company.name, website: company.website },
       create: {
         id: company.id,
         name: company.name,
