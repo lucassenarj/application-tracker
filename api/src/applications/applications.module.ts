@@ -40,6 +40,8 @@ export class ApplicationsModule implements NestModule {
       .forRoutes(
         { path: 'applications', method: RequestMethod.POST },
         { path: 'applications/:id/status', method: RequestMethod.PATCH },
+        { path: 'companies', method: RequestMethod.POST },
+        { path: 'companies/:id', method: RequestMethod.PATCH },
       );
   }
 }

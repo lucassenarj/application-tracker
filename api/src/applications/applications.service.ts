@@ -20,8 +20,8 @@ import {
   bucketApplicationsByWeek,
   type ApplicationsOverTimeBucket,
 } from './domain/applications-over-time';
-import { Company } from './domain/company';
-import type { CompanyRepository } from './domain/company.repository';
+import { CompaniesService } from './companies.service';
+import type { Company } from './domain/company';
 import { getMonthDateRange } from './domain/month-date-range';
 import { Contact, InterviewCategory } from './domain/status-change';
 
@@ -56,8 +56,7 @@ export class ApplicationsService {
   constructor(
     @Inject('ApplicationRepository')
     private readonly applicationRepository: ApplicationRepository,
-    @Inject('CompanyRepository')
-    private readonly companyRepository: CompanyRepository,
+    private readonly companiesService: CompaniesService,
   ) {}
 
   private async resolveCompany(input: {
@@ -65,7 +64,7 @@ export class ApplicationsService {
     companyName: string;
   }): Promise<Company> {
     if (input.companyId) {
-      const existingCompany = await this.companyRepository.findById(
+      const existingCompany = await this.companiesService.findById(
         input.companyId,
       );
 
@@ -76,18 +75,7 @@ export class ApplicationsService {
       return existingCompany;
     }
 
-    const normalizedName = Company.normalizeName(input.companyName);
-    const existingCompany =
-      await this.companyRepository.findByNormalizedName(normalizedName);
-
-    if (existingCompany) {
-      return existingCompany;
-    }
-
-    const newCompany = Company.create({ name: input.companyName });
-    await this.companyRepository.save(newCompany);
-
-    return newCompany;
+    return this.companiesService.findOrCreate(input.companyName);
   }
 
   async create(input: CreateApplicationInput): Promise<Application> {
@@ -123,9 +111,7 @@ export class ApplicationsService {
     userId: string,
   ): Promise<ApplicationWithCompanyName> {
     const application = await this.findById(id, userId);
-    const company = await this.companyRepository.findById(
-      application.companyId,
-    );
+    const company = await this.companiesService.findById(application.companyId);
 
     if (!company) {
       throw new NotFoundException('Company not found');

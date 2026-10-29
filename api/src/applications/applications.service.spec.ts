@@ -1,5 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { ApplicationsService } from './applications.service';
+import { CompaniesService } from './companies.service';
 import type { Application } from './domain/application';
 import { FakeApplicationRepository } from './test-utils/fakes/application.repository.fake';
 import { FakeCompanyRepository } from './test-utils/fakes/company.repository.fake';
@@ -8,13 +9,15 @@ describe('ApplicationsService', () => {
   let applicationService: ApplicationsService;
   let applicationRepository: FakeApplicationRepository;
   let companyRepository: FakeCompanyRepository;
+  let companiesService: CompaniesService;
 
   beforeEach(() => {
     companyRepository = new FakeCompanyRepository();
+    companiesService = new CompaniesService(companyRepository);
     applicationRepository = new FakeApplicationRepository(companyRepository);
     applicationService = new ApplicationsService(
       applicationRepository,
-      companyRepository,
+      companiesService,
     );
   });
 

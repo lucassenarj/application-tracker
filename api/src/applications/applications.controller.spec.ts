@@ -1,6 +1,7 @@
 import type { Request } from 'express';
 import { ApplicationsController } from './applications.controller';
 import { ApplicationsService } from './applications.service';
+import { CompaniesService } from './companies.service';
 import { FakeApplicationRepository } from './test-utils/fakes/application.repository.fake';
 import { FakeCompanyRepository } from './test-utils/fakes/company.repository.fake';
 
@@ -10,9 +11,10 @@ describe('ApplicationsController', () => {
 
   beforeEach(() => {
     const companyRepository = new FakeCompanyRepository();
+    const companiesService = new CompaniesService(companyRepository);
     applicationsService = new ApplicationsService(
       new FakeApplicationRepository(companyRepository),
-      companyRepository,
+      companiesService,
     );
     applicationsController = new ApplicationsController(applicationsService);
   });
