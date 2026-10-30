@@ -36,6 +36,14 @@ export class Company {
     return new Company(props);
   }
 
+  rename(newName: string): Company {
+    return new Company({
+      id: this.id,
+      name: Company.normalizeName(newName),
+      website: this.website,
+    });
+  }
+
   static normalizeName(name: string): string {
     return name.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
   }

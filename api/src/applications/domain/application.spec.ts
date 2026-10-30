@@ -15,6 +15,27 @@ describe('Application', () => {
       expect(application.userId).toBe('user-1');
     });
 
+    it('defaults tagIds to an empty array when omitted', () => {
+      const application = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: 'company-1',
+        userId: 'user-1',
+      });
+
+      expect(application.tagIds).toEqual([]);
+    });
+
+    it('sets tagIds when provided', () => {
+      const application = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: 'company-1',
+        userId: 'user-1',
+        tagIds: ['tag-1', 'tag-2'],
+      });
+
+      expect(application.tagIds).toEqual(['tag-1', 'tag-2']);
+    });
+
     it('sets currentStatus to APPLIED automatically on creation', () => {
       const application = Application.create({
         title: 'Senior Backend Engineer',
@@ -116,6 +137,7 @@ describe('Application', () => {
         title: 'Senior Backend Engineer',
         companyId: 'company-1',
         userId: 'user-1',
+        tagIds: ['tag-1'],
       });
     });
 
@@ -160,6 +182,15 @@ describe('Application', () => {
       expect(application.currentStatus).toBe('APPLIED');
       expect(application.statusHistory).toHaveLength(1);
     });
+
+    it('preserves tagIds when changing status', () => {
+      const updatedApplication = application.changeStatus({
+        status: 'WAITING_FEEDBACK',
+        eventDate: new Date(),
+      });
+
+      expect(updatedApplication.tagIds).toEqual(['tag-1']);
+    });
   });
 
   describe('reconstitute', () => {
@@ -178,12 +209,14 @@ describe('Application', () => {
         userId: 'user-1',
         currentStatus: 'WAITING_FEEDBACK',
         statusHistory: [statusChange],
+        tagIds: ['tag-1'],
         createdAt,
       });
 
       expect(application.id).toBe('existing-id');
       expect(application.currentStatus).toBe('WAITING_FEEDBACK');
       expect(application.statusHistory).toEqual([statusChange]);
+      expect(application.tagIds).toEqual(['tag-1']);
       expect(application.createdAt).toBe(createdAt);
     });
   });

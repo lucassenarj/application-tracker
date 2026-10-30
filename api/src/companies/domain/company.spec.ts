@@ -53,4 +53,19 @@ describe('Company', () => {
       expect(Company.normalizeName('STRIPE INC')).toBe('Stripe Inc');
     });
   });
+
+  describe('rename', () => {
+    it('returns a new Company with the normalized new name, keeping the same id and website', () => {
+      const company = Company.create({
+        name: 'Acme Corp',
+        website: 'https://acme.example',
+      });
+
+      const renamed = company.rename('STRIPE INC');
+
+      expect(renamed.id).toBe(company.id);
+      expect(renamed.name).toBe('Stripe Inc');
+      expect(renamed.website).toBe('https://acme.example');
+    });
+  });
 });

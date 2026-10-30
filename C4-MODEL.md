@@ -62,11 +62,16 @@ C4Component
     title Component Diagram — Backend API (NestJS)
 
     Container_Boundary(api, "Backend API") {
-        Component(appsController, "ApplicationsController", "NestJS Controller", "HTTP endpoints: applications, status changes, companies")
+        Component(appsController, "ApplicationsController", "NestJS Controller", "HTTP endpoints: applications, status changes")
         Component(appsService, "ApplicationsService", "NestJS Service", "Thin orchestrator — no business rules here (decision 6)")
         Component(appDomain, "Application domain", "Aggregate + State pattern", "Application aggregate, guarded status transitions (decision 9)")
         Component(appRepo, "ApplicationRepository", "Repository", "Maps Prisma types to the Application aggregate")
+        Component(companiesController, "CompaniesController", "NestJS Controller", "HTTP endpoints: companies")
+        Component(companiesService, "CompaniesService", "NestJS Service", "create/findOrCreate/update/search (decision 17)")
         Component(companyRepo, "CompanyRepository", "Repository", "Find-or-create by normalized name (decision 17)")
+        Component(tagsController, "TagsController", "NestJS Controller", "HTTP endpoints: tags")
+        Component(tagsService, "TagsService", "NestJS Service", "create/findOrCreate/update/search (decision 31)")
+        Component(tagRepo, "TagRepository", "Repository", "Find-or-create by normalized name (decision 31)")
         Component(identityController, "IdentityController", "NestJS Controller", "Register / login endpoints")
         Component(identityService, "IdentityService", "NestJS Service", "Auth orchestration, issues JWT cookie (decision 10)")
         Component(userRepo, "UserRepository", "Repository", "Maps Prisma types to the User aggregate")
@@ -78,16 +83,22 @@ C4Component
     Rel(appsController, appsService, "Calls")
     Rel(appsService, appDomain, "Invokes")
     Rel(appsService, appRepo, "Calls")
-    Rel(appsService, companyRepo, "Calls")
+    Rel(appsService, companiesService, "Calls (decision 30 — never the repository directly)")
+    Rel(appsService, tagsService, "Calls (decision 30 — never the repository directly)")
+    Rel(companiesController, companiesService, "Calls")
+    Rel(companiesService, companyRepo, "Calls")
+    Rel(tagsController, tagsService, "Calls")
+    Rel(tagsService, tagRepo, "Calls")
     Rel(appRepo, prisma, "Uses")
     Rel(companyRepo, prisma, "Uses")
+    Rel(tagRepo, prisma, "Uses")
     Rel(identityController, identityService, "Calls")
     Rel(identityService, userRepo, "Calls")
     Rel(userRepo, prisma, "Uses")
     Rel(prisma, db, "Reads / writes")
 ```
 
-The `ApplicationsController`/`Service`/`Repository`/domain group and the `Identity*` group are the two bounded-context modules (`ApplicationsModule`, `IdentityModule`, decision 7) living inside the one container — `PrismaService` is the only thing both sides share.
+The `ApplicationsController`/`Service`/`Repository`/domain group, `Companies*`, `Tags*`, and `Identity*` are four bounded-context modules (`ApplicationsModule`, `CompaniesModule`, `TagsModule`, `IdentityModule`, decisions 7 and 30) living inside the one container — `PrismaService` is the only thing all of them share. `ApplicationsModule` imports `CompaniesModule` and `TagsModule` to reach their exported services; it never imports their repositories.
 
 ---
 
@@ -115,6 +126,12 @@ classDiagram
         string website
     }
 
+    class Tag {
+        <<Entity, shared/global>>
+        UUID id
+        string name
+    }
+
     class StatusChange {
         <<Entity, append-only>>
         UUID id
@@ -137,6 +154,7 @@ classDiagram
     }
 
     Application "many" --> "1" Company : company
+    Application "many" --> "many" Tag : tags
     Application "1" --> "many" StatusChange : history
     StatusChange "1" --> "0..1" Contact : contact
     Application "many" ..> "1" User : userId reference only

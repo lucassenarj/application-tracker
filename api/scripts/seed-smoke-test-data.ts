@@ -4,8 +4,8 @@ import { AppModule } from '../src/app.module';
 import { Application } from '../src/applications/domain/application';
 import type { ApplicationStatus } from '../src/applications/domain/application-status';
 import type { ApplicationRepository } from '../src/applications/domain/application.repository';
-import { Company } from '../src/applications/domain/company';
-import type { CompanyRepository } from '../src/applications/domain/company.repository';
+import { Company } from '../src/companies/domain/company';
+import type { CompanyRepository } from '../src/companies/domain/company.repository';
 import {
   StatusChange,
   type InterviewCategory,

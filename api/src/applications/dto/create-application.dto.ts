@@ -38,4 +38,8 @@ export class CreateApplicationDto {
   @IsOptional()
   @IsUUID()
   companyId?: string;
+
+  @IsOptional()
+  @IsString({ each: true })
+  tagNames?: string[];
 }

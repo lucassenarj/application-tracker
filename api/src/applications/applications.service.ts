@@ -20,8 +20,10 @@ import {
   bucketApplicationsByWeek,
   type ApplicationsOverTimeBucket,
 } from './domain/applications-over-time';
-import { Company } from './domain/company';
-import type { CompanyRepository } from './domain/company.repository';
+import { CompaniesService } from '../companies/companies.service';
+import type { Company } from '../companies/domain/company';
+import type { Tag } from '../tags/domain/tag';
+import { TagsService } from '../tags/tags.service';
 import { getMonthDateRange } from './domain/month-date-range';
 import { Contact, InterviewCategory } from './domain/status-change';
 
@@ -41,6 +43,7 @@ interface CreateApplicationInput {
   companyName: string;
   companyId?: string;
   userId: string;
+  tagNames?: string[];
 }
 
 interface ChangeStatusInput {
@@ -56,8 +59,8 @@ export class ApplicationsService {
   constructor(
     @Inject('ApplicationRepository')
     private readonly applicationRepository: ApplicationRepository,
-    @Inject('CompanyRepository')
-    private readonly companyRepository: CompanyRepository,
+    private readonly companiesService: CompaniesService,
+    private readonly tagsService: TagsService,
   ) {}
 
   private async resolveCompany(input: {
@@ -65,7 +68,7 @@ export class ApplicationsService {
     companyName: string;
   }): Promise<Company> {
     if (input.companyId) {
-      const existingCompany = await this.companyRepository.findById(
+      const existingCompany = await this.companiesService.findById(
         input.companyId,
       );
 
@@ -76,22 +79,12 @@ export class ApplicationsService {
       return existingCompany;
     }
 
-    const normalizedName = Company.normalizeName(input.companyName);
-    const existingCompany =
-      await this.companyRepository.findByNormalizedName(normalizedName);
-
-    if (existingCompany) {
-      return existingCompany;
-    }
-
-    const newCompany = Company.create({ name: input.companyName });
-    await this.companyRepository.save(newCompany);
-
-    return newCompany;
+    return this.companiesService.findOrCreate(input.companyName);
   }
 
   async create(input: CreateApplicationInput): Promise<Application> {
     const company = await this.resolveCompany(input);
+    const tagIds = await this.resolveTagIds(input.tagNames);
 
     const application = Application.create({
       title: input.title,
@@ -101,11 +94,22 @@ export class ApplicationsService {
       currency: input.currency,
       companyId: company.id,
       userId: input.userId,
+      tagIds,
     });
 
     await this.applicationRepository.save(application);
 
     return application;
+  }
+
+  private async resolveTagIds(tagNames?: string[]): Promise<string[]> {
+    if (!tagNames) return [];
+
+    const tags = await Promise.all(
+      tagNames.map((name) => this.tagsService.findOrCreate(name)),
+    );
+
+    return tags.map((tag) => tag.id);
   }
 
   async findById(id: string, userId: string): Promise<Application> {
@@ -123,15 +127,25 @@ export class ApplicationsService {
     userId: string,
   ): Promise<ApplicationWithCompanyName> {
     const application = await this.findById(id, userId);
-    const company = await this.companyRepository.findById(
-      application.companyId,
-    );
+    const company = await this.companiesService.findById(application.companyId);
 
     if (!company) {
       throw new NotFoundException('Company not found');
     }
 
-    return { application, companyName: company.name };
+    const tags = await this.resolveTagNames(application.tagIds);
+
+    return { application, companyName: company.name, tags };
+  }
+
+  private async resolveTagNames(tagIds: readonly string[]): Promise<string[]> {
+    const tags = await Promise.all(
+      tagIds.map((id) => this.tagsService.findById(id)),
+    );
+
+    return tags
+      .filter((tag): tag is Tag => tag !== null)
+      .map((tag) => tag.name);
   }
 
   findAllByUser(

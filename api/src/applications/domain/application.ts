@@ -11,6 +11,7 @@ export interface CreateApplicationProps {
   currency?: string;
   companyId: string;
   userId: string;
+  tagIds?: string[];
 }
 
 export class Application {
@@ -24,6 +25,7 @@ export class Application {
   readonly userId: string;
   readonly currentStatus: ApplicationStatus;
   readonly statusHistory: readonly StatusChange[];
+  readonly tagIds: readonly string[];
   readonly createdAt: Date;
 
   private constructor(props: {
@@ -37,6 +39,7 @@ export class Application {
     userId: string;
     currentStatus: ApplicationStatus;
     statusHistory: StatusChange[];
+    tagIds: string[];
     createdAt: Date;
   }) {
     this.id = props.id;
@@ -49,6 +52,7 @@ export class Application {
     this.userId = props.userId;
     this.currentStatus = props.currentStatus;
     this.statusHistory = props.statusHistory;
+    this.tagIds = props.tagIds;
     this.createdAt = props.createdAt;
   }
 
@@ -93,6 +97,7 @@ export class Application {
       userId: input.userId,
       currentStatus: 'APPLIED',
       statusHistory: [initialStatusChange],
+      tagIds: input.tagIds ?? [],
       createdAt: now,
     });
   }
@@ -135,6 +140,7 @@ export class Application {
       userId: this.userId,
       currentStatus: input.status,
       statusHistory: [...this.statusHistory, statusChange],
+      tagIds: [...this.tagIds],
       createdAt: this.createdAt,
     });
   }
@@ -150,8 +156,9 @@ export class Application {
     userId: string;
     currentStatus: ApplicationStatus;
     statusHistory: StatusChange[];
+    tagIds?: string[];
     createdAt: Date;
   }): Application {
-    return new Application(props);
+    return new Application({ ...props, tagIds: props.tagIds ?? [] });
   }
 }

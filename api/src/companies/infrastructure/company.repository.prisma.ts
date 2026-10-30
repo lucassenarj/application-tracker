@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Company } from '../domain/company';
 import type { CompanyRepository } from '../domain/company.repository';
-import { toPrefixTsQuery } from './postgres-search';
+import { toPrefixTsQuery } from '../../utils/postgres-search';
 
 type PersistedCompany = {
   id: string;
@@ -16,8 +16,8 @@ export class PrismaCompanyRepository implements CompanyRepository {
 
   async save(company: Company): Promise<void> {
     await this.prisma.company.upsert({
-      where: { name: company.name },
-      update: { website: company.website },
+      where: { id: company.id },
+      update: { name: company.name, website: company.website },
       create: {
         id: company.id,
         name: company.name,
