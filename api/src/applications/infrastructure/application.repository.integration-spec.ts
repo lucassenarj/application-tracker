@@ -1,6 +1,8 @@
 import { PrismaService } from '../../prisma/prisma.service';
 import { Company } from '../../companies/domain/company';
 import { PrismaCompanyRepository } from '../../companies/infrastructure/company.repository.prisma';
+import { Tag } from '../../tags/domain/tag';
+import { PrismaTagRepository } from '../../tags/infrastructure/tag.repository.prisma';
 import { Application } from '../domain/application';
 import { PrismaApplicationRepository } from './application.repository.prisma';
 
@@ -8,12 +10,14 @@ describe('PrismaApplicationRepository', () => {
   let prisma: PrismaService;
   let applicationRepository: PrismaApplicationRepository;
   let companyRepository: PrismaCompanyRepository;
+  let tagRepository: PrismaTagRepository;
 
   beforeAll(async () => {
     prisma = new PrismaService();
     await prisma.$connect();
     applicationRepository = new PrismaApplicationRepository(prisma);
     companyRepository = new PrismaCompanyRepository(prisma);
+    tagRepository = new PrismaTagRepository(prisma);
   });
 
   afterAll(async () => {
@@ -27,6 +31,9 @@ describe('PrismaApplicationRepository', () => {
     });
     await prisma.company.deleteMany({
       where: { name: { in: ['Acme Corp', 'Globex Inc'] } },
+    });
+    await prisma.tag.deleteMany({
+      where: { name: { startsWith: 'App Tag Test' } },
     });
     await prisma.$disconnect();
   });
@@ -42,6 +49,9 @@ describe('PrismaApplicationRepository', () => {
     });
     await prisma.company.deleteMany({
       where: { name: { in: ['Acme Corp', 'Globex Inc'] } },
+    });
+    await prisma.tag.deleteMany({
+      where: { name: { startsWith: 'App Tag Test' } },
     });
   });
 
@@ -150,6 +160,27 @@ describe('PrismaApplicationRepository', () => {
         name: 'Jane Recruiter',
         email: 'jane@example.com',
       });
+    });
+
+    it('persists tagIds and returns them via findById', async () => {
+      const company = Company.create({ name: 'Acme Corp' });
+      await companyRepository.save(company);
+      const tag = Tag.create({ name: 'App Tag Test Remote' });
+      await tagRepository.save(tag);
+
+      const application = Application.create({
+        title: 'Senior Backend Engineer',
+        companyId: company.id,
+        userId: 'user-1',
+        tagIds: [tag.id],
+      });
+      await applicationRepository.save(application);
+
+      const foundApplication = await applicationRepository.findById(
+        application.id,
+      );
+
+      expect(foundApplication?.tagIds).toEqual([tag.id]);
     });
   });
 
@@ -481,6 +512,61 @@ describe('PrismaApplicationRepository', () => {
 
       expect(result.items).toHaveLength(1);
       expect(result.items[0].application.id).toBe(inProgressApplication.id);
+    });
+
+    describe('tag filtering and hydration', () => {
+      let company: Company;
+      let tag: Tag;
+
+      beforeEach(async () => {
+        company = Company.create({ name: 'Acme Corp' });
+        await companyRepository.save(company);
+        tag = Tag.create({ name: 'App Tag Test Remote' });
+        await tagRepository.save(tag);
+      });
+
+      it('returns hydrated tag names for each Application', async () => {
+        const application = Application.create({
+          title: 'Senior Backend Engineer',
+          companyId: company.id,
+          userId: 'user-1',
+          tagIds: [tag.id],
+        });
+        await applicationRepository.save(application);
+
+        const result = await applicationRepository.findAllByUser('user-1', {
+          page: 1,
+          pageSize: 10,
+        });
+
+        expect(result.items[0].tags).toEqual(['App Tag Test Remote']);
+      });
+
+      it('returns only Applications matching the given tag', async () => {
+        const taggedApplication = Application.create({
+          title: 'Senior Backend Engineer',
+          companyId: company.id,
+          userId: 'user-1',
+          tagIds: [tag.id],
+        });
+        await applicationRepository.save(taggedApplication);
+
+        const untaggedApplication = Application.create({
+          title: 'Staff Engineer',
+          companyId: company.id,
+          userId: 'user-1',
+        });
+        await applicationRepository.save(untaggedApplication);
+
+        const result = await applicationRepository.findAllByUser('user-1', {
+          page: 1,
+          pageSize: 10,
+          tag: 'App Tag Test Remote',
+        });
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0].application.id).toBe(taggedApplication.id);
+      });
     });
   });
 

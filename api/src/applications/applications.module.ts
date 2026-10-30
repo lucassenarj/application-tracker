@@ -9,12 +9,13 @@ import { CompaniesModule } from '../companies/companies.module';
 import { IdentityModule } from '../identity/identity.module';
 import { JwtAuthGuard } from '../identity/guards/jwt-auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
+import { TagsModule } from '../tags/tags.module';
 import { ApplicationsController } from './applications.controller';
 import { ApplicationsService } from './applications.service';
 import { PrismaApplicationRepository } from './infrastructure/application.repository.prisma';
 
 @Module({
-  imports: [IdentityModule, CompaniesModule],
+  imports: [IdentityModule, CompaniesModule, TagsModule],
   controllers: [ApplicationsController],
   providers: [
     ApplicationsService,

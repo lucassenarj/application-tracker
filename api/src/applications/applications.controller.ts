@@ -46,6 +46,9 @@ export class ApplicationListItemResponse {
   @ApiProperty()
   companyName: string;
 
+  @ApiProperty({ type: String, isArray: true })
+  tags: string[];
+
   @ApiProperty({ enum: APPLICATION_STATUSES })
   currentStatus: ApplicationStatus;
 
@@ -62,11 +65,13 @@ export class ApplicationListItemResponse {
 function toListItemResponse({
   application,
   companyName,
+  tags,
 }: ApplicationWithCompanyName): ApplicationListItemResponse {
   return {
     id: application.id,
     title: application.title,
     companyName,
+    tags,
     currentStatus: application.currentStatus,
     availableTransitions: ApplicationStatusStateMachine.getAvailableTransitions(
       application.currentStatus,
@@ -141,6 +146,9 @@ export class ApplicationResponse {
   @ApiProperty()
   companyId: string;
 
+  @ApiProperty({ type: String, isArray: true })
+  tagIds: string[];
+
   @ApiProperty()
   userId: string;
 
@@ -163,6 +171,7 @@ function toApplicationResponse(application: Application): ApplicationResponse {
     salary: application.salary,
     currency: application.currency,
     companyId: application.companyId,
+    tagIds: [...application.tagIds],
     userId: application.userId,
     currentStatus: application.currentStatus,
     statusHistory: application.statusHistory.map(toStatusChangeResponse),
@@ -192,6 +201,9 @@ export class ApplicationDetailResponse {
   @ApiProperty()
   companyName: string;
 
+  @ApiProperty({ type: String, isArray: true })
+  tags: string[];
+
   @ApiProperty({ enum: APPLICATION_STATUSES })
   currentStatus: ApplicationStatus;
 
@@ -208,6 +220,7 @@ export class ApplicationDetailResponse {
 function toDetailResponse({
   application,
   companyName,
+  tags,
 }: ApplicationWithCompanyName): ApplicationDetailResponse {
   return {
     id: application.id,
@@ -217,6 +230,7 @@ function toDetailResponse({
     salary: application.salary,
     currency: application.currency,
     companyName,
+    tags,
     currentStatus: application.currentStatus,
     availableTransitions: ApplicationStatusStateMachine.getAvailableTransitions(
       application.currentStatus,
@@ -325,6 +339,7 @@ export class ApplicationsController {
       companyName: dto.companyName,
       companyId: dto.companyId,
       userId: request.user!.id,
+      tagNames: dto.tagNames,
     });
     return toApplicationResponse(application);
   }
@@ -342,6 +357,7 @@ export class ApplicationsController {
         search: query.search,
         status: query.status,
         category: query.category,
+        tag: query.tag,
       },
     );
 

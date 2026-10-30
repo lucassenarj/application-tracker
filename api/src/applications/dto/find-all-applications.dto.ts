@@ -29,4 +29,8 @@ export class FindAllApplicationsDto {
   @IsOptional()
   @IsIn(APPLICATION_STATUS_CATEGORIES)
   category?: ApplicationStatusCategory;
+
+  @IsOptional()
+  @IsString()
+  tag?: string;
 }

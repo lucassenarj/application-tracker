@@ -9,6 +9,7 @@ export interface FindAllByUserOptions {
   search?: string;
   status?: ApplicationStatus;
   category?: ApplicationStatusCategory;
+  tag?: string;
 }
 
 export interface PaginatedResult<T> {
@@ -19,6 +20,7 @@ export interface PaginatedResult<T> {
 export interface ApplicationWithCompanyName {
   application: Application;
   companyName: string;
+  tags: string[];
 }
 
 export interface RecentActivityItem {

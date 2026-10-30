@@ -2,6 +2,8 @@ import { NotFoundException } from '@nestjs/common';
 import { ApplicationsService } from './applications.service';
 import { CompaniesService } from '../companies/companies.service';
 import { FakeCompanyRepository } from '../companies/test-utils/fakes/company.repository.fake';
+import { TagsService } from '../tags/tags.service';
+import { FakeTagRepository } from '../tags/test-utils/fakes/tag.repository.fake';
 import type { Application } from './domain/application';
 import { FakeApplicationRepository } from './test-utils/fakes/application.repository.fake';
 
@@ -10,14 +12,22 @@ describe('ApplicationsService', () => {
   let applicationRepository: FakeApplicationRepository;
   let companyRepository: FakeCompanyRepository;
   let companiesService: CompaniesService;
+  let tagRepository: FakeTagRepository;
+  let tagsService: TagsService;
 
   beforeEach(() => {
     companyRepository = new FakeCompanyRepository();
     companiesService = new CompaniesService(companyRepository);
-    applicationRepository = new FakeApplicationRepository(companyRepository);
+    tagRepository = new FakeTagRepository();
+    tagsService = new TagsService(tagRepository);
+    applicationRepository = new FakeApplicationRepository(
+      companyRepository,
+      tagRepository,
+    );
     applicationService = new ApplicationsService(
       applicationRepository,
       companiesService,
+      tagsService,
     );
   });
 
@@ -87,6 +97,44 @@ describe('ApplicationsService', () => {
           userId: 'user-1',
         }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('creates a new Tag for each given tagName, then attaches their ids to the Application', async () => {
+      const newApplication = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+        tagNames: ['Remote', 'Dream Job'],
+      });
+
+      expect(newApplication.tagIds).toHaveLength(2);
+
+      const remoteTag = await tagRepository.findByNormalizedName('Remote');
+      const dreamJobTag = await tagRepository.findByNormalizedName('Dream Job');
+      expect(newApplication.tagIds).toEqual([remoteTag?.id, dreamJobTag?.id]);
+    });
+
+    it('reuses an existing Tag instead of creating a duplicate, when one already matches the normalized name', async () => {
+      const existingTag = await tagsService.create('Remote');
+
+      const newApplication = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+        tagNames: ['remote'],
+      });
+
+      expect(newApplication.tagIds).toEqual([existingTag.id]);
+    });
+
+    it('defaults tagIds to an empty array when tagNames is omitted', async () => {
+      const newApplication = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+      });
+
+      expect(newApplication.tagIds).toEqual([]);
     });
   });
 
@@ -159,6 +207,22 @@ describe('ApplicationsService', () => {
       await expect(
         applicationService.getDetailById(newApplication.id, 'user-2'),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('returns the hydrated tag names for the Application', async () => {
+      const newApplication = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+        tagNames: ['Remote', 'Dream Job'],
+      });
+
+      const detail = await applicationService.getDetailById(
+        newApplication.id,
+        'user-1',
+      );
+
+      expect(detail.tags).toEqual(['Remote', 'Dream Job']);
     });
   });
 

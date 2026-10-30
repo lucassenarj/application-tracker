@@ -15,6 +15,7 @@ import type {
   UpcomingInterview,
 } from '../domain/application.repository';
 import { Contact, StatusChange } from '../domain/status-change';
+import { Tag } from '../../tags/domain/tag';
 import { toPrefixTsQuery } from '../../utils/postgres-search';
 
 type PersistedStatusChange = {
@@ -40,6 +41,7 @@ type PersistedApplication = {
   userId: string;
   currentStatus: string;
   statusChanges: PersistedStatusChange[];
+  tags: { id: string; name: string }[];
   createdAt: Date;
 };
 
@@ -62,6 +64,7 @@ export class PrismaApplicationRepository implements ApplicationRepository {
         userId: application.userId,
         currentStatus: application.currentStatus,
         createdAt: application.createdAt,
+        tags: { connect: application.tagIds.map((id) => ({ id })) },
       },
     });
 
@@ -84,7 +87,10 @@ export class PrismaApplicationRepository implements ApplicationRepository {
   async findById(id: string): Promise<Application | null> {
     const row = await this.prisma.application.findUnique({
       where: { id },
-      include: { statusChanges: { orderBy: { createdAt: 'asc' } } },
+      include: {
+        statusChanges: { orderBy: { createdAt: 'asc' } },
+        tags: { select: { id: true, name: true } },
+      },
     });
 
     return row ? toApplication(row) : null;
@@ -113,6 +119,9 @@ export class PrismaApplicationRepository implements ApplicationRepository {
             ],
           }
         : {}),
+      ...(options.tag
+        ? { tags: { some: { name: Tag.normalizeName(options.tag) } } }
+        : {}),
     };
 
     const [rows, total] = await this.prisma.$transaction([
@@ -124,6 +133,7 @@ export class PrismaApplicationRepository implements ApplicationRepository {
         include: {
           statusChanges: { orderBy: { createdAt: 'asc' } },
           company: { select: { name: true } },
+          tags: { select: { id: true, name: true } },
         },
       }),
       this.prisma.application.count({ where }),
@@ -133,6 +143,7 @@ export class PrismaApplicationRepository implements ApplicationRepository {
       items: rows.map((row) => ({
         application: toApplication(row),
         companyName: row.company.name,
+        tags: row.tags.map((tag) => tag.name),
       })),
       total,
     };
@@ -251,6 +262,7 @@ function toApplication(row: PersistedApplication): Application {
     userId: row.userId,
     currentStatus: row.currentStatus as Application['currentStatus'],
     statusHistory: row.statusChanges.map(toStatusChange),
+    tagIds: row.tags.map((tag) => tag.id),
     createdAt: row.createdAt,
   });
 }

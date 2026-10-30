@@ -14,11 +14,16 @@ import type {
 } from '../../domain/application.repository';
 import type { StatusChange } from '../../domain/status-change';
 import type { FakeCompanyRepository } from '../../../companies/test-utils/fakes/company.repository.fake';
+import { Tag } from '../../../tags/domain/tag';
+import type { FakeTagRepository } from '../../../tags/test-utils/fakes/tag.repository.fake';
 
 export class FakeApplicationRepository implements ApplicationRepository {
   private readonly applications = new Map<string, Application>();
 
-  constructor(private readonly companyRepository: FakeCompanyRepository) {}
+  constructor(
+    private readonly companyRepository: FakeCompanyRepository,
+    private readonly tagRepository: FakeTagRepository,
+  ) {}
 
   save(application: Application): Promise<void> {
     this.applications.set(application.id, application);
@@ -52,26 +57,53 @@ export class FakeApplicationRepository implements ApplicationRepository {
       );
     }
 
-    const start = (options.page - 1) * options.pageSize;
-    const items = await Promise.all(
-      matching
-        .slice(start, start + options.pageSize)
-        .map(async (application): Promise<ApplicationWithCompanyName> => {
-          const company = await this.companyRepository.findById(
-            application.companyId,
-          );
-
-          if (!company) {
-            throw new Error(
-              `No company found for id ${application.companyId} — test setup likely forgot to save it`,
-            );
-          }
-
-          return { application, companyName: company.name };
-        }),
+    let withTags = await Promise.all(
+      matching.map(async (application) => ({
+        application,
+        tags: await this.hydrateTagNames(application.tagIds),
+      })),
     );
 
-    return { items, total: matching.length };
+    if (options.tag) {
+      const normalizedTag = Tag.normalizeName(options.tag);
+      withTags = withTags.filter(({ tags }) => tags.includes(normalizedTag));
+    }
+
+    const start = (options.page - 1) * options.pageSize;
+    const items = await Promise.all(
+      withTags
+        .slice(start, start + options.pageSize)
+        .map(
+          async ({
+            application,
+            tags,
+          }): Promise<ApplicationWithCompanyName> => {
+            const company = await this.companyRepository.findById(
+              application.companyId,
+            );
+
+            if (!company) {
+              throw new Error(
+                `No company found for id ${application.companyId} — test setup likely forgot to save it`,
+              );
+            }
+
+            return { application, companyName: company.name, tags };
+          },
+        ),
+    );
+
+    return { items, total: withTags.length };
+  }
+
+  private async hydrateTagNames(tagIds: readonly string[]): Promise<string[]> {
+    const tags = await Promise.all(
+      tagIds.map((id) => this.tagRepository.findById(id)),
+    );
+
+    return tags
+      .filter((tag): tag is Tag => tag !== null)
+      .map((tag) => tag.name);
   }
 
   countByUserGroupedByStatus(

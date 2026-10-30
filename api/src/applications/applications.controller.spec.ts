@@ -3,6 +3,8 @@ import { ApplicationsController } from './applications.controller';
 import { ApplicationsService } from './applications.service';
 import { CompaniesService } from '../companies/companies.service';
 import { FakeCompanyRepository } from '../companies/test-utils/fakes/company.repository.fake';
+import { TagsService } from '../tags/tags.service';
+import { FakeTagRepository } from '../tags/test-utils/fakes/tag.repository.fake';
 import { FakeApplicationRepository } from './test-utils/fakes/application.repository.fake';
 
 describe('ApplicationsController', () => {
@@ -12,9 +14,12 @@ describe('ApplicationsController', () => {
   beforeEach(() => {
     const companyRepository = new FakeCompanyRepository();
     const companiesService = new CompaniesService(companyRepository);
+    const tagRepository = new FakeTagRepository();
+    const tagsService = new TagsService(tagRepository);
     applicationsService = new ApplicationsService(
-      new FakeApplicationRepository(companyRepository),
+      new FakeApplicationRepository(companyRepository, tagRepository),
       companiesService,
+      tagsService,
     );
     applicationsController = new ApplicationsController(applicationsService);
   });
