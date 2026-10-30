@@ -129,6 +129,7 @@ The interview category is `interviewCategory` on `StatusChange`, not a separate 
 - Group tests with a nested `describe` block per method under test (e.g. `describe('create', ...)`, `describe('findById', ...)` inside the outer `describe('ClassName', ...)`), so test output reads as `ClassName › methodName › behavior` and it's clear which method each test targets at a glance. Skip this nesting when a class has only one public method being tested — nothing to disambiguate.
 - Keep test names terse — do not append explanatory suffixes like "never passed in" (e.g. `generates id on creation`, not `generates id on creation, never passed in`).
 - Do not “mock the behavior we are trying to prove”; test the real behavior of the domain.
+- Before proposing any test file, scan for setup lines repeated across `it` blocks (e.g. creating/saving the same fixture in three different tests) and hoist that into `beforeEach`/`beforeAll` before presenting the draft — don't wait to be corrected. Exception: a test whose whole point is exercising the creation/save call itself still needs its own local, distinctly-named instance, since reusing a shared fixture would stop it from testing what it claims to.
 
 ### 3.4. State machine rules
 - Never change `currentStatus` directly in service code.
@@ -178,6 +179,8 @@ Check `BACKLOG.md` (or the live GitHub issues) for current priority — don't as
 ---
 
 ## 5. Operational checklist for AI agents
+
+**Never assume, never presume. Always ask, wait for an explicit yes, then act.** This applies to every file edit, not just "big" ones — proposing a plan and then immediately implementing it in the same turn is a violation even if the plan itself was correct. The sequence is always: ask/propose → wait for the user's explicit answer → only then write code. Presenting a diff is not permission to apply it; "here's the plan" is not "go ahead." If this rule is ever unclear in a specific situation, stop and ask rather than guessing which way it applies.
 
 Before changing code, confirm:
 - [ ] The change aligns with `DECISIONS.md` and the C4 model.

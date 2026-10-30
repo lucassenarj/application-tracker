@@ -256,6 +256,26 @@ A personal job-application tracker: log an application (title, description, link
 - **Why not now:** `api/Dockerfile.prod` is already live in production with a simple, self-contained install (`api/package.json`+`api/yarn.lock` only) that took two separate failed-deploy cycles to get right. Converting to Yarn workspaces changes that install mechanism (root lockfile, `yarn workspaces focus api` instead of a plain install) for a tooling-convenience benefit, not a bug fix — real regression risk to something already stable, and it would also touch `docker-compose.yml`, CI cache paths, and both projects' lockfiles at once. The actual dependency overlap between the two stacks is smaller than it might seem, too — NestJS-specific deps (`@nestjs/*`, `prisma`, `argon2`) and frontend-specific ones (`react`, `@tanstack/*`, shadcn's ecosystem) don't overlap; the real shared surface is just `typescript` and the `semantic-release` toolchain.
 - **Decision:** keep `api/` and `frontend/` as fully independent npm projects (separate `package.json`/`yarn.lock`/`node_modules` each) for now. Revisit workspaces as its own deliberately-scoped piece of work later, on its own branch, so the Docker/CI implications can be verified in isolation rather than entangled with unrelated feature work.
 
+### 30. Repository scoping rule: a repository is only ever injected into its own domain's service
+
+- **Goal:** fix `ApplicationsService` reaching directly into `CompanyRepository` and duplicating find-or-create logic that belongs to Company's own domain — and establish a durable rule before a second domain (`Tag`) hit the same temptation.
+- **Why this way:** a repository is the data-access boundary for its own aggregate's invariants; letting another domain's service inject it directly erodes that boundary one shortcut at a time. Going forward, cross-domain access goes through that domain's *service* (`CompaniesService`, `TagsService`), never its repository.
+- **Decision:** `ApplicationsService` depends on `CompaniesService` and `TagsService` only. `Company` was also physically moved into its own `src/companies/` module (previously nested under `applications/`), since it has its own identity and lifecycle independent of `Application` (a planned future admin app manages it directly) — the module boundary now matches the domain boundary that already existed conceptually.
+
+### 31. `Tag` attributes & invariants
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `id` | UUID | system-generated | identity |
+| `name` | string | yes | normalized on write — see invariants |
+
+- **Goal:** let users attach freeform-but-deduped labels to an `Application` (e.g. "Remote", "Dream Job") without producing duplicate rows for the same label, mirroring `Company`'s autocomplete-or-create flow exactly.
+- **Why this way** (architectural invariants only):
+  - No `userId` — like `Company`, `Tag` is shared/global across all users: the autocomplete flow needs one shared pool, and generic tag names aren't per-user-sensitive data that would need scoping.
+  - `name` normalized the same way as `Company.name` (lowercase, then capitalize the first letter of each word) and unique after normalization.
+  - `Application`↔`Tag` is an implicit many-to-many (Prisma-managed join table) — no explicit join entity, since the pairing itself carries no extra fields.
+  - `Application.tagIds` is set once, at creation time, via `TagsService.findOrCreate` per given name (same silent-reuse semantics as company resolution). No endpoint exists yet to edit an existing application's tags — out of scope until a real need shows up.
+
 ## Still open (see README `TO DO` sections for the authoritative list)
 
 - **Domain model:** none — `Application`, `StatusChange`/`Contact`, `Company`, the state machine, and now `User` are all defined (decisions 15–18, 25).
