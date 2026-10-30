@@ -1,3 +1,17 @@
+# [api-v1.13.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.12.5...api-v1.13.0) (2026-10-30)
+
+
+### Bug Fixes
+
+* **application:** persist Company updates by id instead of name ([1226f1c](https://github.com/lucassenarj/application-tracker/commit/1226f1c9224e49bc5c648341c9b55396a35ddeb8))
+
+
+### Features
+
+* **application:** add explicit create/edit endpoints for Company ([a847813](https://github.com/lucassenarj/application-tracker/commit/a8478130c586911dfa45c1a4ce5a8788564490ba))
+* **application:** wire tags into creation, listing, and detail views ([3eb58cd](https://github.com/lucassenarj/application-tracker/commit/3eb58cdd58e5f71dc4a4669f2b88fc9e2a7abc79))
+* **tags:** add Tag domain, service, controller, and module ([8888ff8](https://github.com/lucassenarj/application-tracker/commit/8888ff8fd275f9db20d44f2426255a5cd5e03d06))
+
 # [api-v1.12.5](https://github.com/lucassenarj/application-tracker/compare/api-v1.12.4...api-v1.12.5) (2026-10-28)
 
 
