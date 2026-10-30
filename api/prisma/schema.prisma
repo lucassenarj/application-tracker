@@ -46,6 +46,13 @@ model Company {
   applications Application[]
 }
 
+model Tag {
+  id   String @id @default(uuid())
+  name String @unique
+
+  applications Application[]
+}
+
 model Application {
   id            String            @id @default(uuid())
   title         String            @db.VarChar(255)
@@ -60,6 +67,7 @@ model Application {
 
   company       Company        @relation(fields: [companyId], references: [id])
   statusChanges StatusChange[]
+  tags          Tag[]
 
   @@index([companyId])
   @@index([userId])
