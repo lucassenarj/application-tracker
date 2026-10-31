@@ -50,6 +50,15 @@ export class PrismaTagRepository implements TagRepository {
 
     return rows.map(toTag);
   }
+
+  async findPopular(limit: number): Promise<Tag[]> {
+    const rows = await this.prisma.tag.findMany({
+      orderBy: { applications: { _count: 'desc' } },
+      take: limit,
+    });
+
+    return rows.map(toTag);
+  }
 }
 
 function toTag(row: PersistedTag): Tag {

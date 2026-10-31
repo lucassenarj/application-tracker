@@ -28,4 +28,8 @@ export class FakeTagRepository implements TagRepository {
   findById(id: string): Promise<Tag | null> {
     return Promise.resolve(this.tags.get(id) ?? null);
   }
+
+  findPopular(limit: number): Promise<Tag[]> {
+    return Promise.resolve([...this.tags.values()].slice(0, limit));
+  }
 }

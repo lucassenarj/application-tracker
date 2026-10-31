@@ -122,6 +122,27 @@ describe('Applications (e2e)', () => {
       where: { email: 'interviews-by-month-e2e-test@example.com' },
     });
 
+    await prisma.statusChange.deleteMany({
+      where: {
+        application: { title: 'Tag Filter E2E Test Application' },
+      },
+    });
+    await prisma.application.deleteMany({
+      where: { title: 'Tag Filter E2E Test Application' },
+    });
+    await prisma.company.deleteMany({
+      where: { name: 'Tag Filter E2E Test Co' },
+    });
+    await prisma.tag.deleteMany({
+      where: { name: 'Tag Filter E2e Test Remote' },
+    });
+    await prisma.refreshToken.deleteMany({
+      where: { user: { email: 'tag-filter-e2e-test@example.com' } },
+    });
+    await prisma.user.deleteMany({
+      where: { email: 'tag-filter-e2e-test@example.com' },
+    });
+
     await app.close();
   });
 
@@ -346,5 +367,42 @@ describe('Applications (e2e)', () => {
       companyName: 'Interviews By Month E2e Test Co',
       interviewCategory: 'TECHNICAL',
     });
+  });
+
+  it('filters applications by a single tag given in the query string', async () => {
+    const agent = request.agent(app.getHttpServer());
+
+    await agent.post('/auth/register').send({
+      email: 'tag-filter-e2e-test@example.com',
+      password: 'plain-text-password',
+      name: 'E2E Test User',
+    });
+    await agent.post('/auth/login').send({
+      email: 'tag-filter-e2e-test@example.com',
+      password: 'plain-text-password',
+    });
+
+    const csrfResponse = await agent.get('/auth/csrf-token');
+    const csrfToken = (csrfResponse.body as { csrfToken: string }).csrfToken;
+
+    await agent
+      .post('/applications')
+      .set('x-csrf-token', csrfToken)
+      .send({
+        title: 'Tag Filter E2E Test Application',
+        companyName: 'Tag Filter E2E Test Co',
+        tagNames: ['Tag Filter E2e Test Remote'],
+      })
+      .expect(201);
+
+    const response = await agent
+      .get('/applications')
+      .query({ page: 1, pageSize: 10, tags: 'Tag Filter E2e Test Remote' })
+      .expect(200);
+
+    const body = response.body as { items: Array<{ title: string }> };
+
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0].title).toBe('Tag Filter E2E Test Application');
   });
 });

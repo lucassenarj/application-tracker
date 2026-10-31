@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import type { ApplicationStatus } from '../domain/application-status';
 import { APPLICATION_STATUSES } from '../domain/application-status';
@@ -31,6 +31,9 @@ export class FindAllApplicationsDto {
   category?: ApplicationStatusCategory;
 
   @IsOptional()
-  @IsString()
-  tag?: string;
+  @Transform(({ value }: { value?: string | string[] }) =>
+    value === undefined ? undefined : Array.isArray(value) ? value : [value],
+  )
+  @IsString({ each: true })
+  tags?: string[];
 }

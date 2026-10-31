@@ -357,7 +357,7 @@ export class ApplicationsController {
         search: query.search,
         status: query.status,
         category: query.category,
-        tag: query.tag,
+        tags: query.tags,
       },
     );
 

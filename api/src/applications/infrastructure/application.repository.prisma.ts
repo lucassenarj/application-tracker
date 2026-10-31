@@ -119,8 +119,16 @@ export class PrismaApplicationRepository implements ApplicationRepository {
             ],
           }
         : {}),
-      ...(options.tag
-        ? { tags: { some: { name: Tag.normalizeName(options.tag) } } }
+      ...(options.tags && options.tags.length > 0
+        ? {
+            tags: {
+              some: {
+                name: {
+                  in: options.tags.map((name) => Tag.normalizeName(name)),
+                },
+              },
+            },
+          }
         : {}),
     };
 
