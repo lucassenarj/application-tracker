@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
+import { Eye, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { NewApplicationDialog } from '@/components/new-application-dialog'
 import { PageHeader } from '@/components/page-header'
-import { Badge } from '@/components/ui/badge'
+import { Badge, badgeVariants } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -26,15 +27,18 @@ import {
 import { formatStatus } from '@/lib/dashboard/applications-list'
 import { getStatusBadgeStyle } from '@/lib/dashboard/status-badge'
 import { formatRelativeTime } from '@/lib/relative-time'
+import { cn } from 'cn'
 
 export function ApplicationsPage() {
-  const { page, category, search } = useSearch({
+  const { page, category, search, tags } = useSearch({
     from: '/_authenticated/applications',
   })
   const navigate = useNavigate()
   const [searchInput, setSearchInput] = useState(search ?? '')
   const debouncedSearchInput = useDebouncedValue(searchInput, 400)
-  const query = useQuery(applicationsListQueryOptions(page, category, search))
+  const query = useQuery(
+    applicationsListQueryOptions(page, category, search, tags),
+  )
 
   useEffect(() => {
     const nextSearch = debouncedSearchInput || undefined
@@ -42,10 +46,10 @@ export function ApplicationsPage() {
 
     navigate({
       to: '/applications',
-      search: { page: 1, category, search: nextSearch },
+      search: { page: 1, category, search: nextSearch, tags },
       replace: true,
     })
-  }, [debouncedSearchInput, category, search, navigate])
+  }, [debouncedSearchInput, category, search, tags, navigate])
 
   const setCategory = (value: string) => {
     navigate({
@@ -55,15 +59,37 @@ export function ApplicationsPage() {
         category:
           value === 'ALL' ? undefined : (value as ApplicationStatusCategory),
         search,
+        tags,
       },
       replace: true,
     })
   }
 
+  const setTags = (nextTags: string[]) => {
+    navigate({
+      to: '/applications',
+      search: {
+        page: 1,
+        category,
+        search,
+        tags: nextTags.length > 0 ? nextTags : undefined,
+      },
+      replace: true,
+    })
+  }
+
+  const toggleTagFilter = (tag: string) => {
+    const current = tags ?? []
+    const next = current.includes(tag)
+      ? current.filter((t) => t !== tag)
+      : [...current, tag]
+    setTags(next)
+  }
+
   const goToPage = (nextPage: number) => {
     navigate({
       to: '/applications',
-      search: { page: nextPage, category, search },
+      search: { page: nextPage, category, search, tags },
       replace: true,
     })
   }
@@ -89,12 +115,14 @@ export function ApplicationsPage() {
         </TabsList>
       </Tabs>
 
-      <Input
-        aria-label="Search by title or company"
-        placeholder="Search by title or company"
-        value={searchInput}
-        onChange={(e) => setSearchInput(e.target.value)}
-      />
+      {tags && tags.length > 0 && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Filtering by tags: {tags.join(', ')}</span>
+          <Button variant="ghost" size="sm" onClick={() => setTags([])}>
+            Clear tags
+          </Button>
+        </div>
+      )}
 
       {query.isFetching && (
         <p className="text-sm text-muted-foreground">Searching...</p>
@@ -106,7 +134,28 @@ export function ApplicationsPage() {
             <CardTitle>All Applications</CardTitle>
             <CardDescription>Manage your job applications</CardDescription>
           </div>
-          <NewApplicationDialog />
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Input
+                aria-label="Search by title or company"
+                placeholder="Search by title or company"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-64 pr-9"
+              />
+              {searchInput && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => setSearchInput('')}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:cursor-pointer hover:text-foreground"
+                >
+                  <X className="size-4" />
+                </button>
+              )}
+            </div>
+            <NewApplicationDialog />
+          </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {query.isPending && (
@@ -134,6 +183,7 @@ export function ApplicationsPage() {
                   <TableRow>
                     <TableHead>Role</TableHead>
                     <TableHead>Company</TableHead>
+                    <TableHead>Tags</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Updated</TableHead>
@@ -144,15 +194,29 @@ export function ApplicationsPage() {
                   {query.data.items.map((item) => {
                     const badgeStyle = getStatusBadgeStyle(item.currentStatus)
                     return (
-                      <TableRow
-                        key={item.id}
-                        className="cursor-pointer"
-                        onClick={() => goToDetail(item.id)}
-                      >
+                      <TableRow key={item.id}>
                         <TableCell className="font-medium text-foreground">
                           {item.title}
                         </TableCell>
                         <TableCell>{item.companyName}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {item.tags.map((tag) => (
+                              <button
+                                key={tag}
+                                type="button"
+                                className={cn(
+                                  badgeVariants({ variant: 'outline' }),
+                                  'h-auto cursor-pointer p-2 hover:bg-emerald-light/20',
+                                  tags?.includes(tag) && 'bg-accent',
+                                )}
+                                onClick={() => toggleTagFilter(tag)}
+                              >
+                                {tag}
+                              </button>
+                            ))}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <Badge
                             variant={badgeStyle.variant}
@@ -167,13 +231,14 @@ export function ApplicationsPage() {
                         <TableCell>
                           {formatRelativeTime(new Date(item.updatedAt))}
                         </TableCell>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
+                        <TableCell>
                           <Button
                             variant="outline"
                             size="sm"
+                            aria-label="View"
                             onClick={() => goToDetail(item.id)}
                           >
-                            View
+                            <Eye />
                           </Button>
                         </TableCell>
                       </TableRow>

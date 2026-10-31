@@ -41,6 +41,7 @@ function buildApplicationListItem(
     availableTransitions: [],
     createdAt: '2026-01-15T10:00:00.000Z',
     updatedAt: '2026-01-15T10:00:00.000Z',
+    tags: [],
     ...overrides,
   }
 }
@@ -52,12 +53,15 @@ describe('ApplicationsPage', () => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
-    fetchMock.mockImplementation(() =>
-      Promise.resolve({
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/tags/search')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
+      }
+      return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ items: [], total: 0 }),
-      }),
-    )
+      })
+    })
   })
 
   describe('table', () => {
@@ -124,6 +128,32 @@ describe('ApplicationsPage', () => {
         ),
       ).toBeInTheDocument()
     })
+
+    it('renders tag badges for each application', async () => {
+      const items = [
+        buildApplicationListItem({ tags: ['Remote', 'Dream Job'] }),
+        buildApplicationListItem({
+          id: '2',
+          title: 'Frontend Developer',
+          tags: [],
+        }),
+      ]
+      fetchMock.mockImplementation(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ items, total: items.length }),
+        }),
+      )
+
+      renderWithRouter(routeTree, queryClient, '/applications?page=1')
+
+      const firstRow = (
+        await screen.findByText('Senior Backend Engineer')
+      ).closest('tr')!
+      expect(within(firstRow).getByText('Remote')).toBeInTheDocument()
+      expect(within(firstRow).getByText('Dream Job')).toBeInTheDocument()
+    })
+
     it('shows "No applications yet." when the list is empty', async () => {
       renderWithRouter(routeTree, queryClient, '/applications?page=1')
 
@@ -199,6 +229,85 @@ describe('ApplicationsPage', () => {
     })
   })
 
+  describe('tag filter', () => {
+    function mockItemsWithTag() {
+      fetchMock.mockImplementation(() =>
+        Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              items: [buildApplicationListItem({ tags: ['Remote'] })],
+              total: 1,
+            }),
+        }),
+      )
+    }
+
+    it('clicking a tag badge adds it as a filter and resets to page 1', async () => {
+      const user = userEvent.setup()
+      mockItemsWithTag()
+
+      renderWithRouter(routeTree, queryClient, '/applications?page=2')
+
+      await user.click(await screen.findByRole('button', { name: 'Remote' }))
+
+      const lastCallUrl = fetchMock.mock.calls.at(-1)?.[0] as string
+      expect(lastCallUrl).toContain('page=1')
+      expect(lastCallUrl).toContain('tags=Remote')
+    })
+
+    it('clicking an already-active tag removes it from the filter', async () => {
+      const user = userEvent.setup()
+      mockItemsWithTag()
+
+      renderWithRouter(
+        routeTree,
+        queryClient,
+        '/applications?page=1&tags=%5B%22Remote%22%5D',
+      )
+
+      await user.click(await screen.findByRole('button', { name: 'Remote' }))
+
+      const lastCallUrl = fetchMock.mock.calls.at(-1)?.[0] as string
+      expect(lastCallUrl).not.toContain('tags=')
+    })
+
+    it('shows the active tag filters with a "Clear tags" control', async () => {
+      mockItemsWithTag()
+
+      renderWithRouter(
+        routeTree,
+        queryClient,
+        '/applications?page=1&tags=%5B%22Remote%22%5D',
+      )
+
+      expect(
+        await screen.findByText('Filtering by tags: Remote'),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: 'Clear tags' }),
+      ).toBeInTheDocument()
+    })
+
+    it('clicking "Clear tags" removes all tag filters', async () => {
+      const user = userEvent.setup()
+      mockItemsWithTag()
+
+      renderWithRouter(
+        routeTree,
+        queryClient,
+        '/applications?page=1&tags=%5B%22Remote%22%5D',
+      )
+
+      await user.click(
+        await screen.findByRole('button', { name: 'Clear tags' }),
+      )
+
+      const lastCallUrl = fetchMock.mock.calls.at(-1)?.[0] as string
+      expect(lastCallUrl).not.toContain('tags=')
+    })
+  })
+
   describe('pagination', () => {
     beforeEach(() => {
       fetchMock.mockImplementation(() =>
@@ -237,28 +346,6 @@ describe('ApplicationsPage', () => {
 
       expect(await screen.findByText('Page 2 of 3')).toBeInTheDocument()
     })
-  })
-
-  it("clicking a row navigates to the application's detail page", async () => {
-    const user = userEvent.setup()
-    fetchMock.mockImplementation(() =>
-      Promise.resolve({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            items: [buildApplicationListItem({ id: 'abc123' })],
-            total: 1,
-          }),
-      }),
-    )
-
-    renderWithRouter(routeTree, queryClient, '/applications?page=1')
-
-    await user.click(await screen.findByText('Senior Backend Engineer'))
-
-    expect(
-      await screen.findByText('Application Detail page'),
-    ).toBeInTheDocument()
   })
 
   it('clicking the View button navigates to the application\'s detail page', async () => {

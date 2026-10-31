@@ -36,6 +36,7 @@ describe('ApplicationDetailPage', () => {
     id: 'abc123',
     title: 'Senior Backend Engineer',
     companyName: 'Acme Corp',
+    tags: [],
     currentStatus: 'APPLIED',
     availableTransitions: [],
     statusHistory: [],
@@ -79,6 +80,15 @@ describe('ApplicationDetailPage', () => {
     renderWithRouter(routeTree, queryClient, '/applications/abc123')
 
     expect(await screen.findByText('$90,000')).toBeInTheDocument()
+  })
+
+  it('renders a badge for each tag', async () => {
+    mockDetailResponse({ tags: ['Remote', 'Dream Job'] })
+
+    renderWithRouter(routeTree, queryClient, '/applications/abc123')
+
+    expect(await screen.findByText('Remote')).toBeInTheDocument()
+    expect(screen.getByText('Dream Job')).toBeInTheDocument()
   })
 
   it('renders the salary, a link to the job posting, and the description when present', async () => {

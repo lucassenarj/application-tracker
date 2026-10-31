@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Input } from '@/components/ui/input'
+import { SuggestionsDropdown } from '@/components/suggestions-dropdown'
 import { companySearchQueryOptions } from '@/lib/companies/company-search'
+import type { Company } from '@/lib/companies/company-search'
 
 interface CompanyAutocompleteProps {
   id?: string
@@ -29,25 +31,16 @@ export function CompanyAutocomplete({
         onBlur={() => setIsOpen(false)}
         autoComplete="off"
       />
-      {isOpen && query.data && query.data.length > 0 && (
-        <ul className="absolute z-10 mt-1 w-full rounded-md border bg-popover shadow-md">
-          {query.data.map((company) => (
-            <li key={company.id}>
-              <button
-                type="button"
-                className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  onChange({ name: company.name, companyId: company.id })
-                  setIsOpen(false)
-                }}
-              >
-                {company.name}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      <SuggestionsDropdown
+        items={query.data ?? []}
+        isOpen={isOpen}
+        getKey={(company: Company) => company.id}
+        getLabel={(company: Company) => company.name}
+        onSelect={(company) => {
+          onChange({ name: company.name, companyId: company.id })
+          setIsOpen(false)
+        }}
+      />
     </div>
   )
 }

@@ -27,6 +27,7 @@ export interface ApplicationDetail {
   salary?: number
   currency?: string
   companyName: string
+  tags: string[]
   currentStatus: ApplicationStatus
   availableTransitions: ApplicationStatus[]
   statusHistory: StatusChange[]

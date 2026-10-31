@@ -29,6 +29,7 @@ export interface ApplicationListItem {
   id: string
   title: string
   companyName: string
+  tags: string[]
   currentStatus: ApplicationStatus
   availableTransitions: ApplicationStatus[]
   createdAt: string
@@ -44,6 +45,7 @@ export function applicationsListQueryOptions(
   page: number,
   category?: ApplicationStatusCategory,
   search?: string,
+  tags?: string[],
 ) {
   const params = new URLSearchParams({
     page: String(page),
@@ -55,9 +57,12 @@ export function applicationsListQueryOptions(
   if (search) {
     params.set('search', search)
   }
+  if (tags && tags.length > 0) {
+    tags.forEach((tag) => params.append('tags', tag))
+  }
 
   return queryOptions({
-    queryKey: ['applications', 'list', { page, category, search }],
+    queryKey: ['applications', 'list', { page, category, search, tags }],
     queryFn: () =>
       apiFetch<PaginatedResult<ApplicationListItem>>(
         `/applications?${params.toString()}`,

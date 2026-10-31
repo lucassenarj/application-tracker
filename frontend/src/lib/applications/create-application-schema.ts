@@ -15,6 +15,7 @@ export const createApplicationSchema = z.object({
     ),
   currency: z.string().optional(),
   companyName: z.string().trim().min(1, 'Company is required'),
+  tagNames: z.array(z.string()).optional(),
 })
 
 export type CreateApplicationFormValues = z.infer<typeof createApplicationSchema>

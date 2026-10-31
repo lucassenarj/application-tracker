@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { CompanyAutocomplete } from '@/components/company-autocomplete'
+import { TagInput } from '@/components/tag-input'
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,7 @@ export function NewApplicationDialog() {
     defaultValues: {
       title: '',
       companyName: '',
+      tagNames: [],
       description: '',
       externalUrl: '',
       salary: '',
@@ -59,6 +61,7 @@ export function NewApplicationDialog() {
         title: values.title,
         companyName: values.companyName,
         companyId,
+        tagNames: values.tagNames,
         description: values.description || undefined,
         externalUrl: values.externalUrl || undefined,
         salary: values.salary ? Number(values.salary) : undefined,
@@ -134,6 +137,21 @@ export function NewApplicationDialog() {
                 {errors.companyName.message}
               </span>
             )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="tagNames">Tags</Label>
+            <Controller
+              name="tagNames"
+              control={control}
+              render={({ field }) => (
+                <TagInput
+                  id="tagNames"
+                  value={field.value ?? []}
+                  onChange={field.onChange}
+                />
+              )}
+            />
           </div>
 
           <div className="flex flex-col gap-2">
