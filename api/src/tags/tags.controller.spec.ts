@@ -30,6 +30,20 @@ describe('TagsController', () => {
 
       expect(results).toEqual([]);
     });
+
+    it('returns popular Tags when q is empty', async () => {
+      const results = await tagsController.search({ q: '' });
+
+      expect(results).toHaveLength(1);
+      expect(results[0].id).toBe(remote.id);
+    });
+
+    it('returns popular Tags when q is omitted', async () => {
+      const results = await tagsController.search({});
+
+      expect(results).toHaveLength(1);
+      expect(results[0].id).toBe(remote.id);
+    });
   });
 
   describe('create', () => {

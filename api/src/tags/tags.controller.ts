@@ -38,7 +38,9 @@ export class TagsController {
 
   @Get('search')
   async search(@Query() query: SearchTagsDto): Promise<TagResponse[]> {
-    const tags = await this.tagsService.search(query.q);
+    const tags = query.q
+      ? await this.tagsService.search(query.q)
+      : await this.tagsService.findPopular(10);
     return tags.map(toTagResponse);
   }
 

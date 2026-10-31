@@ -134,4 +134,12 @@ describe('Tags (e2e)', () => {
       .send({ name: 'Tags E2e Test Tag Renamed' })
       .expect(403);
   });
+
+  it('returns popular tags when no query is given', async () => {
+    const { agent } = await authenticatedAgent();
+
+    const response = await agent.get('/tags/search').expect(200);
+
+    expect(Array.isArray(response.body)).toBe(true);
+  });
 });

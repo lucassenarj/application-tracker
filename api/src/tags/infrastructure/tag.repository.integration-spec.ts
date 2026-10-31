@@ -1,4 +1,8 @@
 import { PrismaService } from '../../prisma/prisma.service';
+import { Application } from '../../applications/domain/application';
+import { PrismaApplicationRepository } from '../../applications/infrastructure/application.repository.prisma';
+import { Company } from '../../companies/domain/company';
+import { PrismaCompanyRepository } from '../../companies/infrastructure/company.repository.prisma';
 import { Tag } from '../domain/tag';
 import { PrismaTagRepository } from './tag.repository.prisma';
 
@@ -117,6 +121,74 @@ describe('PrismaTagRepository', () => {
       const results = await tagRepository.search('widget');
 
       expect(results).toHaveLength(10);
+    });
+  });
+
+  describe('findPopular', () => {
+    let popularTag: Tag;
+    let rareTag: Tag;
+
+    beforeAll(async () => {
+      const applicationRepository = new PrismaApplicationRepository(prisma);
+      const companyRepository = new PrismaCompanyRepository(prisma);
+      const company = Company.create({ name: 'Popular Tag Test Co' });
+      await companyRepository.save(company);
+
+      popularTag = Tag.create({ name: 'Popular Tag Test Remote' });
+      await tagRepository.save(popularTag);
+      rareTag = Tag.create({ name: 'Popular Tag Test Rare' });
+      await tagRepository.save(rareTag);
+
+      for (let i = 0; i < 3; i++) {
+        await applicationRepository.save(
+          Application.create({
+            title: `Popular Tag Test App ${i}`,
+            companyId: company.id,
+            userId: 'user-1',
+            tagIds: [popularTag.id],
+          }),
+        );
+      }
+      await applicationRepository.save(
+        Application.create({
+          title: 'Popular Tag Test App Rare',
+          companyId: company.id,
+          userId: 'user-1',
+          tagIds: [rareTag.id],
+        }),
+      );
+    });
+
+    afterAll(async () => {
+      await prisma.statusChange.deleteMany({
+        where: { application: { title: { startsWith: 'Popular Tag Test' } } },
+      });
+      await prisma.application.deleteMany({
+        where: { title: { startsWith: 'Popular Tag Test' } },
+      });
+      await prisma.company.deleteMany({
+        where: { name: 'Popular Tag Test Co' },
+      });
+      await prisma.tag.deleteMany({
+        where: { name: { startsWith: 'Popular Tag Test' } },
+      });
+    });
+
+    it('orders Tags by how many Applications use them, most popular first', async () => {
+      const results = await tagRepository.findPopular(50);
+
+      const popularIndex = results.findIndex((t) => t.id === popularTag.id);
+      const rareIndex = results.findIndex((t) => t.id === rareTag.id);
+
+      expect(popularIndex).toBeGreaterThanOrEqual(0);
+      expect(rareIndex).toBeGreaterThanOrEqual(0);
+      expect(popularIndex).toBeLessThan(rareIndex);
+    });
+
+    it('limits results to the given limit', async () => {
+      const results = await tagRepository.findPopular(1);
+
+      expect(results).toHaveLength(1);
     });
   });
 });
