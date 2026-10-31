@@ -1,3 +1,16 @@
+# [api-v1.14.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.13.0...api-v1.14.0) (2026-10-31)
+
+
+### Bug Fixes
+
+* **application:** handle a single tags query param correctly ([69356a3](https://github.com/lucassenarj/application-tracker/commit/69356a38b521735aeabfeda08cdd84fb8a28ddff))
+
+
+### Features
+
+* **application:** support filtering by multiple tags (ANY-match) ([755cd1f](https://github.com/lucassenarj/application-tracker/commit/755cd1fb54808d4f25405056d764f5e7175c7e0c))
+* **tags:** return popular tags for GET /tags/search when q is empty ([0270fb2](https://github.com/lucassenarj/application-tracker/commit/0270fb2ca9c4b7ae364cd119fd5ae99a9a20c9d1))
+
 # [api-v1.13.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.12.5...api-v1.13.0) (2026-10-30)
 
 
