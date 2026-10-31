@@ -48,6 +48,16 @@ export function ApplicationDetailPage() {
                   <span>{formatStatus(query.data.currentStatus)}</span>
                 </p>
 
+                {query.data.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {query.data.tags.map((tag) => (
+                      <Badge key={tag} variant="outline">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
                 {(query.data.salary !== undefined || query.data.externalUrl) && (
                   <div className="flex flex-wrap items-center gap-4 text-sm">
                     {query.data.salary !== undefined && (
