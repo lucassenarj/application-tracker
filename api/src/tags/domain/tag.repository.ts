@@ -5,4 +5,5 @@ export interface TagRepository {
   findByNormalizedName(name: string): Promise<Tag | null>;
   findById(id: string): Promise<Tag | null>;
   search(query: string): Promise<Tag[]>;
+  findPopular(limit: number): Promise<Tag[]>;
 }

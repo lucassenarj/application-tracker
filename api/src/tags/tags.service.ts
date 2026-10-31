@@ -18,6 +18,10 @@ export class TagsService {
     return this.tagRepository.search(query);
   }
 
+  findPopular(limit: number): Promise<Tag[]> {
+    return this.tagRepository.findPopular(limit);
+  }
+
   async create(name: string): Promise<Tag> {
     const normalizedName = Tag.normalizeName(name);
     const existing =

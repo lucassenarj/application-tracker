@@ -9,7 +9,7 @@ export interface FindAllByUserOptions {
   search?: string;
   status?: ApplicationStatus;
   category?: ApplicationStatusCategory;
-  tag?: string;
+  tags?: string[];
 }
 
 export interface PaginatedResult<T> {

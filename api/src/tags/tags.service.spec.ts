@@ -132,4 +132,12 @@ describe('TagsService', () => {
       expect(results).toHaveLength(10);
     });
   });
+
+  describe('findPopular', () => {
+    it('returns Tags from the repository, capped at the given limit', async () => {
+      const results = await tagsService.findPopular(1);
+
+      expect(results).toHaveLength(1);
+    });
+  });
 });

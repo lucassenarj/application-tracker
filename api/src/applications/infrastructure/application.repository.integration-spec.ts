@@ -561,11 +561,50 @@ describe('PrismaApplicationRepository', () => {
         const result = await applicationRepository.findAllByUser('user-1', {
           page: 1,
           pageSize: 10,
-          tag: 'App Tag Test Remote',
+          tags: ['App Tag Test Remote'],
         });
 
         expect(result.items).toHaveLength(1);
         expect(result.items[0].application.id).toBe(taggedApplication.id);
+      });
+
+      it('returns Applications matching any of multiple given tags', async () => {
+        const otherTag = Tag.create({ name: 'App Tag Test Urgent' });
+        await tagRepository.save(otherTag);
+
+        const remoteApplication = Application.create({
+          title: 'Senior Backend Engineer',
+          companyId: company.id,
+          userId: 'user-1',
+          tagIds: [tag.id],
+        });
+        await applicationRepository.save(remoteApplication);
+
+        const urgentApplication = Application.create({
+          title: 'Staff Engineer',
+          companyId: company.id,
+          userId: 'user-1',
+          tagIds: [otherTag.id],
+        });
+        await applicationRepository.save(urgentApplication);
+
+        const untaggedApplication = Application.create({
+          title: 'QA Engineer',
+          companyId: company.id,
+          userId: 'user-1',
+        });
+        await applicationRepository.save(untaggedApplication);
+
+        const result = await applicationRepository.findAllByUser('user-1', {
+          page: 1,
+          pageSize: 10,
+          tags: ['App Tag Test Remote', 'App Tag Test Urgent'],
+        });
+
+        expect(result.items).toHaveLength(2);
+        expect(result.items.map((i) => i.application.id)).toEqual(
+          expect.arrayContaining([remoteApplication.id, urgentApplication.id]),
+        );
       });
     });
   });
