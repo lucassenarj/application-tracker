@@ -31,6 +31,6 @@ export class FindAllApplicationsDto {
   category?: ApplicationStatusCategory;
 
   @IsOptional()
-  @IsString()
-  tag?: string;
+  @IsString({ each: true })
+  tags?: string[];
 }

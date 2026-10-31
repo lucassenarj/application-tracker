@@ -64,9 +64,13 @@ export class FakeApplicationRepository implements ApplicationRepository {
       })),
     );
 
-    if (options.tag) {
-      const normalizedTag = Tag.normalizeName(options.tag);
-      withTags = withTags.filter(({ tags }) => tags.includes(normalizedTag));
+    if (options.tags && options.tags.length > 0) {
+      const normalizedTags = options.tags.map((name) =>
+        Tag.normalizeName(name),
+      );
+      withTags = withTags.filter(({ tags }) =>
+        tags.some((tag) => normalizedTags.includes(tag)),
+      );
     }
 
     const start = (options.page - 1) * options.pageSize;
