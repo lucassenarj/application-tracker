@@ -6,16 +6,6 @@ import { SuggestionsDropdown } from '@/components/suggestions-dropdown'
 import { tagSearchQueryOptions } from '@/lib/tags/tag-search'
 import type { Tag } from '@/lib/tags/tag-search'
 
-// TEMPORARY: GET /tags/search doesn't support an empty `q` yet (returns a
-// default/popular list) — remove this and always use the real query once
-// that backend change ships.
-export const MOCK_DEFAULT_TAGS: Tag[] = [
-  { id: 'mock-1', name: 'Remote' },
-  { id: 'mock-2', name: 'Dream Job' },
-  { id: 'mock-3', name: 'Urgent' },
-  { id: 'mock-4', name: 'Startup' },
-]
-
 interface TagInputProps {
   id?: string
   value: string[]
@@ -28,12 +18,12 @@ export function TagInput({ id, value, onChange }: TagInputProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const query = useQuery({
     ...tagSearchQueryOptions(inputValue),
-    enabled: isOpen && inputValue.length > 0,
+    enabled: isOpen,
   })
 
-  const suggestions = (
-    inputValue.length > 0 ? query.data ?? [] : MOCK_DEFAULT_TAGS
-  ).filter((tag) => !value.includes(tag.name))
+  const suggestions = (query.data ?? []).filter(
+    (tag) => !value.includes(tag.name),
+  )
 
   function addTag(name: string) {
     const trimmed = name.trim()

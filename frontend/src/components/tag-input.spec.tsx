@@ -98,6 +98,7 @@ describe('TagInput', () => {
 
   it('shows suggestions when focused, even before typing anything', async () => {
     const user = userEvent.setup()
+    mockTagSearchResults([{ id: '1', name: 'Remote' }])
     renderTagInput({ onChange })
 
     await user.click(screen.getByRole('textbox'))
@@ -109,6 +110,10 @@ describe('TagInput', () => {
 
   it('keeps the dropdown open after selecting, so more tags can be picked', async () => {
     const user = userEvent.setup()
+    mockTagSearchResults([
+      { id: '1', name: 'Remote' },
+      { id: '2', name: 'Dream Job' },
+    ])
     renderTagInput({ onChange })
 
     await user.click(screen.getByRole('textbox'))
