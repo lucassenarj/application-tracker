@@ -129,7 +129,7 @@ The interview category is `interviewCategory` on `StatusChange`, not a separate 
 - Group tests with a nested `describe` block per method under test (e.g. `describe('create', ...)`, `describe('findById', ...)` inside the outer `describe('ClassName', ...)`), so test output reads as `ClassName › methodName › behavior` and it's clear which method each test targets at a glance. Skip this nesting when a class has only one public method being tested — nothing to disambiguate.
 - Keep test names terse — do not append explanatory suffixes like "never passed in" (e.g. `generates id on creation`, not `generates id on creation, never passed in`).
 - Do not “mock the behavior we are trying to prove”; test the real behavior of the domain.
-- Before proposing any test file, scan for setup lines repeated across `it` blocks (e.g. creating/saving the same fixture in three different tests) and hoist that into `beforeEach`/`beforeAll` before presenting the draft — don't wait to be corrected. Exception: a test whose whole point is exercising the creation/save call itself still needs its own local, distinctly-named instance, since reusing a shared fixture would stop it from testing what it claims to.
+- **Mandatory mechanical check before presenting any test draft** (this has recurred repeatedly even after being written down — a vague "watch for duplication" reminder does not work, so do this literally): after writing the draft, go block by block through every `it(...)` and every `mockImplementation`/fixture-building call inside it. For each line, check whether the same line (or the same shape, e.g. a `render(<X .../>)` call or a `fetchMock.mockImplementation(() => Promise.resolve({ ok: true, json: ... }))` wrapper) already appears in another block in this same file. If it appears in 2+ blocks, extract it — into `beforeEach`/`beforeAll` for setup that doesn't vary, or into a local builder function (`renderX(overrides)`, `mockXResult(data)`) for setup that varies by one or two arguments. Do this pass as a distinct, final step after a draft feels "done," not something to hold in mind while writing. Exception: a test whose whole point is exercising the creation/save/render call itself still needs its own local, distinctly-named instance, since reusing a shared fixture would stop it from testing what it claims to.
 
 ### 3.4. State machine rules
 - Never change `currentStatus` directly in service code.
@@ -189,6 +189,8 @@ Before changing code, confirm:
 - [ ] No new module or infrastructure has been created without need.
 - [ ] The repository + domain + service pattern has been preserved.
 - [ ] If the architecture changed, `DECISIONS.md` and `C4-MODEL.md` were updated.
+
+After any file is created or edited in this container, run `chown -R ubuntu:ubuntu /application-tracker` (or scope it to the specific path touched) before ending the turn. Files written inside this container default to root ownership, which silently breaks host-side `git checkout`/`pull`/editor operations later — this must be done proactively, not only after the user hits a permission error.
 
 This file is intentionally strict: prefer correctness, domain clarity, and incremental evolution over premature abstraction.
 
