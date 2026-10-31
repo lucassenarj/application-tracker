@@ -1,3 +1,18 @@
+# [frontend-v1.3.0](https://github.com/lucassenarj/application-tracker/compare/frontend-v1.2.1...frontend-v1.3.0) (2026-10-31)
+
+
+### Bug Fixes
+
+* **application:** use the real popular-tags endpoint, drop the mock ([99007ab](https://github.com/lucassenarj/application-tracker/commit/99007ab9b97a2907b1ad96f8a13d4f5a48e288ea))
+
+
+### Features
+
+* **application:** add tag filtering to the Applications List page ([b22b921](https://github.com/lucassenarj/application-tracker/commit/b22b92148c2e3c98ca89d012f576ec5ece16d1aa))
+* **application:** add TagInput, a multi-select tag combobox ([bd139bc](https://github.com/lucassenarj/application-tracker/commit/bd139bcbb59e100f7b37873a560cc1769b50f744))
+* **application:** add tags to the create-application form ([1fa0bfd](https://github.com/lucassenarj/application-tracker/commit/1fa0bfd6df016f01bcf25006577c6cdf5750bd92))
+* **application:** show tag badges on the application detail page ([d1a5273](https://github.com/lucassenarj/application-tracker/commit/d1a527310b7439a434626a2f7e8bf50aff968daf))
+
 # [frontend-v1.2.1](https://github.com/lucassenarj/application-tracker/compare/frontend-v1.2.0...frontend-v1.2.1) (2026-10-28)
 
 
