@@ -24,6 +24,9 @@ describe('NewApplicationDialog', () => {
       if (url.includes('/companies/search')) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
       }
+      if (url.includes('/tags/search')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
+      }
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ id: '1' }),
@@ -50,6 +53,9 @@ describe('NewApplicationDialog', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByRole('textbox', { name: 'Company' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('textbox', { name: 'Tags' }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('textbox', { name: 'Description' }),
@@ -262,6 +268,36 @@ describe('NewApplicationDialog', () => {
       )
       const body = JSON.parse(createCall?.[1]?.body as string)
       expect(body.currency).toBe('USD')
+    })
+  })
+
+  it('sends the entered tag names when creating an application', async () => {
+    const user = userEvent.setup()
+    renderDialog(queryClient)
+
+    await user.click(screen.getByRole('button', { name: 'Add Application' }))
+    await user.type(
+      await screen.findByRole('textbox', { name: 'Title' }),
+      'Senior Backend Engineer',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Company' }),
+      'Acme Corp',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Tags' }),
+      'Remote{Enter}',
+    )
+    await user.click(screen.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      const createCall = fetchMock.mock.calls.find(
+        ([url, options]) =>
+          (options as RequestInit | undefined)?.method === 'POST' &&
+          !url.includes('search'),
+      )
+      const body = JSON.parse(createCall?.[1]?.body as string)
+      expect(body.tagNames).toEqual(['Remote'])
     })
   })
 })

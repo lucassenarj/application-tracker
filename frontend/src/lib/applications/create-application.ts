@@ -9,6 +9,7 @@ interface CreateApplicationInput {
   externalUrl?: string
   salary?: number
   currency?: string
+  tagNames?: string[]
 }
 
 export function useCreateApplicationMutation() {
