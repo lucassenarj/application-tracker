@@ -1,3 +1,10 @@
+# [frontend-v1.4.1](https://github.com/lucassenarj/application-tracker/compare/frontend-v1.4.0...frontend-v1.4.1) (2026-11-01)
+
+
+### Bug Fixes
+
+* **frontend:** replace landing page screenshot placeholders with real images ([e518de0](https://github.com/lucassenarj/application-tracker/commit/e518de0a7f76f925f15090fd925ed69d017ce3e8))
+
 # [frontend-v1.4.0](https://github.com/lucassenarj/application-tracker/compare/frontend-v1.3.0...frontend-v1.4.0) (2026-11-01)
 
 
