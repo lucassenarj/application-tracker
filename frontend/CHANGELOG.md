@@ -1,3 +1,10 @@
+# [frontend-v1.4.0](https://github.com/lucassenarj/application-tracker/compare/frontend-v1.3.0...frontend-v1.4.0) (2026-11-01)
+
+
+### Features
+
+* **frontend:** add a public landing page at / ([c236a89](https://github.com/lucassenarj/application-tracker/commit/c236a8965ca0d15190c15700becded20bd771b41))
+
 # [frontend-v1.3.0](https://github.com/lucassenarj/application-tracker/compare/frontend-v1.2.1...frontend-v1.3.0) (2026-10-31)
 
 
