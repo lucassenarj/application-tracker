@@ -128,4 +128,26 @@ export class User {
       createdAt: this.createdAt,
     });
   }
+
+  changePassword(newPasswordHash: string): User {
+    if (!newPasswordHash) {
+      throw new Error('newPasswordHash is required');
+    }
+
+    return new User({
+      id: this.id,
+      email: this.email,
+      passwordHash: newPasswordHash,
+      authProvider: this.authProvider,
+      name: this.name,
+      avatar: this.avatar,
+      phone: this.phone,
+      bio: this.bio,
+      language: this.language,
+      defaultCurrency: this.defaultCurrency,
+      role: this.role,
+      isActive: this.isActive,
+      createdAt: this.createdAt,
+    });
+  }
 }

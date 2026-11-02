@@ -185,4 +185,35 @@ describe('User', () => {
       expect(updatedUser.defaultCurrency).toBeUndefined();
     });
   });
+
+  describe('changePassword', () => {
+    let user: User;
+
+    beforeAll(() => {
+      user = User.create({
+        email: 'jane@example.com',
+        passwordHash: 'original-hash',
+      });
+    });
+
+    it('updates passwordHash to the newly provided hash', () => {
+      const updatedUser = user.changePassword('new-hash');
+
+      expect(updatedUser.passwordHash).toBe('new-hash');
+    });
+    it('does not mutate the original User instance', () => {
+      user.changePassword('new-hash');
+
+      expect(user.passwordHash).toBe('original-hash');
+    });
+    it('leaves other fields (e.g. email, name) unchanged', () => {
+      const updatedUser = user.changePassword('new-hash');
+
+      expect(updatedUser.email).toBe('jane@example.com');
+      expect(updatedUser.id).toBe(user.id);
+    });
+    it('throws an error when newPasswordHash is empty', () => {
+      expect(() => user.changePassword('')).toThrow();
+    });
+  });
 });
