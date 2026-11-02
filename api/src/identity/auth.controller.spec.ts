@@ -4,6 +4,7 @@ import { instanceToPlain } from 'class-transformer';
 import { Request, Response } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService, REFRESH_TOKEN_TTL_MS } from './auth.service';
+import type { UserResponse } from './dto/user-response.dto';
 import { FakePasswordHasher } from './test-utils/fakes/password-hasher.fake';
 import { FakeRefreshTokenRepository } from './test-utils/fakes/refresh-token.repository.fake';
 import { FakeUserRepository } from './test-utils/fakes/user.repository.fake';
@@ -361,6 +362,106 @@ describe('AuthController', () => {
 
       const serializedUserResponse = instanceToPlain(userResponse);
       expect(serializedUserResponse.passwordHash).toBeUndefined();
+    });
+  });
+
+  describe('changePassword', () => {
+    let newUser: UserResponse;
+    let changePasswordSpy: jest.SpyInstance;
+
+    beforeEach(async () => {
+      newUser = await authController.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+      changePasswordSpy = jest.spyOn(authService, 'changePassword');
+    });
+
+    it('calls authService.changePassword with currentPassword and newPassword from the request body', async () => {
+      const mockRequest = {
+        user: { id: newUser.id },
+        cookies: {},
+      } as unknown as Request;
+
+      await authController.changePassword(
+        {
+          currentPassword: 'plain-text-password',
+          newPassword: 'new-plain-text-password',
+          revokeOtherSessions: false,
+        },
+        mockRequest,
+      );
+
+      expect(changePasswordSpy).toHaveBeenCalledWith(
+        newUser.id,
+        expect.objectContaining({
+          currentPassword: 'plain-text-password',
+          newPassword: 'new-plain-text-password',
+        }),
+      );
+    });
+
+    it('passes revokeOtherSessions from the request body', async () => {
+      const mockRequest = {
+        user: { id: newUser.id },
+        cookies: {},
+      } as unknown as Request;
+
+      await authController.changePassword(
+        {
+          currentPassword: 'plain-text-password',
+          newPassword: 'new-plain-text-password',
+          revokeOtherSessions: true,
+        },
+        mockRequest,
+      );
+
+      expect(changePasswordSpy).toHaveBeenCalledWith(
+        newUser.id,
+        expect.objectContaining({ revokeOtherSessions: true }),
+      );
+    });
+
+    it("passes the refresh token cookie as the current session's identifier", async () => {
+      const mockRequest = {
+        user: { id: newUser.id },
+        cookies: { refreshToken: 'raw-refresh-token' },
+      } as unknown as Request;
+
+      await authController.changePassword(
+        {
+          currentPassword: 'plain-text-password',
+          newPassword: 'new-plain-text-password',
+          revokeOtherSessions: false,
+        },
+        mockRequest,
+      );
+
+      expect(changePasswordSpy).toHaveBeenCalledWith(
+        newUser.id,
+        expect.objectContaining({
+          currentRawRefreshToken: 'raw-refresh-token',
+        }),
+      );
+    });
+
+    it('works when no refresh token cookie is present', async () => {
+      const mockRequest = {
+        user: { id: newUser.id },
+        cookies: {},
+      } as unknown as Request;
+
+      await expect(
+        authController.changePassword(
+          {
+            currentPassword: 'plain-text-password',
+            newPassword: 'new-plain-text-password',
+            revokeOtherSessions: false,
+          },
+          mockRequest,
+        ),
+      ).resolves.not.toThrow();
     });
   });
 });

@@ -13,6 +13,7 @@ import {
 import type { Request, Response } from 'express';
 import { generateCsrfToken } from '../csrf.config';
 import { AuthService, REFRESH_TOKEN_TTL_MS } from './auth.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -143,5 +144,22 @@ export class AuthController {
     });
 
     return UserResponse.fromDomain(user);
+  }
+
+  @Patch('password')
+  @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @Body() dto: ChangePasswordDto,
+    @Req() request: Request,
+  ): Promise<void> {
+    const currentRawRefreshToken = request.cookies?.refreshToken as
+      string | undefined;
+
+    await this.authService.changePassword(request.user!.id, {
+      currentPassword: dto.currentPassword,
+      newPassword: dto.newPassword,
+      revokeOtherSessions: dto.revokeOtherSessions,
+      currentRawRefreshToken,
+    });
   }
 }
