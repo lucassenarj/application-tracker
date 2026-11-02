@@ -49,6 +49,7 @@ describe('CSRF protection (e2e)', () => {
               'csrf-test@example.com',
               'csrf-test-2@example.com',
               'csrf-test-refresh@example.com',
+              'csrf-test-password@example.com',
             ],
           },
         },
@@ -61,6 +62,7 @@ describe('CSRF protection (e2e)', () => {
             'csrf-test@example.com',
             'csrf-test-2@example.com',
             'csrf-test-refresh@example.com',
+            'csrf-test-password@example.com',
           ],
         },
       },
@@ -128,6 +130,42 @@ describe('CSRF protection (e2e)', () => {
       .post('/auth/refresh')
       .set('x-csrf-token', csrfToken)
       .expect(201);
+  });
+  it('rejects a password-change request with no CSRF token', async () => {
+    await request(app.getHttpServer())
+      .patch('/auth/password')
+      .send({
+        currentPassword: 'plain-text-password',
+        newPassword: 'new-plain-text-password',
+        revokeOtherSessions: false,
+      })
+      .expect(403);
+  });
+  it('accepts a password-change request with a valid CSRF token', async () => {
+    const agent = request.agent(app.getHttpServer());
+
+    await agent.post('/auth/register').send({
+      email: 'csrf-test-password@example.com',
+      password: 'plain-text-password',
+      name: 'E2E Test User',
+    });
+    await agent.post('/auth/login').send({
+      email: 'csrf-test-password@example.com',
+      password: 'plain-text-password',
+    });
+
+    const csrfResponse = await agent.get('/auth/csrf-token');
+    const csrfToken = (csrfResponse.body as { csrfToken: string }).csrfToken;
+
+    await agent
+      .patch('/auth/password')
+      .set('x-csrf-token', csrfToken)
+      .send({
+        currentPassword: 'plain-text-password',
+        newPassword: 'new-plain-text-password',
+        revokeOtherSessions: false,
+      })
+      .expect(200);
   });
   it('allows an unprotected request without any CSRF token', async () => {
     await request(app.getHttpServer())

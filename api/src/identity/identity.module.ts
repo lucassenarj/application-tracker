@@ -47,6 +47,7 @@ export class IdentityModule implements NestModule {
         { path: 'auth/refresh', method: RequestMethod.POST },
         { path: 'auth/logout', method: RequestMethod.POST },
         { path: 'auth/me', method: RequestMethod.PATCH },
+        { path: 'auth/password', method: RequestMethod.PATCH },
       );
   }
 }
