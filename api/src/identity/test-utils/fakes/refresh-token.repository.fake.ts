@@ -22,4 +22,12 @@ export class FakeRefreshTokenRepository implements RefreshTokenRepository {
       ),
     );
   }
+
+  findAllByUserId(userId: string): Promise<RefreshToken[]> {
+    return Promise.resolve(
+      [...this.refreshTokensByTokenHash.values()].filter(
+        (refreshToken) => refreshToken.userId === userId,
+      ),
+    );
+  }
 }

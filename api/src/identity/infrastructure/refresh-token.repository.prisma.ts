@@ -50,6 +50,13 @@ export class PrismaRefreshTokenRepository implements RefreshTokenRepository {
     });
     return rows.map(toRefreshToken);
   }
+
+  async findAllByUserId(userId: string): Promise<RefreshToken[]> {
+    const rows = await this.prisma.refreshToken.findMany({
+      where: { userId },
+    });
+    return rows.map(toRefreshToken);
+  }
 }
 
 function toRefreshToken(row: PersistedRefreshToken): RefreshToken {
