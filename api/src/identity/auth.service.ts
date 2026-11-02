@@ -208,4 +208,64 @@ export class AuthService {
 
     return updatedUser;
   }
+
+  async changePassword(
+    userId: string,
+    input: {
+      currentPassword: string;
+      newPassword: string;
+      revokeOtherSessions: boolean;
+      currentRawRefreshToken?: string;
+    },
+  ): Promise<void> {
+    const user = await this.getProfile(userId);
+
+    if (!user.passwordHash) {
+      throw new UnauthorizedException('invalid credentials');
+    }
+
+    const isCurrentPasswordValid = await this.passwordHasher.verify(
+      input.currentPassword,
+      user.passwordHash,
+    );
+
+    if (!isCurrentPasswordValid) {
+      throw new UnauthorizedException('invalid credentials');
+    }
+
+    const newPasswordHash = await this.passwordHasher.hash(input.newPassword);
+    const updatedUser = user.changePassword(newPasswordHash);
+    await this.userRepository.save(updatedUser);
+
+    if (input.revokeOtherSessions) {
+      await this.revokeOtherSessions(userId, input.currentRawRefreshToken);
+    }
+  }
+
+  private async revokeOtherSessions(
+    userId: string,
+    currentRawRefreshToken?: string,
+  ): Promise<void> {
+    const currentRefreshToken = currentRawRefreshToken
+      ? await this.refreshTokenRepository.findByTokenHash(
+          hashRefreshToken(currentRawRefreshToken),
+        )
+      : null;
+    const currentFamilyId = currentRefreshToken?.familyId;
+
+    const allRefreshTokens =
+      await this.refreshTokenRepository.findAllByUserId(userId);
+
+    await Promise.all(
+      allRefreshTokens
+        .filter(
+          (refreshToken) =>
+            !refreshToken.revokedAt &&
+            refreshToken.familyId !== currentFamilyId,
+        )
+        .map((refreshToken) =>
+          this.refreshTokenRepository.save(refreshToken.revoke()),
+        ),
+    );
+  }
 }

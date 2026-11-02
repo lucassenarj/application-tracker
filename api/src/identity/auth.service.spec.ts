@@ -374,4 +374,105 @@ describe('AuthService', () => {
       ).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('changePassword', () => {
+    let newUser: User;
+
+    beforeEach(async () => {
+      newUser = await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+    });
+
+    it('hashes and persists the new password when the current password is correct', async () => {
+      await authService.changePassword(newUser.id, {
+        currentPassword: 'plain-text-password',
+        newPassword: 'new-plain-text-password',
+        revokeOtherSessions: false,
+      });
+
+      const persistedUser = await userRepository.findById(newUser.id);
+      expect(persistedUser?.passwordHash).toBe(
+        'hashed:new-plain-text-password',
+      );
+    });
+
+    it('throws an UnauthorizedException when the current password is incorrect', async () => {
+      await expect(
+        authService.changePassword(newUser.id, {
+          currentPassword: 'wrong-password',
+          newPassword: 'new-plain-text-password',
+          revokeOtherSessions: false,
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('throws a NotFoundException when no User matches the given id', async () => {
+      await expect(
+        authService.changePassword('nonexistent-id', {
+          currentPassword: 'plain-text-password',
+          newPassword: 'new-plain-text-password',
+          revokeOtherSessions: false,
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it("revokes every other session's refresh tokens when revokeOtherSessions is true, but keeps the current session active", async () => {
+      const currentLoginResult = await authService.login({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        rememberMe: true,
+      });
+      const otherLoginResult = await authService.login({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        rememberMe: true,
+      });
+
+      await authService.changePassword(newUser.id, {
+        currentPassword: 'plain-text-password',
+        newPassword: 'new-plain-text-password',
+        revokeOtherSessions: true,
+        currentRawRefreshToken: currentLoginResult.refreshToken,
+      });
+
+      const currentRefreshToken = await refreshTokenRepository.findByTokenHash(
+        hashRefreshToken(currentLoginResult.refreshToken),
+      );
+      const otherRefreshToken = await refreshTokenRepository.findByTokenHash(
+        hashRefreshToken(otherLoginResult.refreshToken),
+      );
+
+      expect(currentRefreshToken?.revokedAt).toBeUndefined();
+      expect(otherRefreshToken?.revokedAt).toBeInstanceOf(Date);
+    });
+
+    it('does not revoke any other sessions when revokeOtherSessions is false', async () => {
+      const currentLoginResult = await authService.login({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        rememberMe: true,
+      });
+      const otherLoginResult = await authService.login({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        rememberMe: true,
+      });
+
+      await authService.changePassword(newUser.id, {
+        currentPassword: 'plain-text-password',
+        newPassword: 'new-plain-text-password',
+        revokeOtherSessions: false,
+        currentRawRefreshToken: currentLoginResult.refreshToken,
+      });
+
+      const otherRefreshToken = await refreshTokenRepository.findByTokenHash(
+        hashRefreshToken(otherLoginResult.refreshToken),
+      );
+
+      expect(otherRefreshToken?.revokedAt).toBeUndefined();
+    });
+  });
 });
