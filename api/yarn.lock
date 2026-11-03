@@ -121,6 +121,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@axiomhq/js@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@axiomhq/js@npm:2.0.0"
+  dependencies:
+    fetch-retry: "npm:^6.0.0"
+  checksum: 10c0/5d3ac4f98097cae7c23fc89becc3f0b31e393e4fee6754ad573af734c869dc0fe1f5b189f889d397b2aa1c8084edb56eb25a30165cc06f563c2fbed3d6f8d1a4
+  languageName: node
+  linkType: hard
+
 "@babel/code-frame@npm:^7.0.0, @babel/code-frame@npm:^7.16.7, @babel/code-frame@npm:^7.26.2, @babel/code-frame@npm:^7.27.1, @babel/code-frame@npm:^7.29.7":
   version: 7.29.7
   resolution: "@babel/code-frame@npm:7.29.7"
@@ -3986,6 +3995,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "api@workspace:."
   dependencies:
+    "@axiomhq/js": "npm:^2.0.0"
     "@eslint/js": "npm:^9.18.0"
     "@nestjs/cli": "npm:^11.0.0"
     "@nestjs/common": "npm:^11.0.1"
@@ -6157,6 +6167,13 @@ __metadata:
     picomatch:
       optional: true
   checksum: 10c0/e345083c4306b3aed6cb8ec551e26c36bab5c511e99ea4576a16750ddc8d3240e63826cc624f5ae17ad4dc82e68a253213b60d556c11bfad064b7607847ed07f
+  languageName: node
+  linkType: hard
+
+"fetch-retry@npm:^6.0.0":
+  version: 6.0.0
+  resolution: "fetch-retry@npm:6.0.0"
+  checksum: 10c0/8e275b042ff98041236d30b71966f24c34ff19f957bb0f00e664754bd63d0dfb5122d091e7d5bca21f6370d88a1713d22421b33471305d7b86d6799427278802
   languageName: node
   linkType: hard
 

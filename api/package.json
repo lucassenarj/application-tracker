@@ -25,6 +25,7 @@
     "unseed:smoke-test": "nest build -p tsconfig.scripts.json && node dist/scripts/unseed-smoke-test-data.js"
   },
   "dependencies": {
+    "@axiomhq/js": "^2.0.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "11.0.2",
