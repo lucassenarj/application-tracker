@@ -9,15 +9,16 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { User } from './domain/user';
 import { RefreshToken } from './domain/refresh-token';
+import { PasswordResetToken } from './domain/password-reset-token';
+import type { EmailSender } from './domain/email-sender';
 import type { PasswordHasher } from './domain/password-hasher';
+import type { PasswordResetTokenRepository } from './domain/password-reset-token.repository';
 import type { RefreshTokenRepository } from './domain/refresh-token.repository';
 import type { UserRepository } from './domain/user.repository';
-import {
-  generateRefreshToken,
-  hashRefreshToken,
-} from './infrastructure/refresh-token-crypto';
+import { generateToken, hashToken } from './infrastructure/token-crypto';
 
 export const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+export const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
 interface RegisterInput {
   email: string;
@@ -50,6 +51,10 @@ export class AuthService {
     private readonly passwordHasher: PasswordHasher,
     @Inject('RefreshTokenRepository')
     private readonly refreshTokenRepository: RefreshTokenRepository,
+    @Inject('PasswordResetTokenRepository')
+    private readonly passwordResetTokenRepository: PasswordResetTokenRepository,
+    @Inject('EmailSender')
+    private readonly emailSender: EmailSender,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -93,10 +98,10 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign({ sub: user.id });
 
-    const rawRefreshToken = generateRefreshToken();
+    const rawRefreshToken = generateToken();
     const refreshToken = RefreshToken.create({
       userId: user.id,
-      tokenHash: hashRefreshToken(rawRefreshToken),
+      tokenHash: hashToken(rawRefreshToken),
       familyId: randomUUID(),
       expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
       rememberMe: input.rememberMe,
@@ -112,7 +117,7 @@ export class AuthService {
   }
 
   async refresh(rawRefreshToken: string): Promise<RefreshResult> {
-    const tokenHash = hashRefreshToken(rawRefreshToken);
+    const tokenHash = hashToken(rawRefreshToken);
     const existingRefreshToken =
       await this.refreshTokenRepository.findByTokenHash(tokenHash);
 
@@ -150,10 +155,10 @@ export class AuthService {
       sub: existingRefreshToken.userId,
     });
 
-    const newRawRefreshToken = generateRefreshToken();
+    const newRawRefreshToken = generateToken();
     const newRefreshToken = RefreshToken.create({
       userId: existingRefreshToken.userId,
-      tokenHash: hashRefreshToken(newRawRefreshToken),
+      tokenHash: hashToken(newRawRefreshToken),
       familyId: existingRefreshToken.familyId,
       expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
       rememberMe: existingRefreshToken.rememberMe,
@@ -168,7 +173,7 @@ export class AuthService {
   }
 
   async logout(rawRefreshToken: string): Promise<void> {
-    const tokenHash = hashRefreshToken(rawRefreshToken);
+    const tokenHash = hashToken(rawRefreshToken);
     const existingRefreshToken =
       await this.refreshTokenRepository.findByTokenHash(tokenHash);
 
@@ -242,13 +247,66 @@ export class AuthService {
     }
   }
 
+  async requestPasswordReset(email: string): Promise<void> {
+    const normalizedEmail = User.normalizeEmail(email);
+    const user = await this.userRepository.findByEmail(normalizedEmail);
+
+    if (!user) {
+      return;
+    }
+
+    const rawToken = generateToken();
+    const passwordResetToken = PasswordResetToken.create({
+      userId: user.id,
+      tokenHash: hashToken(rawToken),
+      expiresAt: new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS),
+    });
+    await this.passwordResetTokenRepository.save(passwordResetToken);
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
+    await this.emailSender.send({
+      to: user.email,
+      subject: 'Reset your password',
+      body: `Click the link below to reset your password:\n\n${resetLink}\n\nThis link expires in 1 hour.`,
+    });
+  }
+
+  async resetPassword(rawToken: string, newPassword: string): Promise<void> {
+    const passwordResetToken =
+      await this.passwordResetTokenRepository.findByTokenHash(
+        hashToken(rawToken),
+      );
+
+    if (
+      !passwordResetToken ||
+      passwordResetToken.usedAt ||
+      passwordResetToken.expiresAt < new Date()
+    ) {
+      throw new UnauthorizedException('invalid or expired reset token');
+    }
+
+    const user = await this.userRepository.findById(passwordResetToken.userId);
+
+    if (!user) {
+      throw new UnauthorizedException('invalid or expired reset token');
+    }
+
+    await this.passwordResetTokenRepository.save(passwordResetToken.markUsed());
+
+    const newPasswordHash = await this.passwordHasher.hash(newPassword);
+    const updatedUser = user.changePassword(newPasswordHash);
+    await this.userRepository.save(updatedUser);
+
+    await this.revokeOtherSessions(user.id);
+  }
+
   private async revokeOtherSessions(
     userId: string,
     currentRawRefreshToken?: string,
   ): Promise<void> {
     const currentRefreshToken = currentRawRefreshToken
       ? await this.refreshTokenRepository.findByTokenHash(
-          hashRefreshToken(currentRawRefreshToken),
+          hashToken(currentRawRefreshToken),
         )
       : null;
     const currentFamilyId = currentRefreshToken?.familyId;

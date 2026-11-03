@@ -7,8 +7,10 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import type { User } from './domain/user';
 import { RefreshToken } from './domain/refresh-token';
-import { hashRefreshToken } from './infrastructure/refresh-token-crypto';
+import { hashToken } from './infrastructure/token-crypto';
+import { FakeEmailSender } from './test-utils/fakes/email-sender.fake';
 import { FakePasswordHasher } from './test-utils/fakes/password-hasher.fake';
+import { FakePasswordResetTokenRepository } from './test-utils/fakes/password-reset-token.repository.fake';
 import { FakeRefreshTokenRepository } from './test-utils/fakes/refresh-token.repository.fake';
 import { FakeUserRepository } from './test-utils/fakes/user.repository.fake';
 
@@ -17,17 +19,23 @@ describe('AuthService', () => {
   let userRepository: FakeUserRepository;
   let passwordHasher: FakePasswordHasher;
   let refreshTokenRepository: FakeRefreshTokenRepository;
+  let passwordResetTokenRepository: FakePasswordResetTokenRepository;
+  let emailSender: FakeEmailSender;
   let jwtService: JwtService;
 
   beforeEach(() => {
     userRepository = new FakeUserRepository();
     passwordHasher = new FakePasswordHasher();
     refreshTokenRepository = new FakeRefreshTokenRepository();
+    passwordResetTokenRepository = new FakePasswordResetTokenRepository();
+    emailSender = new FakeEmailSender();
     jwtService = new JwtService({ secret: 'test-secret' });
     authService = new AuthService(
       userRepository,
       passwordHasher,
       refreshTokenRepository,
+      passwordResetTokenRepository,
+      emailSender,
       jwtService,
     );
   });
@@ -166,10 +174,10 @@ describe('AuthService', () => {
       });
 
       const firstRefreshToken = await refreshTokenRepository.findByTokenHash(
-        hashRefreshToken(firstLoginResult.refreshToken),
+        hashToken(firstLoginResult.refreshToken),
       );
       const secondRefreshToken = await refreshTokenRepository.findByTokenHash(
-        hashRefreshToken(secondLoginResult.refreshToken),
+        hashToken(secondLoginResult.refreshToken),
       );
 
       expect(firstRefreshToken?.familyId).not.toBe(
@@ -217,7 +225,7 @@ describe('AuthService', () => {
       await authService.refresh(loginResult.refreshToken);
 
       const oldRefreshToken = await refreshTokenRepository.findByTokenHash(
-        hashRefreshToken(loginResult.refreshToken),
+        hashToken(loginResult.refreshToken),
       );
 
       expect(oldRefreshToken?.revokedAt).toEqual(now);
@@ -239,7 +247,7 @@ describe('AuthService', () => {
       const rawRefreshToken = 'raw-refresh-token';
       const expiredRefreshToken = RefreshToken.create({
         userId: newUser.id,
-        tokenHash: hashRefreshToken(rawRefreshToken),
+        tokenHash: hashToken(rawRefreshToken),
         familyId: 'family-1',
         expiresAt: new Date(Date.now() - 1000),
         rememberMe: true,
@@ -274,7 +282,7 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
 
       const rotatedRefreshToken = await refreshTokenRepository.findByTokenHash(
-        hashRefreshToken(firstRefreshResult.refreshToken),
+        hashToken(firstRefreshResult.refreshToken),
       );
       expect(rotatedRefreshToken?.revokedAt).toEqual(now);
 
@@ -301,7 +309,7 @@ describe('AuthService', () => {
       await authService.logout(loginResult.refreshToken);
 
       const refreshToken = await refreshTokenRepository.findByTokenHash(
-        hashRefreshToken(loginResult.refreshToken),
+        hashToken(loginResult.refreshToken),
       );
 
       expect(refreshToken?.revokedAt).toEqual(now);
@@ -439,10 +447,10 @@ describe('AuthService', () => {
       });
 
       const currentRefreshToken = await refreshTokenRepository.findByTokenHash(
-        hashRefreshToken(currentLoginResult.refreshToken),
+        hashToken(currentLoginResult.refreshToken),
       );
       const otherRefreshToken = await refreshTokenRepository.findByTokenHash(
-        hashRefreshToken(otherLoginResult.refreshToken),
+        hashToken(otherLoginResult.refreshToken),
       );
 
       expect(currentRefreshToken?.revokedAt).toBeUndefined();
@@ -469,10 +477,159 @@ describe('AuthService', () => {
       });
 
       const otherRefreshToken = await refreshTokenRepository.findByTokenHash(
-        hashRefreshToken(otherLoginResult.refreshToken),
+        hashToken(otherLoginResult.refreshToken),
       );
 
       expect(otherRefreshToken?.revokedAt).toBeUndefined();
+    });
+  });
+
+  describe('requestPasswordReset', () => {
+    let newUser: User;
+
+    beforeEach(async () => {
+      newUser = await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+    });
+
+    it('creates a PasswordResetToken for the User matching the given email', async () => {
+      await authService.requestPasswordReset('jane@example.com');
+
+      const sentEmail = emailSender.sentEmails[0];
+      const rawToken = new URL(
+        sentEmail.body.match(/https?:\/\/\S+/)![0],
+      ).searchParams.get('token')!;
+
+      const passwordResetToken =
+        await passwordResetTokenRepository.findByTokenHash(hashToken(rawToken));
+
+      expect(passwordResetToken?.userId).toBe(newUser.id);
+    });
+
+    it('sends an email containing the reset link with the raw token', async () => {
+      await authService.requestPasswordReset('jane@example.com');
+
+      expect(emailSender.sentEmails).toHaveLength(1);
+      expect(emailSender.sentEmails[0].to).toBe('jane@example.com');
+      expect(emailSender.sentEmails[0].body).toMatch(
+        /\/reset-password\?token=/,
+      );
+    });
+
+    it('sets the token to expire in 1 hour', async () => {
+      const now = new Date();
+      jest.useFakeTimers().setSystemTime(now);
+
+      await authService.requestPasswordReset('jane@example.com');
+
+      const sentEmail = emailSender.sentEmails[0];
+      const rawToken = new URL(
+        sentEmail.body.match(/https?:\/\/\S+/)![0],
+      ).searchParams.get('token')!;
+      const passwordResetToken =
+        await passwordResetTokenRepository.findByTokenHash(hashToken(rawToken));
+
+      expect(passwordResetToken?.expiresAt).toEqual(
+        new Date(now.getTime() + 60 * 60 * 1000),
+      );
+
+      jest.useRealTimers();
+    });
+
+    it('does not throw when no User matches the given email', async () => {
+      await authService.requestPasswordReset('nonexistent@example.com');
+    });
+
+    it('does not create a PasswordResetToken or send an email when no User matches the given email', async () => {
+      await authService.requestPasswordReset('nonexistent@example.com');
+
+      expect(emailSender.sentEmails).toHaveLength(0);
+    });
+  });
+
+  describe('resetPassword', () => {
+    let newUser: User;
+    let rawToken: string;
+
+    beforeEach(async () => {
+      newUser = await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+      await authService.requestPasswordReset('jane@example.com');
+
+      const sentEmail = emailSender.sentEmails[0];
+      rawToken = new URL(
+        sentEmail.body.match(/https?:\/\/\S+/)![0],
+      ).searchParams.get('token')!;
+    });
+
+    it('hashes and persists the new password when the token is valid', async () => {
+      await authService.resetPassword(rawToken, 'new-plain-text-password');
+
+      const persistedUser = await userRepository.findById(newUser.id);
+      expect(persistedUser?.passwordHash).toBe(
+        'hashed:new-plain-text-password',
+      );
+    });
+
+    it('marks the token as used after a successful reset', async () => {
+      await authService.resetPassword(rawToken, 'new-plain-text-password');
+
+      const passwordResetToken =
+        await passwordResetTokenRepository.findByTokenHash(hashToken(rawToken));
+
+      expect(passwordResetToken?.usedAt).toBeInstanceOf(Date);
+    });
+
+    it("revokes every one of the User's active sessions after a successful reset", async () => {
+      const loginResult = await authService.login({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        rememberMe: true,
+      });
+
+      await authService.resetPassword(rawToken, 'new-plain-text-password');
+
+      const activeRefreshToken = await refreshTokenRepository.findByTokenHash(
+        hashToken(loginResult.refreshToken),
+      );
+
+      expect(activeRefreshToken?.revokedAt).toBeInstanceOf(Date);
+    });
+
+    it('throws an UnauthorizedException when the token does not exist', async () => {
+      await expect(
+        authService.resetPassword(
+          'nonexistent-token',
+          'new-plain-text-password',
+        ),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('throws an UnauthorizedException when the token has expired', async () => {
+      const now = new Date();
+      jest
+        .useFakeTimers()
+        .setSystemTime(new Date(now.getTime() + 61 * 60 * 1000));
+
+      await expect(
+        authService.resetPassword(rawToken, 'new-plain-text-password'),
+      ).rejects.toThrow(UnauthorizedException);
+
+      jest.useRealTimers();
+    });
+
+    it('throws an UnauthorizedException when the token has already been used', async () => {
+      await authService.resetPassword(rawToken, 'new-plain-text-password');
+
+      await expect(
+        authService.resetPassword(rawToken, 'another-new-password'),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 });

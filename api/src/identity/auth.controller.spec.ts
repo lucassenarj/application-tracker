@@ -5,7 +5,9 @@ import { Request, Response } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService, REFRESH_TOKEN_TTL_MS } from './auth.service';
 import type { UserResponse } from './dto/user-response.dto';
+import { FakeEmailSender } from './test-utils/fakes/email-sender.fake';
 import { FakePasswordHasher } from './test-utils/fakes/password-hasher.fake';
+import { FakePasswordResetTokenRepository } from './test-utils/fakes/password-reset-token.repository.fake';
 import { FakeRefreshTokenRepository } from './test-utils/fakes/refresh-token.repository.fake';
 import { FakeUserRepository } from './test-utils/fakes/user.repository.fake';
 
@@ -18,6 +20,8 @@ describe('AuthController', () => {
       new FakeUserRepository(),
       new FakePasswordHasher(),
       new FakeRefreshTokenRepository(),
+      new FakePasswordResetTokenRepository(),
+      new FakeEmailSender(),
       new JwtService({ secret: 'test-secret' }),
     );
     authController = new AuthController(authService);
@@ -462,6 +466,37 @@ describe('AuthController', () => {
           mockRequest,
         ),
       ).resolves.not.toThrow();
+    });
+  });
+
+  describe('forgotPassword', () => {
+    it('calls authService.requestPasswordReset with the email from the request body', async () => {
+      const requestPasswordResetSpy = jest.spyOn(
+        authService,
+        'requestPasswordReset',
+      );
+
+      await authController.forgotPassword({ email: 'jane@example.com' });
+
+      expect(requestPasswordResetSpy).toHaveBeenCalledWith('jane@example.com');
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('calls authService.resetPassword with the token and new password from the request body', async () => {
+      const resetPasswordSpy = jest.spyOn(authService, 'resetPassword');
+
+      await authController
+        .resetPassword({
+          token: 'raw-token',
+          newPassword: 'new-plain-text-password',
+        })
+        .catch(() => undefined);
+
+      expect(resetPasswordSpy).toHaveBeenCalledWith(
+        'raw-token',
+        'new-plain-text-password',
+      );
     });
   });
 });
