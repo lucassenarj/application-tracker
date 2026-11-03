@@ -104,7 +104,8 @@ model User {
   isActive        Boolean      @default(true)
   createdAt       DateTime     @default(now())
 
-  refreshTokens RefreshToken[]
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model RefreshToken {
@@ -121,4 +122,17 @@ model RefreshToken {
 
   @@index([userId])
   @@index([familyId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  usedAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
