@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ApplicationsModule } from './applications/applications.module';
 import { IdentityModule } from './identity/identity.module';
+import { LoggingInterceptor } from './observability/logging.interceptor';
 import { TagsModule } from './tags/tags.module';
 import {
   DEFAULT_THROTTLE_LIMIT,
@@ -37,6 +38,10 @@ import {
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
     },
   ],
 })
