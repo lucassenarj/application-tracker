@@ -11,6 +11,8 @@ import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 
+const COMPANIES_E2E_TEST_EMAIL = 'companies-e2e-test@example.com';
+
 describe('Companies (e2e)', () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
@@ -45,11 +47,14 @@ describe('Companies (e2e)', () => {
     await prisma.company.deleteMany({
       where: { name: { startsWith: 'Companies E2e Test Co' } },
     });
+    await prisma.emailVerificationToken.deleteMany({
+      where: { user: { email: COMPANIES_E2E_TEST_EMAIL } },
+    });
     await prisma.refreshToken.deleteMany({
-      where: { user: { email: 'companies-e2e-test@example.com' } },
+      where: { user: { email: COMPANIES_E2E_TEST_EMAIL } },
     });
     await prisma.user.deleteMany({
-      where: { email: 'companies-e2e-test@example.com' },
+      where: { email: COMPANIES_E2E_TEST_EMAIL },
     });
   }
 
@@ -57,12 +62,16 @@ describe('Companies (e2e)', () => {
     const agent = request.agent(app.getHttpServer());
 
     await agent.post('/auth/register').send({
-      email: 'companies-e2e-test@example.com',
+      email: COMPANIES_E2E_TEST_EMAIL,
       password: 'plain-text-password',
       name: 'E2E Test User',
     });
+    await prisma.user.update({
+      where: { email: COMPANIES_E2E_TEST_EMAIL },
+      data: { emailVerifiedAt: new Date() },
+    });
     await agent.post('/auth/login').send({
-      email: 'companies-e2e-test@example.com',
+      email: COMPANIES_E2E_TEST_EMAIL,
       password: 'plain-text-password',
     });
 

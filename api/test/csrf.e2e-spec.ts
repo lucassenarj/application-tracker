@@ -11,6 +11,17 @@ import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 
+const CSRF_TEST_EMAIL = 'csrf-test@example.com';
+const CSRF_TEST_2_EMAIL = 'csrf-test-2@example.com';
+const CSRF_TEST_REFRESH_EMAIL = 'csrf-test-refresh@example.com';
+const CSRF_TEST_PASSWORD_EMAIL = 'csrf-test-password@example.com';
+const CSRF_TEST_EMAILS = [
+  CSRF_TEST_EMAIL,
+  CSRF_TEST_2_EMAIL,
+  CSRF_TEST_REFRESH_EMAIL,
+  CSRF_TEST_PASSWORD_EMAIL,
+];
+
 describe('CSRF protection (e2e)', () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
@@ -41,31 +52,14 @@ describe('CSRF protection (e2e)', () => {
       where: { title: 'CSRF Test Application' },
     });
     await prisma.company.deleteMany({ where: { name: 'CSRF Test Co' } });
+    await prisma.emailVerificationToken.deleteMany({
+      where: { user: { email: { in: CSRF_TEST_EMAILS } } },
+    });
     await prisma.refreshToken.deleteMany({
-      where: {
-        user: {
-          email: {
-            in: [
-              'csrf-test@example.com',
-              'csrf-test-2@example.com',
-              'csrf-test-refresh@example.com',
-              'csrf-test-password@example.com',
-            ],
-          },
-        },
-      },
+      where: { user: { email: { in: CSRF_TEST_EMAILS } } },
     });
     await prisma.user.deleteMany({
-      where: {
-        email: {
-          in: [
-            'csrf-test@example.com',
-            'csrf-test-2@example.com',
-            'csrf-test-refresh@example.com',
-            'csrf-test-password@example.com',
-          ],
-        },
-      },
+      where: { email: { in: CSRF_TEST_EMAILS } },
     });
     await app.close();
   });
@@ -92,12 +86,16 @@ describe('CSRF protection (e2e)', () => {
     const agent = request.agent(app.getHttpServer());
 
     await agent.post('/auth/register').send({
-      email: 'csrf-test-2@example.com',
+      email: CSRF_TEST_2_EMAIL,
       password: 'plain-text-password',
       name: 'E2E Test User',
     });
+    await prisma.user.update({
+      where: { email: CSRF_TEST_2_EMAIL },
+      data: { emailVerifiedAt: new Date() },
+    });
     await agent.post('/auth/login').send({
-      email: 'csrf-test-2@example.com',
+      email: CSRF_TEST_2_EMAIL,
       password: 'plain-text-password',
     });
 
@@ -114,12 +112,16 @@ describe('CSRF protection (e2e)', () => {
     const agent = request.agent(app.getHttpServer());
 
     await agent.post('/auth/register').send({
-      email: 'csrf-test-refresh@example.com',
+      email: CSRF_TEST_REFRESH_EMAIL,
       password: 'plain-text-password',
       name: 'E2E Test User',
     });
+    await prisma.user.update({
+      where: { email: CSRF_TEST_REFRESH_EMAIL },
+      data: { emailVerifiedAt: new Date() },
+    });
     await agent.post('/auth/login').send({
-      email: 'csrf-test-refresh@example.com',
+      email: CSRF_TEST_REFRESH_EMAIL,
       password: 'plain-text-password',
     });
 
@@ -145,12 +147,16 @@ describe('CSRF protection (e2e)', () => {
     const agent = request.agent(app.getHttpServer());
 
     await agent.post('/auth/register').send({
-      email: 'csrf-test-password@example.com',
+      email: CSRF_TEST_PASSWORD_EMAIL,
       password: 'plain-text-password',
       name: 'E2E Test User',
     });
+    await prisma.user.update({
+      where: { email: CSRF_TEST_PASSWORD_EMAIL },
+      data: { emailVerifiedAt: new Date() },
+    });
     await agent.post('/auth/login').send({
-      email: 'csrf-test-password@example.com',
+      email: CSRF_TEST_PASSWORD_EMAIL,
       password: 'plain-text-password',
     });
 
@@ -171,7 +177,7 @@ describe('CSRF protection (e2e)', () => {
     await request(app.getHttpServer())
       .post('/auth/register')
       .send({
-        email: 'csrf-test@example.com',
+        email: CSRF_TEST_EMAIL,
         password: 'plain-text-password',
         name: 'E2E Test User',
       })
