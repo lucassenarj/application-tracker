@@ -16,6 +16,8 @@ const COMPANIES_E2E_TEST_EMAIL = 'companies-e2e-test@example.com';
 describe('Companies (e2e)', () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
+  let agent: ReturnType<typeof request.agent>;
+  let csrfToken: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -35,6 +37,8 @@ describe('Companies (e2e)', () => {
     prisma = app.get(PrismaService);
 
     await cleanupTestData();
+
+    ({ agent, csrfToken } = await authenticatedAgent());
   });
 
   afterAll(async () => {
@@ -82,8 +86,6 @@ describe('Companies (e2e)', () => {
   }
 
   it('creates a Company', async () => {
-    const { agent, csrfToken } = await authenticatedAgent();
-
     const response = await agent
       .post('/companies')
       .set('x-csrf-token', csrfToken)
@@ -96,8 +98,6 @@ describe('Companies (e2e)', () => {
   });
 
   it('rejects creating a Company without a CSRF token', async () => {
-    const { agent } = await authenticatedAgent();
-
     await agent
       .post('/companies')
       .send({ name: 'Companies E2e Test Co No Csrf' })
@@ -105,8 +105,6 @@ describe('Companies (e2e)', () => {
   });
 
   it('renames a Company', async () => {
-    const { agent, csrfToken } = await authenticatedAgent();
-
     const createResponse = await agent
       .post('/companies')
       .set('x-csrf-token', csrfToken)
@@ -128,8 +126,6 @@ describe('Companies (e2e)', () => {
   });
 
   it('rejects renaming a Company without a CSRF token', async () => {
-    const { agent, csrfToken } = await authenticatedAgent();
-
     const createResponse = await agent
       .post('/companies')
       .set('x-csrf-token', csrfToken)

@@ -16,6 +16,8 @@ const TAGS_E2E_TEST_EMAIL = 'tags-e2e-test@example.com';
 describe('Tags (e2e)', () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
+  let agent: ReturnType<typeof request.agent>;
+  let csrfToken: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -35,6 +37,8 @@ describe('Tags (e2e)', () => {
     prisma = app.get(PrismaService);
 
     await cleanupTestData();
+
+    ({ agent, csrfToken } = await authenticatedAgent());
   });
 
   afterAll(async () => {
@@ -82,8 +86,6 @@ describe('Tags (e2e)', () => {
   }
 
   it('creates a Tag', async () => {
-    const { agent, csrfToken } = await authenticatedAgent();
-
     const response = await agent
       .post('/tags')
       .set('x-csrf-token', csrfToken)
@@ -96,8 +98,6 @@ describe('Tags (e2e)', () => {
   });
 
   it('rejects creating a Tag without a CSRF token', async () => {
-    const { agent } = await authenticatedAgent();
-
     await agent
       .post('/tags')
       .send({ name: 'Tags E2e Test Tag No Csrf' })
@@ -105,8 +105,6 @@ describe('Tags (e2e)', () => {
   });
 
   it('renames a Tag', async () => {
-    const { agent, csrfToken } = await authenticatedAgent();
-
     const createResponse = await agent
       .post('/tags')
       .set('x-csrf-token', csrfToken)
@@ -128,8 +126,6 @@ describe('Tags (e2e)', () => {
   });
 
   it('rejects renaming a Tag without a CSRF token', async () => {
-    const { agent, csrfToken } = await authenticatedAgent();
-
     const createResponse = await agent
       .post('/tags')
       .set('x-csrf-token', csrfToken)
@@ -145,8 +141,6 @@ describe('Tags (e2e)', () => {
   });
 
   it('returns popular tags when no query is given', async () => {
-    const { agent } = await authenticatedAgent();
-
     const response = await agent.get('/tags/search').expect(200);
 
     expect(Array.isArray(response.body)).toBe(true);

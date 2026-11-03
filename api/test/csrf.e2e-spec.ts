@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
+import { getOptionsToken } from '@nestjs/throttler';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -29,7 +30,10 @@ describe('CSRF protection (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(getOptionsToken())
+      .useValue([])
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(

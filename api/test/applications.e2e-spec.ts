@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
+import { getOptionsToken } from '@nestjs/throttler';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -27,7 +28,10 @@ describe('Applications (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(getOptionsToken())
+      .useValue([])
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(
@@ -40,9 +44,17 @@ describe('Applications (e2e)', () => {
     await app.init();
 
     prisma = app.get(PrismaService);
+
+    await cleanupTestData();
   });
 
   afterAll(async () => {
+    await cleanupTestData();
+
+    await app.close();
+  });
+
+  async function cleanupTestData() {
     await prisma.statusChange.deleteMany({
       where: { application: { title: 'Stats E2E Test Application' } },
     });
@@ -169,9 +181,7 @@ describe('Applications (e2e)', () => {
     await prisma.user.deleteMany({
       where: { email: TAG_FILTER_E2E_TEST_EMAIL },
     });
-
-    await app.close();
-  });
+  }
 
   it('returns application stats for the authenticated user, not confused with the :id route', async () => {
     const agent = request.agent(app.getHttpServer());
