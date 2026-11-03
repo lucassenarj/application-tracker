@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { ResendEmailSender } from './infrastructure/email-sender.resend';
+import { PrismaEmailVerificationTokenRepository } from './infrastructure/email-verification-token.repository.prisma';
 import { PrismaPasswordResetTokenRepository } from './infrastructure/password-reset-token.repository.prisma';
 import { Argon2PasswordHasher } from './infrastructure/password-hasher.argon2';
 import { PrismaRefreshTokenRepository } from './infrastructure/refresh-token.repository.prisma';
@@ -41,6 +42,10 @@ import { PrismaUserRepository } from './infrastructure/user.repository.prisma';
     {
       provide: 'PasswordResetTokenRepository',
       useClass: PrismaPasswordResetTokenRepository,
+    },
+    {
+      provide: 'EmailVerificationTokenRepository',
+      useClass: PrismaEmailVerificationTokenRepository,
     },
     {
       provide: 'EmailSender',

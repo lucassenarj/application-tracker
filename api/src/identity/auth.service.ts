@@ -10,7 +10,9 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from './domain/user';
 import { RefreshToken } from './domain/refresh-token';
 import { PasswordResetToken } from './domain/password-reset-token';
+import { EmailVerificationToken } from './domain/email-verification-token';
 import type { EmailSender } from './domain/email-sender';
+import type { EmailVerificationTokenRepository } from './domain/email-verification-token.repository';
 import type { PasswordHasher } from './domain/password-hasher';
 import type { PasswordResetTokenRepository } from './domain/password-reset-token.repository';
 import type { RefreshTokenRepository } from './domain/refresh-token.repository';
@@ -19,6 +21,7 @@ import { generateToken, hashToken } from './infrastructure/token-crypto';
 
 export const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 export const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+export const EMAIL_VERIFICATION_TOKEN_TTL_MS = 60 * 60 * 1000;
 
 interface RegisterInput {
   email: string;
@@ -53,6 +56,8 @@ export class AuthService {
     private readonly refreshTokenRepository: RefreshTokenRepository,
     @Inject('PasswordResetTokenRepository')
     private readonly passwordResetTokenRepository: PasswordResetTokenRepository,
+    @Inject('EmailVerificationTokenRepository')
+    private readonly emailVerificationTokenRepository: EmailVerificationTokenRepository,
     @Inject('EmailSender')
     private readonly emailSender: EmailSender,
     private readonly jwtService: JwtService,
@@ -62,21 +67,46 @@ export class AuthService {
     const normalizedEmail = User.normalizeEmail(input.email);
     const existingUser = await this.userRepository.findByEmail(normalizedEmail);
 
+    const passwordHash = await this.passwordHasher.hash(input.password);
+    let user: User;
+
     if (existingUser) {
-      throw new ConflictException('a User with this email already exists');
+      if (existingUser.emailVerifiedAt) {
+        throw new ConflictException('a User with this email already exists');
+      }
+
+      user = existingUser
+        .changePassword(passwordHash)
+        .updateProfile({ name: input.name });
+    } else {
+      user = User.create({
+        email: input.email,
+        passwordHash,
+        name: input.name,
+      });
     }
 
-    const passwordHash = await this.passwordHasher.hash(input.password);
-
-    const user = User.create({
-      email: input.email,
-      passwordHash,
-      name: input.name,
-    });
-
     await this.userRepository.save(user);
+    await this.sendVerificationEmail(user);
 
     return user;
+  }
+
+  private async sendVerificationEmail(user: User): Promise<void> {
+    const rawToken = generateToken();
+    const emailVerificationToken = EmailVerificationToken.create({
+      userId: user.id,
+      tokenHash: hashToken(rawToken),
+      expiresAt: new Date(Date.now() + EMAIL_VERIFICATION_TOKEN_TTL_MS),
+    });
+    await this.emailVerificationTokenRepository.save(emailVerificationToken);
+
+    const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${rawToken}`;
+    await this.emailSender.send({
+      to: user.email,
+      subject: 'Verify your email',
+      body: `Click the link below to verify your email:\n\n${verificationLink}\n\nThis link expires in 1 hour.`,
+    });
   }
 
   async login(input: LoginInput): Promise<LoginResult> {
@@ -94,6 +124,12 @@ export class AuthService {
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('invalid credentials');
+    }
+
+    if (!user.emailVerifiedAt) {
+      throw new UnauthorizedException(
+        'please verify your email before logging in',
+      );
     }
 
     const accessToken = this.jwtService.sign({ sub: user.id });
@@ -251,7 +287,7 @@ export class AuthService {
     const normalizedEmail = User.normalizeEmail(email);
     const user = await this.userRepository.findByEmail(normalizedEmail);
 
-    if (!user) {
+    if (!user || !user.emailVerifiedAt) {
       return;
     }
 
@@ -298,6 +334,36 @@ export class AuthService {
     await this.userRepository.save(updatedUser);
 
     await this.revokeOtherSessions(user.id);
+  }
+
+  async verifyEmail(rawToken: string): Promise<void> {
+    const emailVerificationToken =
+      await this.emailVerificationTokenRepository.findByTokenHash(
+        hashToken(rawToken),
+      );
+
+    if (
+      !emailVerificationToken ||
+      emailVerificationToken.usedAt ||
+      emailVerificationToken.expiresAt < new Date()
+    ) {
+      throw new UnauthorizedException('invalid or expired verification token');
+    }
+
+    const user = await this.userRepository.findById(
+      emailVerificationToken.userId,
+    );
+
+    if (!user) {
+      throw new UnauthorizedException('invalid or expired verification token');
+    }
+
+    await this.emailVerificationTokenRepository.save(
+      emailVerificationToken.markUsed(),
+    );
+
+    const verifiedUser = user.verifyEmail();
+    await this.userRepository.save(verifiedUser);
   }
 
   private async revokeOtherSessions(

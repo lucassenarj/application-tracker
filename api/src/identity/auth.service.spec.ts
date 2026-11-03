@@ -9,6 +9,7 @@ import type { User } from './domain/user';
 import { RefreshToken } from './domain/refresh-token';
 import { hashToken } from './infrastructure/token-crypto';
 import { FakeEmailSender } from './test-utils/fakes/email-sender.fake';
+import { FakeEmailVerificationTokenRepository } from './test-utils/fakes/email-verification-token.repository.fake';
 import { FakePasswordHasher } from './test-utils/fakes/password-hasher.fake';
 import { FakePasswordResetTokenRepository } from './test-utils/fakes/password-reset-token.repository.fake';
 import { FakeRefreshTokenRepository } from './test-utils/fakes/refresh-token.repository.fake';
@@ -20,6 +21,7 @@ describe('AuthService', () => {
   let passwordHasher: FakePasswordHasher;
   let refreshTokenRepository: FakeRefreshTokenRepository;
   let passwordResetTokenRepository: FakePasswordResetTokenRepository;
+  let emailVerificationTokenRepository: FakeEmailVerificationTokenRepository;
   let emailSender: FakeEmailSender;
   let jwtService: JwtService;
 
@@ -28,6 +30,8 @@ describe('AuthService', () => {
     passwordHasher = new FakePasswordHasher();
     refreshTokenRepository = new FakeRefreshTokenRepository();
     passwordResetTokenRepository = new FakePasswordResetTokenRepository();
+    emailVerificationTokenRepository =
+      new FakeEmailVerificationTokenRepository();
     emailSender = new FakeEmailSender();
     jwtService = new JwtService({ secret: 'test-secret' });
     authService = new AuthService(
@@ -35,6 +39,7 @@ describe('AuthService', () => {
       passwordHasher,
       refreshTokenRepository,
       passwordResetTokenRepository,
+      emailVerificationTokenRepository,
       emailSender,
       jwtService,
     );
@@ -65,7 +70,62 @@ describe('AuthService', () => {
       expect(newUser.name).toBe('Jane Doe');
     });
 
-    it('throws an error when a User with the given email already exists', async () => {
+    it('throws an error when a User with the given email already exists and has verified their email', async () => {
+      const existingUser = await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+      await userRepository.save(existingUser.verifyEmail());
+
+      await expect(
+        authService.register({
+          email: 'jane@example.com',
+          password: 'another-password',
+          name: 'Jane Doe',
+        }),
+      ).rejects.toThrow(ConflictException);
+    });
+    it('throws an error when a User with the given email already exists in a different case and has verified their email', async () => {
+      const existingUser = await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+      await userRepository.save(existingUser.verifyEmail());
+
+      await expect(
+        authService.register({
+          email: 'JANE@EXAMPLE.COM',
+          password: 'another-password',
+          name: 'Jane Doe',
+        }),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('does not set emailVerifiedAt on a newly created User', async () => {
+      const newUser = await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+
+      expect(newUser.emailVerifiedAt).toBeUndefined();
+    });
+
+    it('sends a verification email containing a token link after registering a new User', async () => {
+      await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+
+      expect(emailSender.sentEmails).toHaveLength(1);
+      expect(emailSender.sentEmails[0].to).toBe('jane@example.com');
+      expect(emailSender.sentEmails[0].body).toMatch(/\/verify-email\?token=/);
+    });
+
+    it('does not throw when a User with the given email already exists but has not verified their email yet', async () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
@@ -78,9 +138,61 @@ describe('AuthService', () => {
           password: 'another-password',
           name: 'Jane Doe',
         }),
-      ).rejects.toThrow(ConflictException);
+      ).resolves.not.toThrow();
     });
-    it('throws an error when a User with the given email already exists in a different case', async () => {
+
+    it("updates the existing unverified User's password and name when registering again with the same email", async () => {
+      await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+
+      const updatedUser = await authService.register({
+        email: 'jane@example.com',
+        password: 'another-password',
+        name: 'Jane Smith',
+      });
+
+      expect(updatedUser.name).toBe('Jane Smith');
+      expect(updatedUser.passwordHash).toBe('hashed:another-password');
+    });
+
+    it('sends a new verification email when registering again with an existing, unverified email', async () => {
+      await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+
+      await authService.register({
+        email: 'jane@example.com',
+        password: 'another-password',
+        name: 'Jane Doe',
+      });
+
+      expect(emailSender.sentEmails).toHaveLength(2);
+    });
+
+    it('does not create a duplicate User when registering again with an existing, unverified email', async () => {
+      const firstUser = await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+
+      const secondUser = await authService.register({
+        email: 'jane@example.com',
+        password: 'another-password',
+        name: 'Jane Doe',
+      });
+
+      expect(secondUser.id).toBe(firstUser.id);
+    });
+  });
+
+  describe('login', () => {
+    it('throws an UnauthorizedException when the User has not verified their email yet', async () => {
       await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
@@ -88,22 +200,21 @@ describe('AuthService', () => {
       });
 
       await expect(
-        authService.register({
-          email: 'JANE@EXAMPLE.COM',
-          password: 'another-password',
-          name: 'Jane Doe',
+        authService.login({
+          email: 'jane@example.com',
+          password: 'plain-text-password',
+          rememberMe: true,
         }),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(UnauthorizedException);
     });
-  });
 
-  describe('login', () => {
     it('returns an access token and a refresh token for valid credentials', async () => {
-      await authService.register({
+      const newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      await userRepository.save(newUser.verifyEmail());
 
       const loginResult = await authService.login({
         email: 'jane@example.com',
@@ -117,11 +228,12 @@ describe('AuthService', () => {
       expect(loginResult.refreshToken).not.toBe('');
     });
     it('includes rememberMe in the result, matching the input', async () => {
-      await authService.register({
+      const newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      await userRepository.save(newUser.verifyEmail());
 
       const loginResult = await authService.login({
         email: 'jane@example.com',
@@ -156,11 +268,12 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
     it('creates a new refresh token family on each login', async () => {
-      await authService.register({
+      const newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      await userRepository.save(newUser.verifyEmail());
 
       const firstLoginResult = await authService.login({
         email: 'jane@example.com',
@@ -188,11 +301,12 @@ describe('AuthService', () => {
 
   describe('refresh', () => {
     it('rotates the refresh token and issues a new access token', async () => {
-      await authService.register({
+      const newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      await userRepository.save(newUser.verifyEmail());
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
@@ -208,11 +322,12 @@ describe('AuthService', () => {
       expect(refreshResult.refreshToken).not.toBe(loginResult.refreshToken);
     });
     it('revokes the old refresh token after a successful rotation', async () => {
-      await authService.register({
+      const newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      await userRepository.save(newUser.verifyEmail());
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
@@ -259,11 +374,12 @@ describe('AuthService', () => {
       );
     });
     it('revokes the entire token family when an already-revoked refresh token is reused', async () => {
-      await authService.register({
+      const newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      await userRepository.save(newUser.verifyEmail());
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
@@ -292,11 +408,12 @@ describe('AuthService', () => {
 
   describe('logout', () => {
     it('revokes the given refresh token', async () => {
-      await authService.register({
+      const newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      await userRepository.save(newUser.verifyEmail());
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
@@ -392,6 +509,7 @@ describe('AuthService', () => {
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      await userRepository.save(newUser.verifyEmail());
     });
 
     it('hashes and persists the new password when the current password is correct', async () => {
@@ -493,6 +611,8 @@ describe('AuthService', () => {
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      await userRepository.save(newUser.verifyEmail());
+      emailSender.sentEmails.length = 0;
     });
 
     it('creates a PasswordResetToken for the User matching the given email', async () => {
@@ -548,6 +668,14 @@ describe('AuthService', () => {
 
       expect(emailSender.sentEmails).toHaveLength(0);
     });
+
+    it('does not create a PasswordResetToken or send an email when the User has not verified their email yet', async () => {
+      await userRepository.save(newUser);
+
+      await authService.requestPasswordReset('jane@example.com');
+
+      expect(emailSender.sentEmails).toHaveLength(0);
+    });
   });
 
   describe('resetPassword', () => {
@@ -560,6 +688,8 @@ describe('AuthService', () => {
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      await userRepository.save(newUser.verifyEmail());
+      emailSender.sentEmails.length = 0;
       await authService.requestPasswordReset('jane@example.com');
 
       const sentEmail = emailSender.sentEmails[0];
@@ -630,6 +760,69 @@ describe('AuthService', () => {
       await expect(
         authService.resetPassword(rawToken, 'another-new-password'),
       ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('verifyEmail', () => {
+    let newUser: User;
+    let rawToken: string;
+
+    beforeEach(async () => {
+      newUser = await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+
+      const sentEmail = emailSender.sentEmails[0];
+      rawToken = new URL(
+        sentEmail.body.match(/https?:\/\/\S+/)![0],
+      ).searchParams.get('token')!;
+    });
+
+    it("marks the User's email as verified when the token is valid", async () => {
+      await authService.verifyEmail(rawToken);
+
+      const persistedUser = await userRepository.findById(newUser.id);
+      expect(persistedUser?.emailVerifiedAt).toBeInstanceOf(Date);
+    });
+
+    it('marks the token as used after a successful verification', async () => {
+      await authService.verifyEmail(rawToken);
+
+      const emailVerificationToken =
+        await emailVerificationTokenRepository.findByTokenHash(
+          hashToken(rawToken),
+        );
+
+      expect(emailVerificationToken?.usedAt).toBeInstanceOf(Date);
+    });
+
+    it('throws an UnauthorizedException when the token does not exist', async () => {
+      await expect(
+        authService.verifyEmail('nonexistent-token'),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('throws an UnauthorizedException when the token has expired', async () => {
+      const now = new Date();
+      jest
+        .useFakeTimers()
+        .setSystemTime(new Date(now.getTime() + 61 * 60 * 1000));
+
+      await expect(authService.verifyEmail(rawToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
+
+      jest.useRealTimers();
+    });
+
+    it('throws an UnauthorizedException when the token has already been used', async () => {
+      await authService.verifyEmail(rawToken);
+
+      await expect(authService.verifyEmail(rawToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });

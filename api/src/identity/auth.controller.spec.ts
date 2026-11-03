@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { AuthService, REFRESH_TOKEN_TTL_MS } from './auth.service';
 import type { UserResponse } from './dto/user-response.dto';
 import { FakeEmailSender } from './test-utils/fakes/email-sender.fake';
+import { FakeEmailVerificationTokenRepository } from './test-utils/fakes/email-verification-token.repository.fake';
 import { FakePasswordHasher } from './test-utils/fakes/password-hasher.fake';
 import { FakePasswordResetTokenRepository } from './test-utils/fakes/password-reset-token.repository.fake';
 import { FakeRefreshTokenRepository } from './test-utils/fakes/refresh-token.repository.fake';
@@ -14,13 +15,16 @@ import { FakeUserRepository } from './test-utils/fakes/user.repository.fake';
 describe('AuthController', () => {
   let authController: AuthController;
   let authService: AuthService;
+  let userRepository: FakeUserRepository;
 
   beforeEach(() => {
+    userRepository = new FakeUserRepository();
     authService = new AuthService(
-      new FakeUserRepository(),
+      userRepository,
       new FakePasswordHasher(),
       new FakeRefreshTokenRepository(),
       new FakePasswordResetTokenRepository(),
+      new FakeEmailVerificationTokenRepository(),
       new FakeEmailSender(),
       new JwtService({ secret: 'test-secret' }),
     );
@@ -49,6 +53,8 @@ describe('AuthController', () => {
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      const newUser = await userRepository.findByEmail('jane@example.com');
+      await userRepository.save(newUser!.verifyEmail());
 
       const mockResponse = { cookie: jest.fn() } as unknown as Response;
 
@@ -69,6 +75,8 @@ describe('AuthController', () => {
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      const newUser = await userRepository.findByEmail('jane@example.com');
+      await userRepository.save(newUser!.verifyEmail());
 
       const mockResponse = { cookie: jest.fn() } as unknown as Response;
 
@@ -90,6 +98,8 @@ describe('AuthController', () => {
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      const newUser = await userRepository.findByEmail('jane@example.com');
+      await userRepository.save(newUser!.verifyEmail());
 
       const mockResponse = { cookie: jest.fn() } as unknown as Response;
 
@@ -111,6 +121,8 @@ describe('AuthController', () => {
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      const newUser = await userRepository.findByEmail('jane@example.com');
+      await userRepository.save(newUser!.verifyEmail());
 
       const mockResponse = { cookie: jest.fn() } as unknown as Response;
 
@@ -136,6 +148,8 @@ describe('AuthController', () => {
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      const newUser = await userRepository.findByEmail('jane@example.com');
+      await userRepository.save(newUser!.verifyEmail());
 
       const mockResponse = { cookie: jest.fn() } as unknown as Response;
 
@@ -154,11 +168,12 @@ describe('AuthController', () => {
 
   describe('refresh', () => {
     it('reads the refresh token from the request cookie', async () => {
-      await authService.register({
+      const newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      await userRepository.save(newUser.verifyEmail());
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
@@ -175,11 +190,12 @@ describe('AuthController', () => {
       expect(mockResponse.cookie).toHaveBeenCalled();
     });
     it('sets new httpOnly cookies for the rotated access and refresh tokens', async () => {
-      await authService.register({
+      const newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      await userRepository.save(newUser.verifyEmail());
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
@@ -217,11 +233,12 @@ describe('AuthController', () => {
 
   describe('logout', () => {
     it('reads the refresh token from the request cookie', async () => {
-      await authService.register({
+      const newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      await userRepository.save(newUser.verifyEmail());
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
@@ -244,11 +261,12 @@ describe('AuthController', () => {
     });
 
     it('clears the access and refresh token cookies', async () => {
-      await authService.register({
+      const newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      await userRepository.save(newUser.verifyEmail());
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
@@ -273,11 +291,12 @@ describe('AuthController', () => {
     });
 
     it('clears the CSRF token cookie', async () => {
-      await authService.register({
+      const newUser = await authService.register({
         email: 'jane@example.com',
         password: 'plain-text-password',
         name: 'Jane Doe',
       });
+      await userRepository.save(newUser.verifyEmail());
       const loginResult = await authService.login({
         email: 'jane@example.com',
         password: 'plain-text-password',
@@ -497,6 +516,18 @@ describe('AuthController', () => {
         'raw-token',
         'new-plain-text-password',
       );
+    });
+  });
+
+  describe('verifyEmail', () => {
+    it('calls authService.verifyEmail with the token from the request body', async () => {
+      const verifyEmailSpy = jest.spyOn(authService, 'verifyEmail');
+
+      await authController
+        .verifyEmail({ token: 'raw-token' })
+        .catch(() => undefined);
+
+      expect(verifyEmailSpy).toHaveBeenCalledWith('raw-token');
     });
   });
 });
