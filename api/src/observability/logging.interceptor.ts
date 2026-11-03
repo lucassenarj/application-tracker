@@ -17,6 +17,11 @@ export class LoggingInterceptor implements NestInterceptor {
     const http = context.switchToHttp();
     const request = http.getRequest<Request>();
     const response = http.getResponse<Response>();
+
+    if (request.path === '/health') {
+      return next.handle();
+    }
+
     const startTime = Date.now();
 
     response.on('finish', () => {
