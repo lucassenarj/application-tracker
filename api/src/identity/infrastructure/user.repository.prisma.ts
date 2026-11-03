@@ -17,6 +17,7 @@ type PersistedUser = {
   role: string;
   isActive: boolean;
   createdAt: Date;
+  emailVerifiedAt: Date | null;
 };
 
 @Injectable()
@@ -38,6 +39,7 @@ export class PrismaUserRepository implements UserRepository {
         defaultCurrency: user.defaultCurrency,
         role: user.role,
         isActive: user.isActive,
+        emailVerifiedAt: user.emailVerifiedAt ?? null,
       },
       create: {
         id: user.id,
@@ -53,6 +55,7 @@ export class PrismaUserRepository implements UserRepository {
         role: user.role,
         isActive: user.isActive,
         createdAt: user.createdAt,
+        emailVerifiedAt: user.emailVerifiedAt ?? null,
       },
     });
   }
@@ -83,5 +86,6 @@ function toUser(row: PersistedUser): User {
     role: row.role as User['role'],
     isActive: row.isActive,
     createdAt: row.createdAt,
+    emailVerifiedAt: row.emailVerifiedAt ?? undefined,
   });
 }
