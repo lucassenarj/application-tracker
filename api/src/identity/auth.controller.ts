@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { generateCsrfToken } from '../csrf.config';
 import { AuthService, REFRESH_TOKEN_TTL_MS } from './auth.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -22,6 +23,15 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserResponse } from './dto/user-response.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import {
+  DEFAULT_THROTTLE_TTL_MS,
+  FORGOT_PASSWORD_HOURLY_THROTTLE_LIMIT,
+  FORGOT_PASSWORD_THROTTLE_LIMIT,
+  HOURLY_THROTTLE_TTL_MS,
+  LOGIN_THROTTLE_LIMIT,
+  REGISTER_HOURLY_THROTTLE_LIMIT,
+  REGISTER_THROTTLE_LIMIT,
+} from '../throttle.config';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -31,6 +41,13 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @Throttle({
+    default: { limit: REGISTER_THROTTLE_LIMIT, ttl: DEFAULT_THROTTLE_TTL_MS },
+    hourly: {
+      limit: REGISTER_HOURLY_THROTTLE_LIMIT,
+      ttl: HOURLY_THROTTLE_TTL_MS,
+    },
+  })
   async register(@Body() dto: RegisterDto): Promise<UserResponse> {
     const user = await this.authService.register({
       email: dto.email,
@@ -42,6 +59,9 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({
+    default: { limit: LOGIN_THROTTLE_LIMIT, ttl: DEFAULT_THROTTLE_TTL_MS },
+  })
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) response: Response,
@@ -167,6 +187,16 @@ export class AuthController {
   }
 
   @Post('forgot-password')
+  @Throttle({
+    default: {
+      limit: FORGOT_PASSWORD_THROTTLE_LIMIT,
+      ttl: DEFAULT_THROTTLE_TTL_MS,
+    },
+    hourly: {
+      limit: FORGOT_PASSWORD_HOURLY_THROTTLE_LIMIT,
+      ttl: HOURLY_THROTTLE_TTL_MS,
+    },
+  })
   async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<void> {
     await this.authService.requestPasswordReset(dto.email);
   }
