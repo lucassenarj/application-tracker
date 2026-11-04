@@ -1,0 +1,11 @@
+{
+  "lifecycleRule": {
+    "fileNamePrefix": "",
+    "daysFromUploadingToHiding": 1,
+    "daysFromHidingToDeleting": 29
+  },
+  "defaultRetention": {
+    "mode": "governance",
+    "period": "7 days"
+  }
+}
