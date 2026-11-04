@@ -19,11 +19,22 @@ C4Context
 
     System(tracker, "Application Tracker", "Lets a job seeker log applications and track status through the hiring process")
 
+    System_Ext(axiom, "Axiom", "Request logging (decision 35)")
+    System_Ext(resend, "Resend", "Transactional email (decision 32)")
+    System_Ext(cronJob, "cron-job.org", "Keep-alive pings (decision 36)")
+    System_Ext(ghActions, "GitHub Actions", "Scheduled daily DB backup (decision 37)")
+    System_Ext(b2, "Backblaze B2", "Backup storage (decision 37)")
+
     Rel(anonUser, tracker, "Uses, client-side only")
     Rel(regUser, tracker, "Uses, data persisted via API")
+    Rel(tracker, axiom, "Logs every request to")
+    Rel(tracker, resend, "Sends password-reset / verification emails via")
+    Rel(cronJob, tracker, "Pings GET /health every 10 min, weekdays")
+    Rel(ghActions, tracker, "Dumps the database directly, daily")
+    Rel(ghActions, b2, "Uploads the validated dump to")
 ```
 
-No external systems appear here on purpose — the job posting link (`Application.externalUrl`) is a stored string, not an integration (decision 15).
+Job posting links (`Application.externalUrl`) are a stored string, not an integration (decision 15) — the five external systems above are all ops/infra concerns (decisions 32, 35–37), not product integrations. `GitHub Actions` connects straight to the `Database` container, bypassing the API entirely (see Container level) — it's shown against the whole system here for simplicity.
 
 ---
 
@@ -43,13 +54,22 @@ C4Container
         ContainerDb(db, "Database", "PostgreSQL", "Application, Company, StatusChange, User data. Hosted on Render.")
     }
 
+    System_Ext(axiom, "Axiom", "Request logging (decision 35)")
+    System_Ext(cronJob, "cron-job.org", "Keep-alive pings (decision 36)")
+    System_Ext(ghActions, "GitHub Actions", "Scheduled daily DB backup (decision 37)")
+    System_Ext(b2, "Backblaze B2", "Backup storage (decision 37)")
+
     Rel(user, frontend, "Uses", "HTTPS, via Vercel")
     Rel(user, api, "Calls directly for API traffic", "HTTPS, via Render")
     Rel(frontend, api, "Calls", "REST/JSON")
     Rel(api, db, "Reads/writes", "Prisma")
+    Rel(api, axiom, "Logs every request to (decision 35)")
+    Rel(cronJob, api, "GET /health, keeps the Render instance warm")
+    Rel(ghActions, db, "pg_dump -Fc directly, bypassing the API")
+    Rel(ghActions, b2, "Uploads the validated dump")
 ```
 
-No reverse proxy container: an earlier design used nginx as a single entry point (`domain.com` / `api.domain.com`), but decision 22 replaced self-hosting with two managed platforms — Vercel and Render — that each terminate TLS/routing for their own service. One deployable service, not microservices (decision 1): `Backend API` is a single container even though it internally splits into two bounded contexts (see Component level below).
+No reverse proxy container: an earlier design used nginx as a single entry point (`domain.com` / `api.domain.com`), but decision 22 replaced self-hosting with two managed platforms — Vercel and Render — that each terminate TLS/routing for their own service. One deployable service, not microservices (decision 1): `Backend API` is a single container even though it internally splits into two bounded contexts (see Component level below). The daily backup job (decision 37) connects straight to `Database`, deliberately bypassing `Backend API` — a scheduled job dumping the whole database has no reason to go through the REST layer.
 
 ---
 
@@ -72,13 +92,17 @@ C4Component
         Component(tagsController, "TagsController", "NestJS Controller", "HTTP endpoints: tags")
         Component(tagsService, "TagsService", "NestJS Service", "create/findOrCreate/update/search (decision 31)")
         Component(tagRepo, "TagRepository", "Repository", "Find-or-create by normalized name (decision 31)")
-        Component(identityController, "IdentityController", "NestJS Controller", "Register / login endpoints")
-        Component(identityService, "IdentityService", "NestJS Service", "Auth orchestration, issues JWT cookie (decision 10)")
+        Component(identityController, "IdentityController", "NestJS Controller", "Register / login / password-reset / email-verification endpoints (decisions 32–33)")
+        Component(identityService, "IdentityService", "NestJS Service", "Auth orchestration: JWT cookies (decision 10), password reset, email verification (decision 33)")
         Component(userRepo, "UserRepository", "Repository", "Maps Prisma types to the User aggregate")
+        Component(appController, "AppController", "NestJS Controller", "GET /health — dedicated keep-alive endpoint (decision 36)")
+        Component(loggingInterceptor, "LoggingInterceptor", "NestJS Interceptor, global APP_INTERCEPTOR", "Logs every request via the response's native 'finish' event, excludes /health (decision 35)")
+        Component(throttlerGuard, "ThrottlerGuard", "NestJS Guard, global APP_GUARD", "Per-IP rate limiting, tiered by route (decision 34)")
         Component(prisma, "PrismaService", "Shared infra", "Hand-written wrapper around Prisma Client")
     }
 
     ContainerDb(db, "Database", "PostgreSQL")
+    System_Ext(axiom, "Axiom", "Request logging (decision 35)")
 
     Rel(appsController, appsService, "Calls")
     Rel(appsService, appDomain, "Invokes")
@@ -96,9 +120,12 @@ C4Component
     Rel(identityService, userRepo, "Calls")
     Rel(userRepo, prisma, "Uses")
     Rel(prisma, db, "Reads / writes")
+    Rel(loggingInterceptor, axiom, "Logs every request to (decision 35)")
+    Rel(throttlerGuard, appsController, "Guards (and every other controller — global APP_GUARD)")
+    Rel(loggingInterceptor, appsController, "Wraps (and every other controller — global APP_INTERCEPTOR)")
 ```
 
-The `ApplicationsController`/`Service`/`Repository`/domain group, `Companies*`, `Tags*`, and `Identity*` are four bounded-context modules (`ApplicationsModule`, `CompaniesModule`, `TagsModule`, `IdentityModule`, decisions 7 and 30) living inside the one container — `PrismaService` is the only thing all of them share. `ApplicationsModule` imports `CompaniesModule` and `TagsModule` to reach their exported services; it never imports their repositories.
+The `ApplicationsController`/`Service`/`Repository`/domain group, `Companies*`, `Tags*`, and `Identity*` are four bounded-context modules (`ApplicationsModule`, `CompaniesModule`, `TagsModule`, `IdentityModule`, decisions 7 and 30) living inside the one container — `PrismaService` is the only thing all of them share. `ApplicationsModule` imports `CompaniesModule` and `TagsModule` to reach their exported services; it never imports their repositories. `LoggingInterceptor` and `ThrottlerGuard` are cross-cutting, registered globally (`APP_INTERCEPTOR`/`APP_GUARD`) rather than per-module — the diagram only draws their relation to one controller to avoid redrawing the same arrow at every box. `AppController`'s `/health` route is deliberately outside both the Applications and Identity bounded contexts and excluded from `LoggingInterceptor` (decision 36).
 
 ---
 
