@@ -10,6 +10,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { FakeEmailSender } from '../src/identity/test-utils/fakes/email-sender.fake';
 
 const COMPANIES_E2E_TEST_EMAIL = 'companies-e2e-test@example.com';
 
@@ -22,7 +23,10 @@ describe('Companies (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider('EmailSender')
+      .useClass(FakeEmailSender)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(

@@ -11,6 +11,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { FakeEmailSender } from '../src/identity/test-utils/fakes/email-sender.fake';
 
 const CSRF_TEST_EMAIL = 'csrf-test@example.com';
 const CSRF_TEST_2_EMAIL = 'csrf-test-2@example.com';
@@ -33,6 +34,8 @@ describe('CSRF protection (e2e)', () => {
     })
       .overrideProvider(getOptionsToken())
       .useValue([])
+      .overrideProvider('EmailSender')
+      .useClass(FakeEmailSender)
       .compile();
 
     app = moduleFixture.createNestApplication();

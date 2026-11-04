@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { FakeEmailSender } from '../src/identity/test-utils/fakes/email-sender.fake';
 
 describe('Rate limiting (e2e)', () => {
   let app: NestExpressApplication;
@@ -14,7 +15,10 @@ describe('Rate limiting (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider('EmailSender')
+      .useClass(FakeEmailSender)
+      .compile();
 
     app = moduleFixture.createNestApplication<NestExpressApplication>();
     app.set('trust proxy', 1);

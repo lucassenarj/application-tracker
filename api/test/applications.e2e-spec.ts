@@ -11,6 +11,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { FakeEmailSender } from '../src/identity/test-utils/fakes/email-sender.fake';
 
 const STATS_E2E_TEST_EMAIL = 'stats-e2e-test@example.com';
 const RECENT_ACTIVITY_E2E_TEST_EMAIL = 'recent-activity-e2e-test@example.com';
@@ -31,6 +32,8 @@ describe('Applications (e2e)', () => {
     })
       .overrideProvider(getOptionsToken())
       .useValue([])
+      .overrideProvider('EmailSender')
+      .useClass(FakeEmailSender)
       .compile();
 
     app = moduleFixture.createNestApplication();
