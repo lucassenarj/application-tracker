@@ -1,3 +1,33 @@
+# [api-v1.15.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.14.0...api-v1.15.0) (2026-11-04)
+
+
+### Bug Fixes
+
+* **identity:** persist and read back User.emailVerifiedAt ([742dae0](https://github.com/lucassenarj/application-tracker/commit/742dae0b9c31733ae2507ea59a6b5f209a12e447))
+* **identity:** use FakeEmailSender in e2e tests instead of the real Resend client ([23e6836](https://github.com/lucassenarj/application-tracker/commit/23e6836663b88065b69e4d319e1f64d4a4e549bf))
+* **security:** require CSRF protection on password change ([065eb44](https://github.com/lucassenarj/application-tracker/commit/065eb44e03f7b97d1ece3288076eca50930f1792))
+
+
+### Features
+
+* **identity:** add AuthService.changePassword with optional session revocation ([6d09960](https://github.com/lucassenarj/application-tracker/commit/6d099606991a36cb99b8953e18035918d3bb2e1d))
+* **identity:** add EmailSender port with a Resend adapter ([951fed5](https://github.com/lucassenarj/application-tracker/commit/951fed538c83b1709282998b26b91407a7a65de4))
+* **identity:** add EmailVerificationToken domain entity ([a206d28](https://github.com/lucassenarj/application-tracker/commit/a206d28e7f4d25a7c4371c487d0cf3abbd42e0f9))
+* **identity:** add EmailVerificationTokenRepository ([58283af](https://github.com/lucassenarj/application-tracker/commit/58283af12d973279dee71294606df489b84e1866))
+* **identity:** add forgot-password and reset-password flows ([9337b49](https://github.com/lucassenarj/application-tracker/commit/9337b49a5a637f3333fb3107ac455a3e96738717))
+* **identity:** add PasswordResetToken domain entity ([5ea46fe](https://github.com/lucassenarj/application-tracker/commit/5ea46fefdc63eec7214cdb8930458227730de6f7))
+* **identity:** add PasswordResetTokenRepository ([9596ac3](https://github.com/lucassenarj/application-tracker/commit/9596ac3a8a648464f4c1dfc5c497d056161b48d6))
+* **identity:** add PATCH /auth/password endpoint ([64d4c91](https://github.com/lucassenarj/application-tracker/commit/64d4c9172abc5dc6381d07b12b4f79d102953683))
+* **identity:** add RefreshTokenRepository.findAllByUserId ([deb3328](https://github.com/lucassenarj/application-tracker/commit/deb3328e20d7b7411cc952907aab56790c5bb5bf))
+* **identity:** add User.changePassword domain method ([3251f33](https://github.com/lucassenarj/application-tracker/commit/3251f3332b63c51c11fec0010ff3349c7637b5a0))
+* **identity:** add User.verifyEmail and emailVerifiedAt ([bd5de34](https://github.com/lucassenarj/application-tracker/commit/bd5de34d1a2db43743ebc3fe78ca14c565534133))
+* **identity:** require email verification before login ([b1e812d](https://github.com/lucassenarj/application-tracker/commit/b1e812d66e91cf3a0bf3c832018b44a606582c0a))
+* **observability:** add the Axiom client wrapper ([4f52f91](https://github.com/lucassenarj/application-tracker/commit/4f52f91050d7b18cd7e12a3e28fc053a73d1c3a0))
+* **observability:** add the redaction function ([a8885e3](https://github.com/lucassenarj/application-tracker/commit/a8885e33612035acded222cd612a5dfc5f39d230))
+* **observability:** add the request-logging interceptor ([a83f059](https://github.com/lucassenarj/application-tracker/commit/a83f0595d103928195ff2b7b991f58d31001b7fd))
+* **ops:** add a dedicated health check endpoint ([612c5f6](https://github.com/lucassenarj/application-tracker/commit/612c5f686bf943a160ed113263f05a24b07202e9))
+* **security:** add rate limiting ([85197fa](https://github.com/lucassenarj/application-tracker/commit/85197fadf3e7fd6b40e5c6e51d64b2976f73d27a))
+
 # [api-v1.14.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.13.0...api-v1.14.0) (2026-10-31)
 
 
