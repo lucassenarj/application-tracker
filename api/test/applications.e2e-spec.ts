@@ -5,11 +5,22 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
+import { getOptionsToken } from '@nestjs/throttler';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { FakeEmailSender } from '../src/identity/test-utils/fakes/email-sender.fake';
+
+const STATS_E2E_TEST_EMAIL = 'stats-e2e-test@example.com';
+const RECENT_ACTIVITY_E2E_TEST_EMAIL = 'recent-activity-e2e-test@example.com';
+const OVER_TIME_E2E_TEST_EMAIL = 'over-time-e2e-test@example.com';
+const UPCOMING_INTERVIEWS_E2E_TEST_EMAIL =
+  'upcoming-interviews-e2e-test@example.com';
+const INTERVIEWS_BY_MONTH_E2E_TEST_EMAIL =
+  'interviews-by-month-e2e-test@example.com';
+const TAG_FILTER_E2E_TEST_EMAIL = 'tag-filter-e2e-test@example.com';
 
 describe('Applications (e2e)', () => {
   let app: INestApplication<App>;
@@ -18,7 +29,12 @@ describe('Applications (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(getOptionsToken())
+      .useValue([])
+      .overrideProvider('EmailSender')
+      .useClass(FakeEmailSender)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(
@@ -31,9 +47,17 @@ describe('Applications (e2e)', () => {
     await app.init();
 
     prisma = app.get(PrismaService);
+
+    await cleanupTestData();
   });
 
   afterAll(async () => {
+    await cleanupTestData();
+
+    await app.close();
+  });
+
+  async function cleanupTestData() {
     await prisma.statusChange.deleteMany({
       where: { application: { title: 'Stats E2E Test Application' } },
     });
@@ -41,11 +65,14 @@ describe('Applications (e2e)', () => {
       where: { title: 'Stats E2E Test Application' },
     });
     await prisma.company.deleteMany({ where: { name: 'Stats E2e Test Co' } });
+    await prisma.emailVerificationToken.deleteMany({
+      where: { user: { email: STATS_E2E_TEST_EMAIL } },
+    });
     await prisma.refreshToken.deleteMany({
-      where: { user: { email: 'stats-e2e-test@example.com' } },
+      where: { user: { email: STATS_E2E_TEST_EMAIL } },
     });
     await prisma.user.deleteMany({
-      where: { email: 'stats-e2e-test@example.com' },
+      where: { email: STATS_E2E_TEST_EMAIL },
     });
 
     await prisma.statusChange.deleteMany({
@@ -59,11 +86,14 @@ describe('Applications (e2e)', () => {
     await prisma.company.deleteMany({
       where: { name: 'Recent Activity E2e Test Co' },
     });
+    await prisma.emailVerificationToken.deleteMany({
+      where: { user: { email: RECENT_ACTIVITY_E2E_TEST_EMAIL } },
+    });
     await prisma.refreshToken.deleteMany({
-      where: { user: { email: 'recent-activity-e2e-test@example.com' } },
+      where: { user: { email: RECENT_ACTIVITY_E2E_TEST_EMAIL } },
     });
     await prisma.user.deleteMany({
-      where: { email: 'recent-activity-e2e-test@example.com' },
+      where: { email: RECENT_ACTIVITY_E2E_TEST_EMAIL },
     });
 
     await prisma.statusChange.deleteMany({
@@ -77,11 +107,14 @@ describe('Applications (e2e)', () => {
     await prisma.company.deleteMany({
       where: { name: 'Over Time E2e Test Co' },
     });
+    await prisma.emailVerificationToken.deleteMany({
+      where: { user: { email: OVER_TIME_E2E_TEST_EMAIL } },
+    });
     await prisma.refreshToken.deleteMany({
-      where: { user: { email: 'over-time-e2e-test@example.com' } },
+      where: { user: { email: OVER_TIME_E2E_TEST_EMAIL } },
     });
     await prisma.user.deleteMany({
-      where: { email: 'over-time-e2e-test@example.com' },
+      where: { email: OVER_TIME_E2E_TEST_EMAIL },
     });
 
     await prisma.statusChange.deleteMany({
@@ -97,11 +130,14 @@ describe('Applications (e2e)', () => {
     await prisma.company.deleteMany({
       where: { name: 'Upcoming Interviews E2e Test Co' },
     });
+    await prisma.emailVerificationToken.deleteMany({
+      where: { user: { email: UPCOMING_INTERVIEWS_E2E_TEST_EMAIL } },
+    });
     await prisma.refreshToken.deleteMany({
-      where: { user: { email: 'upcoming-interviews-e2e-test@example.com' } },
+      where: { user: { email: UPCOMING_INTERVIEWS_E2E_TEST_EMAIL } },
     });
     await prisma.user.deleteMany({
-      where: { email: 'upcoming-interviews-e2e-test@example.com' },
+      where: { email: UPCOMING_INTERVIEWS_E2E_TEST_EMAIL },
     });
 
     await prisma.statusChange.deleteMany({
@@ -115,11 +151,14 @@ describe('Applications (e2e)', () => {
     await prisma.company.deleteMany({
       where: { name: 'Interviews By Month E2e Test Co' },
     });
+    await prisma.emailVerificationToken.deleteMany({
+      where: { user: { email: INTERVIEWS_BY_MONTH_E2E_TEST_EMAIL } },
+    });
     await prisma.refreshToken.deleteMany({
-      where: { user: { email: 'interviews-by-month-e2e-test@example.com' } },
+      where: { user: { email: INTERVIEWS_BY_MONTH_E2E_TEST_EMAIL } },
     });
     await prisma.user.deleteMany({
-      where: { email: 'interviews-by-month-e2e-test@example.com' },
+      where: { email: INTERVIEWS_BY_MONTH_E2E_TEST_EMAIL },
     });
 
     await prisma.statusChange.deleteMany({
@@ -136,26 +175,31 @@ describe('Applications (e2e)', () => {
     await prisma.tag.deleteMany({
       where: { name: 'Tag Filter E2e Test Remote' },
     });
+    await prisma.emailVerificationToken.deleteMany({
+      where: { user: { email: TAG_FILTER_E2E_TEST_EMAIL } },
+    });
     await prisma.refreshToken.deleteMany({
-      where: { user: { email: 'tag-filter-e2e-test@example.com' } },
+      where: { user: { email: TAG_FILTER_E2E_TEST_EMAIL } },
     });
     await prisma.user.deleteMany({
-      where: { email: 'tag-filter-e2e-test@example.com' },
+      where: { email: TAG_FILTER_E2E_TEST_EMAIL },
     });
-
-    await app.close();
-  });
+  }
 
   it('returns application stats for the authenticated user, not confused with the :id route', async () => {
     const agent = request.agent(app.getHttpServer());
 
     await agent.post('/auth/register').send({
-      email: 'stats-e2e-test@example.com',
+      email: STATS_E2E_TEST_EMAIL,
       password: 'plain-text-password',
       name: 'E2E Test User',
     });
+    await prisma.user.update({
+      where: { email: STATS_E2E_TEST_EMAIL },
+      data: { emailVerifiedAt: new Date() },
+    });
     await agent.post('/auth/login').send({
-      email: 'stats-e2e-test@example.com',
+      email: STATS_E2E_TEST_EMAIL,
       password: 'plain-text-password',
     });
 
@@ -185,12 +229,16 @@ describe('Applications (e2e)', () => {
     const agent = request.agent(app.getHttpServer());
 
     await agent.post('/auth/register').send({
-      email: 'recent-activity-e2e-test@example.com',
+      email: RECENT_ACTIVITY_E2E_TEST_EMAIL,
       password: 'plain-text-password',
       name: 'E2E Test User',
     });
+    await prisma.user.update({
+      where: { email: RECENT_ACTIVITY_E2E_TEST_EMAIL },
+      data: { emailVerifiedAt: new Date() },
+    });
     await agent.post('/auth/login').send({
-      email: 'recent-activity-e2e-test@example.com',
+      email: RECENT_ACTIVITY_E2E_TEST_EMAIL,
       password: 'plain-text-password',
     });
 
@@ -230,12 +278,16 @@ describe('Applications (e2e)', () => {
     const agent = request.agent(app.getHttpServer());
 
     await agent.post('/auth/register').send({
-      email: 'over-time-e2e-test@example.com',
+      email: OVER_TIME_E2E_TEST_EMAIL,
       password: 'plain-text-password',
       name: 'E2E Test User',
     });
+    await prisma.user.update({
+      where: { email: OVER_TIME_E2E_TEST_EMAIL },
+      data: { emailVerifiedAt: new Date() },
+    });
     await agent.post('/auth/login').send({
-      email: 'over-time-e2e-test@example.com',
+      email: OVER_TIME_E2E_TEST_EMAIL,
       password: 'plain-text-password',
     });
 
@@ -263,12 +315,16 @@ describe('Applications (e2e)', () => {
     const agent = request.agent(app.getHttpServer());
 
     await agent.post('/auth/register').send({
-      email: 'upcoming-interviews-e2e-test@example.com',
+      email: UPCOMING_INTERVIEWS_E2E_TEST_EMAIL,
       password: 'plain-text-password',
       name: 'E2E Test User',
     });
+    await prisma.user.update({
+      where: { email: UPCOMING_INTERVIEWS_E2E_TEST_EMAIL },
+      data: { emailVerifiedAt: new Date() },
+    });
     await agent.post('/auth/login').send({
-      email: 'upcoming-interviews-e2e-test@example.com',
+      email: UPCOMING_INTERVIEWS_E2E_TEST_EMAIL,
       password: 'plain-text-password',
     });
 
@@ -318,12 +374,16 @@ describe('Applications (e2e)', () => {
     const agent = request.agent(app.getHttpServer());
 
     await agent.post('/auth/register').send({
-      email: 'interviews-by-month-e2e-test@example.com',
+      email: INTERVIEWS_BY_MONTH_E2E_TEST_EMAIL,
       password: 'plain-text-password',
       name: 'E2E Test User',
     });
+    await prisma.user.update({
+      where: { email: INTERVIEWS_BY_MONTH_E2E_TEST_EMAIL },
+      data: { emailVerifiedAt: new Date() },
+    });
     await agent.post('/auth/login').send({
-      email: 'interviews-by-month-e2e-test@example.com',
+      email: INTERVIEWS_BY_MONTH_E2E_TEST_EMAIL,
       password: 'plain-text-password',
     });
 
@@ -373,12 +433,16 @@ describe('Applications (e2e)', () => {
     const agent = request.agent(app.getHttpServer());
 
     await agent.post('/auth/register').send({
-      email: 'tag-filter-e2e-test@example.com',
+      email: TAG_FILTER_E2E_TEST_EMAIL,
       password: 'plain-text-password',
       name: 'E2E Test User',
     });
+    await prisma.user.update({
+      where: { email: TAG_FILTER_E2E_TEST_EMAIL },
+      data: { emailVerifiedAt: new Date() },
+    });
     await agent.post('/auth/login').send({
-      email: 'tag-filter-e2e-test@example.com',
+      email: TAG_FILTER_E2E_TEST_EMAIL,
       password: 'plain-text-password',
     });
 

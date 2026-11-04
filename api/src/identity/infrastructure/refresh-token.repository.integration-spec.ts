@@ -144,4 +144,48 @@ describe('PrismaRefreshTokenRepository', () => {
       expect(foundRefreshTokens).toEqual([]);
     });
   });
+
+  describe('findAllByUserId', () => {
+    it('finds all RefreshTokens belonging to the given user, across multiple families', async () => {
+      const user = User.create({
+        email: 'jane@example.com',
+        passwordHash: 'hashed-password',
+      });
+      await userRepository.save(user);
+
+      const firstRefreshToken = RefreshToken.create({
+        userId: user.id,
+        tokenHash: 'hashed-token-1',
+        familyId: 'family-1',
+        expiresAt: daysFromNow(30),
+        rememberMe: true,
+      });
+      await refreshTokenRepository.save(firstRefreshToken);
+
+      const secondRefreshToken = RefreshToken.create({
+        userId: user.id,
+        tokenHash: 'hashed-token-2',
+        familyId: 'family-2',
+        expiresAt: daysFromNow(30),
+        rememberMe: true,
+      });
+      await refreshTokenRepository.save(secondRefreshToken);
+
+      const foundRefreshTokens = await refreshTokenRepository.findAllByUserId(
+        user.id,
+      );
+      const foundIds = foundRefreshTokens.map((rt) => rt.id);
+
+      expect(foundRefreshTokens).toHaveLength(2);
+      expect(foundIds).toEqual(
+        expect.arrayContaining([firstRefreshToken.id, secondRefreshToken.id]),
+      );
+    });
+    it('returns an empty array when no RefreshTokens match the given user', async () => {
+      const foundRefreshTokens =
+        await refreshTokenRepository.findAllByUserId('nonexistent-user');
+
+      expect(foundRefreshTokens).toEqual([]);
+    });
+  });
 });

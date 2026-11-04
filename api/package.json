@@ -25,11 +25,13 @@
     "unseed:smoke-test": "nest build -p tsconfig.scripts.json && node dist/scripts/unseed-smoke-test-data.js"
   },
   "dependencies": {
+    "@axiomhq/js": "^2.0.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "11.0.2",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "11.4.7",
+    "@nestjs/throttler": "^6.7.1",
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
     "argon2": "^0.45.1",
@@ -38,6 +40,7 @@
     "cookie-parser": "^1.4.7",
     "csrf-csrf": "^4.0.3",
     "reflect-metadata": "^0.2.2",
+    "resend": "^6.37.0",
     "rxjs": "^7.8.1"
   },
   "devDependencies": {

@@ -1,0 +1,77 @@
+name: Daily DB Backup
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    services:
+      scratch-db:
+        image: postgres:18
+        env:
+          POSTGRES_USER: scratch
+          POSTGRES_PASSWORD: scratch
+          POSTGRES_DB: scratch
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Install matching pg_dump (Postgres 18)
+        run: |
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-18
+
+      - name: Dump database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          FILENAME="backup-$(date +%F).dump"
+          pg_dump -Fc "$DATABASE_URL" -f "$FILENAME"
+          echo "FILENAME=$FILENAME" >> "$GITHUB_ENV"
+
+      - name: Verify dump is non-trivial
+        run: |
+          MIN_SIZE_BYTES=1024
+          ACTUAL_SIZE=$(stat -c%s "$FILENAME")
+          if [ "$ACTUAL_SIZE" -lt "$MIN_SIZE_BYTES" ]; then
+            echo "Dump is suspiciously small ($ACTUAL_SIZE bytes) — likely an empty or misconfigured connection"
+            exit 1
+          fi
+
+      - name: Test-restore into scratch database
+        env:
+          PGPASSWORD: scratch
+        run: |
+          pg_restore --no-owner --no-privileges \
+            -h localhost -U scratch -d scratch \
+            "$FILENAME"
+
+      - name: Verify restored data
+        env:
+          PGPASSWORD: scratch
+        run: |
+          COUNT=$(psql -h localhost -U scratch -d scratch -tAc 'SELECT COUNT(*) FROM "User"')
+          if [ "$COUNT" -lt 1 ]; then
+            echo "Restored database has no rows in \"User\" — dump may be empty or restore failed silently"
+            exit 1
+          fi
+          echo "Restore verified: $COUNT row(s) in \"User\""
+
+      - name: Install B2 CLI
+        run: pip install "b2>=3.16,<4" "docutils<0.21"
+
+      - name: Upload backup to Backblaze B2
+        env:
+          B2_KEY_ID: ${{ secrets.B2_KEY_ID }}
+          B2_APP_KEY: ${{ secrets.B2_APP_KEY }}
+          B2_BUCKET: ${{ vars.B2_BUCKET }}
+        run: |
+          b2 authorize-account "$B2_KEY_ID" "$B2_APP_KEY"
+          b2 file upload "$B2_BUCKET" "$FILENAME" "$FILENAME"

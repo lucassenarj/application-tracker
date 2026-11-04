@@ -185,4 +185,76 @@ describe('User', () => {
       expect(updatedUser.defaultCurrency).toBeUndefined();
     });
   });
+
+  describe('changePassword', () => {
+    let user: User;
+
+    beforeAll(() => {
+      user = User.create({
+        email: 'jane@example.com',
+        passwordHash: 'original-hash',
+      });
+    });
+
+    it('updates passwordHash to the newly provided hash', () => {
+      const updatedUser = user.changePassword('new-hash');
+
+      expect(updatedUser.passwordHash).toBe('new-hash');
+    });
+    it('does not mutate the original User instance', () => {
+      user.changePassword('new-hash');
+
+      expect(user.passwordHash).toBe('original-hash');
+    });
+    it('leaves other fields (e.g. email, name) unchanged', () => {
+      const updatedUser = user.changePassword('new-hash');
+
+      expect(updatedUser.email).toBe('jane@example.com');
+      expect(updatedUser.id).toBe(user.id);
+    });
+    it('throws an error when newPasswordHash is empty', () => {
+      expect(() => user.changePassword('')).toThrow();
+    });
+  });
+
+  describe('verifyEmail', () => {
+    let user: User;
+
+    beforeAll(() => {
+      user = User.create({
+        email: 'jane@example.com',
+        passwordHash: 'hashed-password',
+      });
+    });
+
+    it('sets emailVerifiedAt to the current date and time', () => {
+      const now = new Date();
+      jest.useFakeTimers().setSystemTime(now);
+
+      const verifiedUser = user.verifyEmail();
+
+      expect(verifiedUser.emailVerifiedAt).toEqual(now);
+
+      jest.useRealTimers();
+    });
+
+    it('does not mutate the original User instance', () => {
+      user.verifyEmail();
+
+      expect(user.emailVerifiedAt).toBeUndefined();
+    });
+
+    it('leaves other fields unchanged', () => {
+      const verifiedUser = user.verifyEmail();
+
+      expect(verifiedUser.email).toBe('jane@example.com');
+      expect(verifiedUser.id).toBe(user.id);
+    });
+
+    it('throws an error when emailVerifiedAt is already set', () => {
+      const verifiedUser = user.verifyEmail();
+
+      expect(() => verifiedUser.verifyEmail()).toThrow();
+    });
+  });
 });

@@ -25,6 +25,7 @@ export class User {
   readonly role: UserRole;
   readonly isActive: boolean;
   readonly createdAt: Date;
+  readonly emailVerifiedAt?: Date;
 
   private constructor(props: {
     id: string;
@@ -40,6 +41,7 @@ export class User {
     role: UserRole;
     isActive: boolean;
     createdAt: Date;
+    emailVerifiedAt?: Date;
   }) {
     this.id = props.id;
     this.email = props.email;
@@ -54,6 +56,7 @@ export class User {
     this.role = props.role;
     this.isActive = props.isActive;
     this.createdAt = props.createdAt;
+    this.emailVerifiedAt = props.emailVerifiedAt;
   }
 
   static create(input: CreateUserProps): User {
@@ -100,6 +103,7 @@ export class User {
     role: UserRole;
     isActive: boolean;
     createdAt: Date;
+    emailVerifiedAt?: Date;
   }): User {
     return new User(props);
   }
@@ -126,6 +130,53 @@ export class User {
       role: this.role,
       isActive: this.isActive,
       createdAt: this.createdAt,
+      emailVerifiedAt: this.emailVerifiedAt,
+    });
+  }
+
+  changePassword(newPasswordHash: string): User {
+    if (!newPasswordHash) {
+      throw new Error('newPasswordHash is required');
+    }
+
+    return new User({
+      id: this.id,
+      email: this.email,
+      passwordHash: newPasswordHash,
+      authProvider: this.authProvider,
+      name: this.name,
+      avatar: this.avatar,
+      phone: this.phone,
+      bio: this.bio,
+      language: this.language,
+      defaultCurrency: this.defaultCurrency,
+      role: this.role,
+      isActive: this.isActive,
+      createdAt: this.createdAt,
+      emailVerifiedAt: this.emailVerifiedAt,
+    });
+  }
+
+  verifyEmail(): User {
+    if (this.emailVerifiedAt) {
+      throw new Error('email has already been verified');
+    }
+
+    return new User({
+      id: this.id,
+      email: this.email,
+      passwordHash: this.passwordHash,
+      authProvider: this.authProvider,
+      name: this.name,
+      avatar: this.avatar,
+      phone: this.phone,
+      bio: this.bio,
+      language: this.language,
+      defaultCurrency: this.defaultCurrency,
+      role: this.role,
+      isActive: this.isActive,
+      createdAt: this.createdAt,
+      emailVerifiedAt: new Date(),
     });
   }
 }

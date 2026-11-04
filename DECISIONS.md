@@ -276,20 +276,54 @@ A personal job-application tracker: log an application (title, description, link
   - `Application`↔`Tag` is an implicit many-to-many (Prisma-managed join table) — no explicit join entity, since the pairing itself carries no extra fields.
   - `Application.tagIds` is set once, at creation time, via `TagsService.findOrCreate` per given name (same silent-reuse semantics as company resolution). No endpoint exists yet to edit an existing application's tags — out of scope until a real need shows up.
 
+### 32. Email provider: Resend
+
+- **Goal:** send real transactional emails (password reset, signup verification) without the deliverability risk of self-hosting SMTP.
+- **Why this way:** self-hosted SMTP was ruled out — a fresh domain has no sending reputation and no SPF/DKIM/DMARC history, so mail would land in spam by default. Resend's free tier (3,000/month, 100/day) comfortably covers this project's scale with a simple API. Brevo was the runner-up if a higher daily cap is ever needed. **Flagged, not yet done:** emails are currently plain text with no branded template — a shared HTML template across all transactional emails is still outstanding.
+
+### 33. Password reset & email verification: time-limited, one-time tokens; unconditional vs. opt-in session revocation
+
+- **Goal:** let users recover a forgotten password and verify ownership of their email, without opening an account-enumeration hole or leaving stale tokens usable indefinitely.
+- **Why this way:** `PasswordResetToken` and `EmailVerificationToken` are separate entities (same shape, kept apart since they authorize different actions) — both 1-hour TTL, one-time use. `requestPasswordReset` always resolves successfully regardless of whether the email exists or is verified, specifically to avoid leaking account existence. A password **reset** unconditionally revokes every active session (the account may have been compromised); a voluntary password **change** only optionally revokes other sessions, since the user is already authenticated and the threat model is weaker. Login rejects unverified accounts, but that check happens *after* password verification — so the rejection itself can't be used to enumerate which emails have registered. A repeat registration against an existing but *unverified* email resends the verification token and updates the password/name, instead of a `ConflictException` — register doubles as "resend verification" with no extra endpoint, and `ConflictException` only fires once an account is actually verified.
+
+### 34. Rate limiting: `@nestjs/throttler`, per-IP, tiered by endpoint — resolves decision 29 (Still open)
+
+- **Goal:** protect the routes with real abuse cost (credential stuffing on `/login`, Resend's 100/day email quota via `/register` and `/forgot-password`) without overbuilding limits for routes that don't need them.
+- **Why this way:** `ThrottlerModule` registered globally as an `APP_GUARD`, keyed per-IP (every at-risk route is pre-authentication, so there's no other identity to key on yet). Two named tiers: a 30/min default applied everywhere, and a separate hourly tier (a no-op everywhere except where explicitly overridden) applied only to `register`/`forgot-password`, since those two burn email quota specifically. `main.ts` sets `trust proxy` to `1`, since the throttler keys on `req.ip` and this app always sits behind exactly one reverse proxy — without it, every request would appear to come from the proxy's own address, collapsing all clients into one shared limit. A coarse `limit_req` baseline (10r/s, burst 20) was also added to the local nginx stack's API server block as defense-in-depth, load-tested manually (confirmed a real mix of `200`s and `503`s under concurrent load).
+
+### 35. Observability: Axiom for backend request logging — resolves decision 29's open "Observability: strategy" item
+
+- **Goal:** see real request traffic (method, path, status, duration) in production, including sequence-dependent bugs this project has actually hit, without adding a self-hosted logging stack.
+- **Why this way:** Axiom over Better Stack/Grafana — a managed, free-tier log destination (compared against a self-hosted Grafana stack, rejected as more infra than this project's scale justifies) with a simple ingest API. Every request is logged, not just errors — the free tier's ingest volume isn't a realistic constraint here, and a full request trail helps debug sequence-dependent issues, not just failures. Known-sensitive fields (passwords, tokens) are redacted before logging regardless of status. The logging interceptor hooks the response object's native `'finish'` event rather than an RxJS `tap()` operator — NestJS doesn't finalize the real HTTP status code until *after* the interceptor's observable resolves, so `tap()` would read a stale value; `'finish'` fires once, after the response is truly sent, for both success and error paths. Sentry for frontend error tracking is designed but not yet built.
+
+### 36. Keep-alive ping: `cron-job.org` hitting a dedicated `/health` endpoint
+
+- **Goal:** keep Render's free-tier instance warm during likely-traffic hours, without burning a disproportionate share of the standalone repo's GitHub Actions minutes.
+- **Why this way:** GitHub Actions was the original plan, but the numbers don't work for a *private* repo — a 10-minute ping across a 9-hour weekday window would consume roughly 58% of the private-repo free tier's entire 2,000-minute/month budget, risking starving the same pool used for real CI. `cron-job.org`'s free tier has no comparable metered cap. `GET /health` is a dedicated, trivial endpoint (no DB call, immediate `200`) — deliberately excluded from decision 35's request logging, since ~1,170 pings/month would bury real traffic in noise. Alerting reuses `cron-job.org`'s own built-in failure notification instead of building anything custom.
+
+### 37. Daily DB backup: GitHub Actions + Backblaze B2, with a two-key credential split
+
+- **Goal:** recover from a bad migration, accidental deletion, or provider-side incident — Neon's free tier only gives a 6-hour point-in-time recovery window, with no backup policy beyond that today.
+- **Why this way:**
+  - **GitHub Actions, not `cron-job.org`** — unlike decision 36, this runs only once/day, costing roughly 4.5% of the private-repo minutes budget, and the job needs real tooling (`pg_dump`, a storage API client) that fits a CI runner better than an external cron pinging a URL.
+  - **Backblaze B2 over GitHub Actions artifacts** — B2's 10GB free tier has no forced expiration; artifacts cap at 500MB (private repos) with a hard 90-day retention ceiling regardless of configured policy. A real backup strategy shouldn't have its retention capped by the storage platform itself.
+  - **`pg_dump -Fc` (custom format)** over plain SQL/directory/tar — compressed automatically, supports selective/parallel restore via `pg_restore`, and is Postgres' own documented general-purpose recommendation.
+  - **Validation beyond "the file has bytes":** every run does an actual test-restore into a throwaway Postgres service container, then checks a real table has real rows — proving the backup is restorable, not just present. This is the "0" in the 3-2-1-1-0 backup rule (zero errors, verified by testing restores).
+  - **Retention enforced by Backblaze itself, provisioned as code:** a 30-day lifecycle rule and a 7-day Object Lock (Governance mode) are set on the bucket via a committed script (`scripts/bootstrap-b2.sh`), not a console click — so the policy is reviewable in git, not just account state. Object Lock's 7-day window is deliberately shorter than the 30-day deletion window, since a lifecycle rule's delete attempt fails while a file is still locked.
+  - **Two separate B2 keys, not one:** the daily workflow's key (stored as a GitHub Secret) is scoped to `writeFiles` only — it can upload but never delete a backup, even if leaked. The more-privileged setup key (needed to configure the bucket itself) is minted fresh each run from the account's master key, used once locally, and never stored anywhere, including CI — confirmed this key cannot also be bucket-restricted, since `writeBuckets` (needed for lifecycle rules) is explicitly disallowed on bucket-scoped keys.
+
 ## Still open (see README `TO DO` sections for the authoritative list)
 
 - **Domain model:** none — `Application`, `StatusChange`/`Contact`, `Company`, the state machine, and now `User` are all defined (decisions 15–18, 25).
-- **Frontend:** framework/CSS/deploy target decided (decisions 22–24); FE optimization strategy still open.
+- **Frontend:** framework/CSS/deploy target decided (decisions 22–24); FE optimization strategy still open. Frontend for Group 4's auth flows (password change, forgot password, email verification pages) and Sentry (decision 35) not yet built.
 - **Infrastructure:** local dev infra (nginx + containers) and public deploy target decided (decisions 23–24); local Docker Compose stack itself not yet built.
 - **Deploy:** platform decided (decisions 22–24); concrete CI/CD pipeline and BE optimization still open.
-- **Observability:** strategy — why, what, how.
-- **Identity module implementation:** attributes and auth strategy decided (decisions 25–28) — `User` domain code, Prisma schema, `UserRepository`, `AuthService`/`AuthController` not yet built.
 - **Identity (future idea, not scoped):** possible user-level settings — currency, timezone, other locale data — raised while discussing `Application.salary`. Also: social login (decision 25's `authProvider`/nullable `passwordHash` leave room for it, but no provider is decided or being built) and account linking (needs a separate linked-accounts table, not scoped).
-- **Rate limiting.** No decision yet on limits per user/IP/endpoint, or overall — needed before this goes anywhere near production.
+- **Backup credential least-privilege:** decision 37's `DATABASE_URL` currently reuses the app's full read/write connection string; a dedicated read-only Neon role would mirror the same least-privilege split already applied to the B2 keys.
 
 ## Next planned step
 
-`Application`, `Company`, and `StatusChange` are all implemented under TDD with a working Prisma persistence layer, and the `applications` module is wired end-to-end (domain → repository → service → REST controller — see `ApplicationsService`/`ApplicationsController`). `User` attributes and the full auth strategy (Argon2id, access/refresh tokens with rotation, CSRF double-submit token) are now decided (decisions 25–28). Next: scaffold the `identity/` module (mirroring `applications/`'s `domain/`/`infrastructure/` layout) and implement `User` construction under TDD, same pattern as `Application`/`Company`.
+Backend-only work for Groups 3 (rate limiting, observability), 4 (password change, forgot password, signup email confirmation), and 6 (keep-alive ping, daily DB backup) is done (decisions 32–37). Next: the frontend half of Group 4 (wiring the Security page, a forgot-password/reset-password flow, a verify-email page) and Group 3's Sentry integration, both still unbuilt. Group 5 (social login) remains deliberately deferred until Group 4's frontend lands.
 
 ---
 
