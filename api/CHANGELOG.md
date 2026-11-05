@@ -1,3 +1,10 @@
+# [api-v1.15.1](https://github.com/lucassenarj/application-tracker/compare/api-v1.15.0...api-v1.15.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* **identity:** don't let an email-send failure fail register/requestPasswordReset ([7eaf761](https://github.com/lucassenarj/application-tracker/commit/7eaf76195b845c297b7e4a8a34ed92c3be459eb3))
+
 # [api-v1.15.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.14.0...api-v1.15.0) (2026-11-04)
 
 
