@@ -1,3 +1,15 @@
+# [api-v1.16.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.15.1...api-v1.16.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* **authentication:** reject changing password to the same current password ([8b4eedb](https://github.com/lucassenarj/application-tracker/commit/8b4eedbc365a90cfb320da1585f160d2fb7210e0))
+
+
+### Features
+
+* **authentication:** branded HTML template for transactional emails ([e14dd88](https://github.com/lucassenarj/application-tracker/commit/e14dd8828ec0e7de4a09a18cf1b7d842eda07154))
+
 # [api-v1.15.1](https://github.com/lucassenarj/application-tracker/compare/api-v1.15.0...api-v1.15.1) (2026-11-05)
 
 
