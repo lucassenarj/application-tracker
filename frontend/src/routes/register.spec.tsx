@@ -169,7 +169,7 @@ describe('RegisterPage', () => {
       await screen.findByText('a User with this email already exists'),
     ).toBeInTheDocument()
   })
-  it('logs in automatically and navigates to /dashboard when registration succeeds', async () => {
+  it('shows a check-your-email success message and does not log in or navigate to /dashboard', async () => {
     fetchMock.mockImplementation(() =>
       Promise.resolve({
         ok: true,
@@ -188,6 +188,13 @@ describe('RegisterPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Create Account' }))
 
-    expect(await screen.findByText('Dashboard page')).toBeInTheDocument()
+    expect(await screen.findByText(/check your email/i)).toBeInTheDocument()
+    expect(screen.getByText('jane@example.com')).toBeInTheDocument()
+    expect(screen.queryByText('Dashboard page')).not.toBeInTheDocument()
+
+    const loginCall = fetchMock.mock.calls.find(([url]) =>
+      (url as string).includes('/auth/login'),
+    )
+    expect(loginCall).toBeUndefined()
   })
 })
