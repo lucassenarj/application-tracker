@@ -3,6 +3,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -47,6 +48,8 @@ interface LoginResult extends RefreshResult {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @Inject('UserRepository')
     private readonly userRepository: UserRepository,
@@ -102,11 +105,25 @@ export class AuthService {
     await this.emailVerificationTokenRepository.save(emailVerificationToken);
 
     const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${rawToken}`;
-    await this.emailSender.send({
+    await this.sendEmail({
       to: user.email,
-      subject: 'Verify your email',
+      subject: 'Verify your email - Application Tracker',
       body: `Click the link below to verify your email:\n\n${verificationLink}\n\nThis link expires in 1 hour.`,
     });
+  }
+
+  private async sendEmail(input: {
+    to: string;
+    subject: string;
+    body: string;
+  }): Promise<void> {
+    try {
+      await this.emailSender.send(input);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send email to ${input.to}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   async login(input: LoginInput): Promise<LoginResult> {
@@ -300,9 +317,9 @@ export class AuthService {
     await this.passwordResetTokenRepository.save(passwordResetToken);
 
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
-    await this.emailSender.send({
+    await this.sendEmail({
       to: user.email,
-      subject: 'Reset your password',
+      subject: 'Reset your password - Application Tracker',
       body: `Click the link below to reset your password:\n\n${resetLink}\n\nThis link expires in 1 hour.`,
     });
   }
