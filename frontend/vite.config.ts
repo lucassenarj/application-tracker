@@ -3,6 +3,7 @@ import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import { defineConfig } from 'vite'
 import pkg from './package.json' with { type: 'json' }
 
@@ -10,6 +11,9 @@ import pkg from './package.json' with { type: 'json' }
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
+  },
+  build: {
+    sourcemap: true,
   },
   plugins: [
     tanstackRouter({
@@ -19,6 +23,18 @@ export default defineConfig({
     }),
     react(),
     tailwindcss(),
+    sentryVitePlugin({
+      org: 'lucas-sena',
+      project: 'application-tracker',
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      disable: !process.env.SENTRY_AUTH_TOKEN,
+      release: {
+        name: pkg.version,
+      },
+      sourcemaps: {
+        filesToDeleteAfterUpload: ['./dist/**/*.map'],
+      },
+    }),
   ],
   resolve: {
     alias: {

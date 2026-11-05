@@ -5,7 +5,10 @@ import { createRoot } from 'react-dom/client'
 import { ThemeProvider } from './components/theme-provider'
 import { queryClient } from './lib/query-client'
 import { router } from './router'
+import { initSentry } from './lib/sentry'
 import './index.css'
+
+initSentry()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
