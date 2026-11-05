@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -123,6 +124,32 @@ describe('AuthService', () => {
       expect(emailSender.sentEmails).toHaveLength(1);
       expect(emailSender.sentEmails[0].to).toBe('jane@example.com');
       expect(emailSender.sentEmails[0].body).toMatch(/\/verify-email\?token=/);
+    });
+
+    it('does not throw when the email fails to send', async () => {
+      emailSender.failNextSend = true;
+
+      await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+    });
+
+    it('logs the error when the email fails to send', async () => {
+      const errorSpy = jest
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation();
+      emailSender.failNextSend = true;
+
+      await authService.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+
+      expect(errorSpy).toHaveBeenCalled();
+      errorSpy.mockRestore();
     });
 
     it('does not throw when a User with the given email already exists but has not verified their email yet', async () => {
@@ -675,6 +702,12 @@ describe('AuthService', () => {
       await authService.requestPasswordReset('jane@example.com');
 
       expect(emailSender.sentEmails).toHaveLength(0);
+    });
+
+    it('does not throw when the email fails to send', async () => {
+      emailSender.failNextSend = true;
+
+      await authService.requestPasswordReset('jane@example.com');
     });
   });
 
