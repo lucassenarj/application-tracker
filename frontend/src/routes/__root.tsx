@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-router'
 import { AnimatedBackground } from '@/components/animated-background'
 import { ConsentBanner } from '@/components/consent-banner'
+import { WidgetErrorBoundary } from '@/components/widget-error-boundary'
 
 interface RouterContext {
   queryClient: QueryClient
@@ -25,7 +26,9 @@ function RootLayout() {
       <HeadContent />
       <AnimatedBackground />
       <main className="flex-1">
-        <Outlet />
+        <WidgetErrorBoundary>
+          <Outlet />
+        </WidgetErrorBoundary>
       </main>
       <ConsentBanner />
       <ReactQueryDevtools initialIsOpen={false} />

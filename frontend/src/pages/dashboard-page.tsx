@@ -14,6 +14,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { TiltCard } from '@/components/tilt-card'
 import { UpcomingInterviewsCalendar } from '@/components/upcoming-interviews-calendar'
 import { UpcomingInterviewsList } from '@/components/upcoming-interviews-list'
+import { WidgetErrorBoundary } from '@/components/widget-error-boundary'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -102,6 +103,7 @@ export function DashboardPage() {
         </p>
       )}
 
+      <WidgetErrorBoundary>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {statsQuery.isPending
           ? SUMMARY_CARDS.map(({ key }) => (
@@ -151,13 +153,21 @@ export function DashboardPage() {
               ),
             )}
       </div>
+      </WidgetErrorBoundary>
 
       <div className="grid grid-cols-1 gap-6 lg:h-[460px] lg:grid-cols-3">
-        <UpcomingInterviewsCalendar />
-        <UpcomingInterviewsList />
-        <RecentActivityFeed />
+        <WidgetErrorBoundary>
+          <UpcomingInterviewsCalendar />
+        </WidgetErrorBoundary>
+        <WidgetErrorBoundary>
+          <UpcomingInterviewsList />
+        </WidgetErrorBoundary>
+        <WidgetErrorBoundary>
+          <RecentActivityFeed />
+        </WidgetErrorBoundary>
       </div>
 
+      <WidgetErrorBoundary>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -232,8 +242,11 @@ export function DashboardPage() {
             ))}
         </CardContent>
       </Card>
+      </WidgetErrorBoundary>
 
-      <ApplicationsOverTimeChart />
+      <WidgetErrorBoundary>
+        <ApplicationsOverTimeChart />
+      </WidgetErrorBoundary>
     </div>
   )
 }
