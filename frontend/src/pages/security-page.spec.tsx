@@ -92,6 +92,24 @@ describe('SecurityPage', () => {
     expect(await screen.findByText('Passwords do not match')).toBeInTheDocument()
   })
 
+  it('shows a validation error when the new password is the same as the current password', async () => {
+    const user = userEvent.setup()
+    renderWithRouter(routeTree, new QueryClient(), '/security')
+    await screen.findByRole('heading', { name: 'Security' })
+
+    await fillAndSubmit(user, {
+      currentPassword: 'same-password',
+      newPassword: 'same-password',
+      confirmPassword: 'same-password',
+    })
+
+    expect(
+      await screen.findByText(
+        'New password must be different from the current password',
+      ),
+    ).toBeInTheDocument()
+  })
+
   it('shows a validation error when the new password is too short', async () => {
     const user = userEvent.setup()
     renderWithRouter(routeTree, new QueryClient(), '/security')

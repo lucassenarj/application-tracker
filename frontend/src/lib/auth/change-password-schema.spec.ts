@@ -44,4 +44,15 @@ describe('changePasswordSchema', () => {
 
     expect(result.success).toBe(false)
   })
+
+  it('rejects a new password that is the same as the current password', () => {
+    const result = changePasswordSchema.safeParse({
+      currentPassword: 'current-password',
+      newPassword: 'current-password',
+      confirmPassword: 'current-password',
+      revokeOtherSessions: false,
+    })
+
+    expect(result.success).toBe(false)
+  })
 })
