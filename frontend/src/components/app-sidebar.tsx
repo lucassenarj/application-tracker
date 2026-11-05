@@ -1,5 +1,5 @@
 import { Link, useLocation } from '@tanstack/react-router'
-import { FileText, LayoutDashboard, User as UserIcon } from 'lucide-react'
+import { FileText, LayoutDashboard, Shield, User as UserIcon } from 'lucide-react'
 import { AccountMenu } from '@/components/account-menu'
 import {
   Sidebar,
@@ -23,6 +23,7 @@ const MAIN_NAV_ITEMS = [
 
 const ACCOUNT_NAV_ITEMS = [
   { to: '/profile', label: 'Profile', icon: UserIcon },
+  { to: '/security', label: 'Security', icon: Shield },
 ] as const
 
 interface AppSidebarProps {
