@@ -3,6 +3,7 @@ name: Daily DB Backup
 on:
   schedule:
     - cron: '0 3 * * *'
+  workflow_dispatch: {}
 
 jobs:
   backup:
@@ -74,4 +75,4 @@ jobs:
           B2_BUCKET: ${{ vars.B2_BUCKET }}
         run: |
           b2 authorize-account "$B2_KEY_ID" "$B2_APP_KEY"
-          b2 file upload "$B2_BUCKET" "$FILENAME" "$FILENAME"
+          b2 upload-file "$B2_BUCKET" "$FILENAME" "$FILENAME"
