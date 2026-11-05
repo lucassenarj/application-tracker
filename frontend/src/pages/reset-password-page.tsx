@@ -27,9 +27,11 @@ export function ResetPasswordPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
   })
 
   return (
@@ -114,7 +116,10 @@ export function ResetPasswordPage() {
                   )}
                 </div>
 
-                <Button type="submit" disabled={resetPasswordMutation.isPending}>
+                <Button
+                  type="submit"
+                  disabled={resetPasswordMutation.isPending || !isValid}
+                >
                   {resetPasswordMutation.isPending
                     ? 'Resetting...'
                     : 'Reset Password'}

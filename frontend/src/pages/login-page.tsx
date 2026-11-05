@@ -28,9 +28,11 @@ export function LoginPage() {
     register,
     handleSubmit,
     control,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
     defaultValues: { rememberMe: false },
   })
 
@@ -118,7 +120,7 @@ export function LoginPage() {
                 </Link>
               </div>
 
-              <Button type="submit" disabled={loginMutation.isPending}>
+              <Button type="submit" disabled={loginMutation.isPending || !isValid}>
                 {loginMutation.isPending ? (
                   'Logging in...'
                 ) : (

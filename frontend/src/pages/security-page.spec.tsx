@@ -5,6 +5,7 @@ import { createRootRoute, createRoute } from '@tanstack/react-router'
 import { SecurityPage } from '@/pages/security-page'
 import { fetchMock } from '@/test-setup'
 import { renderWithRouter } from '@/test-utils/render-with-router'
+import { submitWhenEnabled } from '@/test-utils/submit-when-enabled'
 
 const rootRoute = createRootRoute()
 const securityRoute = createRoute({
@@ -14,7 +15,7 @@ const securityRoute = createRoute({
 })
 const routeTree = rootRoute.addChildren([securityRoute])
 
-async function fillAndSubmit(
+async function fillPasswordFields(
   user: ReturnType<typeof userEvent.setup>,
   overrides: Partial<{
     currentPassword: string
@@ -35,7 +36,19 @@ async function fillAndSubmit(
     screen.getByLabelText('Confirm New Password'),
     values.confirmPassword,
   )
-  await user.click(screen.getByRole('button', { name: 'Update Password' }))
+  await user.tab()
+}
+
+async function fillAndSubmit(
+  user: ReturnType<typeof userEvent.setup>,
+  overrides: Partial<{
+    currentPassword: string
+    newPassword: string
+    confirmPassword: string
+  }> = {},
+) {
+  await fillPasswordFields(user, overrides)
+  await submitWhenEnabled(user, 'Update Password')
 }
 
 describe('SecurityPage', () => {
@@ -87,7 +100,7 @@ describe('SecurityPage', () => {
     renderWithRouter(routeTree, new QueryClient(), '/security')
     await screen.findByRole('heading', { name: 'Security' })
 
-    await fillAndSubmit(user, { confirmPassword: 'different-password' })
+    await fillPasswordFields(user, { confirmPassword: 'different-password' })
 
     expect(await screen.findByText('Passwords do not match')).toBeInTheDocument()
   })
@@ -97,7 +110,7 @@ describe('SecurityPage', () => {
     renderWithRouter(routeTree, new QueryClient(), '/security')
     await screen.findByRole('heading', { name: 'Security' })
 
-    await fillAndSubmit(user, {
+    await fillPasswordFields(user, {
       currentPassword: 'same-password',
       newPassword: 'same-password',
       confirmPassword: 'same-password',
@@ -115,7 +128,7 @@ describe('SecurityPage', () => {
     renderWithRouter(routeTree, new QueryClient(), '/security')
     await screen.findByRole('heading', { name: 'Security' })
 
-    await fillAndSubmit(user, { newPassword: 'short', confirmPassword: 'short' })
+    await fillPasswordFields(user, { newPassword: 'short', confirmPassword: 'short' })
 
     expect(
       await screen.findByText('Password must be at least 8 characters'),

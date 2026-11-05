@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { ResetPasswordPage } from '@/pages/reset-password-page'
 import { fetchMock } from '@/test-setup'
 import { renderWithRouter } from '@/test-utils/render-with-router'
+import { submitWhenEnabled } from '@/test-utils/submit-when-enabled'
 
 const resetPasswordSearchSchema = z.object({
   token: z.string().optional(),
@@ -21,7 +22,7 @@ const resetPasswordRoute = createRoute({
 })
 const routeTree = rootRoute.addChildren([resetPasswordRoute])
 
-async function fillAndSubmit(
+async function fillPasswordFields(
   user: ReturnType<typeof userEvent.setup>,
   overrides: Partial<{ newPassword: string; confirmPassword: string }> = {},
 ) {
@@ -39,7 +40,15 @@ async function fillAndSubmit(
     screen.getByLabelText('Confirm New Password'),
     values.confirmPassword,
   )
-  await user.click(screen.getByRole('button', { name: 'Reset Password' }))
+  await user.tab()
+}
+
+async function fillAndSubmit(
+  user: ReturnType<typeof userEvent.setup>,
+  overrides: Partial<{ newPassword: string; confirmPassword: string }> = {},
+) {
+  await fillPasswordFields(user, overrides)
+  await submitWhenEnabled(user, 'Reset Password')
 }
 
 describe('ResetPasswordPage', () => {
@@ -74,7 +83,7 @@ describe('ResetPasswordPage', () => {
       '/reset-password?token=abc123',
     )
 
-    await fillAndSubmit(user, { confirmPassword: 'different-password' })
+    await fillPasswordFields(user, { confirmPassword: 'different-password' })
 
     expect(await screen.findByText('Passwords do not match')).toBeInTheDocument()
   })

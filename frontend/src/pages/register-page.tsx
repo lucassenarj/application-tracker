@@ -29,9 +29,11 @@ export function RegisterPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
   })
 
   const onSubmit = (values: RegisterFormValues) => {
@@ -138,7 +140,7 @@ export function RegisterPage() {
                 )}
               </div>
 
-              <Button type="submit" disabled={registerMutation.isPending}>
+              <Button type="submit" disabled={registerMutation.isPending || !isValid}>
                 {registerMutation.isPending ? (
                   'Creating account...'
                 ) : (

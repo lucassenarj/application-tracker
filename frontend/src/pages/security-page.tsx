@@ -20,9 +20,11 @@ export function SecurityPage() {
     handleSubmit,
     control,
     reset,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(changePasswordSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
     defaultValues: {
       currentPassword: '',
       newPassword: '',
@@ -124,7 +126,10 @@ export function SecurityPage() {
             </label>
           </CardContent>
           <CardFooter>
-            <Button type="submit" disabled={changePasswordMutation.isPending}>
+            <Button
+              type="submit"
+              disabled={changePasswordMutation.isPending || !isValid}
+            >
               {changePasswordMutation.isPending
                 ? 'Updating...'
                 : 'Update Password'}

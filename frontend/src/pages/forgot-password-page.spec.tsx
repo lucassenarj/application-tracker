@@ -5,6 +5,7 @@ import { createRootRoute, createRoute } from '@tanstack/react-router'
 import { ForgotPasswordPage } from '@/pages/forgot-password-page'
 import { fetchMock } from '@/test-setup'
 import { renderWithRouter } from '@/test-utils/render-with-router'
+import { submitWhenEnabled } from '@/test-utils/submit-when-enabled'
 
 const rootRoute = createRootRoute()
 const forgotPasswordRoute = createRoute({
@@ -35,7 +36,7 @@ describe('ForgotPasswordPage', () => {
     renderWithRouter(routeTree, new QueryClient(), '/forgot-password')
 
     await user.type(await screen.findByLabelText('Email'), 'not-an-email')
-    await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+    await user.tab()
 
     expect(
       await screen.findByText('Enter a valid email address'),
@@ -47,7 +48,8 @@ describe('ForgotPasswordPage', () => {
     renderWithRouter(routeTree, new QueryClient(), '/forgot-password')
 
     await user.type(await screen.findByLabelText('Email'), 'jane@example.com')
-    await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+    await user.tab()
+    await submitWhenEnabled(user, 'Send Reset Link')
 
     await screen.findByText(
       'If an account exists for that email, a reset link was sent.',
@@ -69,7 +71,8 @@ describe('ForgotPasswordPage', () => {
       await screen.findByLabelText('Email'),
       'nonexistent@example.com',
     )
-    await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+    await user.tab()
+    await submitWhenEnabled(user, 'Send Reset Link')
 
     expect(
       await screen.findByText(
@@ -90,7 +93,8 @@ describe('ForgotPasswordPage', () => {
     renderWithRouter(routeTree, new QueryClient(), '/forgot-password')
 
     await user.type(await screen.findByLabelText('Email'), 'jane@example.com')
-    await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+    await user.tab()
+    await submitWhenEnabled(user, 'Send Reset Link')
 
     expect(
       await screen.findByText('Internal server error'),

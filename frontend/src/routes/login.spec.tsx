@@ -5,6 +5,7 @@ import { buildRouteTree } from '@/test-utils/build-route-tree'
 import { renderWithRouter } from '@/test-utils/render-with-router'
 import { LoginPage } from '@/pages/login-page'
 import { fetchMock } from '@/test-setup'
+import { submitWhenEnabled } from '@/test-utils/submit-when-enabled'
 
 const routeTree = buildRouteTree({
   '/login': LoginPage,
@@ -59,7 +60,8 @@ describe('LoginPage', () => {
     renderWithRouter(routeTree, queryClient, '/login')
 
     await user.type(await screen.findByRole('textbox', { name: 'Email' }), 'jane@example.com')
-    await user.click(screen.getByRole('button', { name: 'Sign In' }))
+    await user.click(screen.getByLabelText('Password'))
+    await user.tab()
 
     expect(await screen.findByText('Password is required')).toBeInTheDocument()
   })
@@ -77,7 +79,8 @@ describe('LoginPage', () => {
 
     await user.type(await screen.findByRole('textbox', { name: 'Email' }), 'jane@example.com')
     await user.type(screen.getByLabelText('Password'), 'wrong-password')
-    await user.click(screen.getByRole('button', { name: 'Sign In' }))
+    await user.tab()
+    await submitWhenEnabled(user, 'Sign In')
 
     expect(await screen.findByText('invalid credentials')).toBeInTheDocument()
   })
@@ -99,7 +102,8 @@ describe('LoginPage', () => {
 
     await user.type(await screen.findByRole('textbox', { name: 'Email' }), 'jane@example.com')
     await user.type(screen.getByLabelText('Password'), 'plain-text-password')
-    await user.click(screen.getByRole('button', { name: 'Sign In' }))
+    await user.tab()
+    await submitWhenEnabled(user, 'Sign In')
 
     expect(await screen.findByText('Dashboard page')).toBeInTheDocument()
   })

@@ -26,9 +26,11 @@ export function ForgotPasswordPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
   })
 
   return (
@@ -91,7 +93,10 @@ export function ForgotPasswordPage() {
                 )}
               </div>
 
-              <Button type="submit" disabled={forgotPasswordMutation.isPending}>
+              <Button
+                type="submit"
+                disabled={forgotPasswordMutation.isPending || !isValid}
+              >
                 {forgotPasswordMutation.isPending
                   ? 'Sending...'
                   : 'Send Reset Link'}
