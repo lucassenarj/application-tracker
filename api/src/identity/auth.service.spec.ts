@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Logger,
   NotFoundException,
@@ -570,6 +571,16 @@ describe('AuthService', () => {
           revokeOtherSessions: false,
         }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws a BadRequestException when the new password is the same as the current password', async () => {
+      await expect(
+        authService.changePassword(newUser.id, {
+          currentPassword: 'plain-text-password',
+          newPassword: 'plain-text-password',
+          revokeOtherSessions: false,
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it("revokes every other session's refresh tokens when revokeOtherSessions is true, but keeps the current session active", async () => {

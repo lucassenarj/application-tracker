@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import {
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
@@ -289,6 +290,17 @@ export class AuthService {
 
     if (!isCurrentPasswordValid) {
       throw new UnauthorizedException('invalid credentials');
+    }
+
+    const isNewPasswordSameAsCurrent = await this.passwordHasher.verify(
+      input.newPassword,
+      user.passwordHash,
+    );
+
+    if (isNewPasswordSameAsCurrent) {
+      throw new BadRequestException(
+        'New password must be different from the current password',
+      );
     }
 
     const newPasswordHash = await this.passwordHasher.hash(input.newPassword);
