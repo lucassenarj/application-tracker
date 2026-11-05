@@ -17,6 +17,10 @@ import { FakePasswordResetTokenRepository } from './test-utils/fakes/password-re
 import { FakeRefreshTokenRepository } from './test-utils/fakes/refresh-token.repository.fake';
 import { FakeUserRepository } from './test-utils/fakes/user.repository.fake';
 
+function extractTokenFromEmailBody(body: string): string {
+  return body.match(/[?&]token=([^"&\s]+)/)![1];
+}
+
 describe('AuthService', () => {
   let authService: AuthService;
   let userRepository: FakeUserRepository;
@@ -657,9 +661,7 @@ describe('AuthService', () => {
       await authService.requestPasswordReset('jane@example.com');
 
       const sentEmail = emailSender.sentEmails[0];
-      const rawToken = new URL(
-        sentEmail.body.match(/https?:\/\/\S+/)![0],
-      ).searchParams.get('token')!;
+      const rawToken = extractTokenFromEmailBody(sentEmail.body);
 
       const passwordResetToken =
         await passwordResetTokenRepository.findByTokenHash(hashToken(rawToken));
@@ -684,9 +686,7 @@ describe('AuthService', () => {
       await authService.requestPasswordReset('jane@example.com');
 
       const sentEmail = emailSender.sentEmails[0];
-      const rawToken = new URL(
-        sentEmail.body.match(/https?:\/\/\S+/)![0],
-      ).searchParams.get('token')!;
+      const rawToken = extractTokenFromEmailBody(sentEmail.body);
       const passwordResetToken =
         await passwordResetTokenRepository.findByTokenHash(hashToken(rawToken));
 
@@ -737,9 +737,7 @@ describe('AuthService', () => {
       await authService.requestPasswordReset('jane@example.com');
 
       const sentEmail = emailSender.sentEmails[0];
-      rawToken = new URL(
-        sentEmail.body.match(/https?:\/\/\S+/)![0],
-      ).searchParams.get('token')!;
+      rawToken = extractTokenFromEmailBody(sentEmail.body);
     });
 
     it('hashes and persists the new password when the token is valid', async () => {
@@ -819,9 +817,7 @@ describe('AuthService', () => {
       });
 
       const sentEmail = emailSender.sentEmails[0];
-      rawToken = new URL(
-        sentEmail.body.match(/https?:\/\/\S+/)![0],
-      ).searchParams.get('token')!;
+      rawToken = extractTokenFromEmailBody(sentEmail.body);
     });
 
     it("marks the User's email as verified when the token is valid", async () => {
