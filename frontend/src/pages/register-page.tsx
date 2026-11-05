@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useLoginMutation } from '@/lib/auth/login'
 import { useRegisterMutation } from '@/lib/auth/register'
 import {
   registerSchema,
@@ -27,33 +26,24 @@ import {
 
 export function RegisterPage() {
   const registerMutation = useRegisterMutation()
-  const loginMutation = useLoginMutation()
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
   })
-
-  const isPending = registerMutation.isPending || loginMutation.isPending
-  const error = registerMutation.error ?? loginMutation.error
 
   const onSubmit = (values: RegisterFormValues) => {
     const { confirmPassword, ...registerInput } = values
-    registerMutation.mutate(registerInput, {
-      onSuccess: () =>
-        loginMutation.mutate({
-          email: values.email,
-          password: values.password,
-          rememberMe: false,
-        }),
-    })
+    registerMutation.mutate(registerInput)
   }
 
   return (
     <div className="flex min-h-screen flex-col">
-      {isPending && <FullPageLoader />}
+      {registerMutation.isPending && <FullPageLoader />}
       <div className="fixed top-6 right-6 z-50">
         <ThemeToggle />
       </div>
@@ -71,14 +61,29 @@ export function RegisterPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {registerMutation.isSuccess ? (
+              <div className="flex flex-col gap-6">
+                <Alert>
+                  <AlertDescription>
+                    Check your email to verify your account. We sent a link
+                    to <strong>{registerMutation.data.email}</strong>.
+                  </AlertDescription>
+                </Alert>
+                <Button type="button" render={<Link to="/login" />}>
+                  Sign In
+                </Button>
+              </div>
+            ) : (
             <form
               className="flex flex-col gap-6"
               noValidate
               onSubmit={handleSubmit(onSubmit)}
             >
-              {error && (
+              {registerMutation.isError && (
                 <Alert variant="destructive">
-                  <AlertDescription>{error.message}</AlertDescription>
+                  <AlertDescription>
+                    {registerMutation.error.message}
+                  </AlertDescription>
                 </Alert>
               )}
 
@@ -135,8 +140,8 @@ export function RegisterPage() {
                 )}
               </div>
 
-              <Button type="submit" disabled={isPending}>
-                {isPending ? (
+              <Button type="submit" disabled={registerMutation.isPending || !isValid}>
+                {registerMutation.isPending ? (
                   'Creating account...'
                 ) : (
                   <>
@@ -191,6 +196,7 @@ export function RegisterPage() {
                 </Link>
               </p>
             </form>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -9,6 +9,10 @@ const AUTH_ENDPOINTS_WITHOUT_REFRESH = new Set([
 let cachedCsrfToken: string | undefined
 let inFlightRefresh: Promise<boolean> | undefined
 
+export function invalidateCsrfToken(): void {
+  cachedCsrfToken = undefined
+}
+
 async function getCsrfToken(): Promise<string> {
   const response = await fetch(`${API_URL}/auth/csrf-token`, {
     credentials: 'include',
@@ -27,7 +31,7 @@ function refreshAccessToken(): Promise<boolean> {
       headers: { 'x-csrf-token': cachedCsrfToken },
     })
     if (response.ok) {
-      cachedCsrfToken = undefined
+      invalidateCsrfToken()
     }
     return response.ok
   })().finally(() => {

@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Outlet } from '@tanstack/react-router'
+import * as Sentry from '@sentry/react'
+import { useEffect } from 'react'
 import { AppFooter } from '@/components/app-footer'
 import { AppHeader } from '@/components/app-header'
 import { AppSidebar } from '@/components/app-sidebar'
@@ -10,6 +12,12 @@ import { userQueryOptions } from '@/lib/auth/user-query'
 export function AuthenticatedLayout() {
   const userQuery = useQuery(userQueryOptions)
   const user = userQuery.data
+
+  useEffect(() => {
+    if (user) {
+      Sentry.setUser({ id: user.id })
+    }
+  }, [user])
 
   if (!user) {
     return <FullPageLoader />

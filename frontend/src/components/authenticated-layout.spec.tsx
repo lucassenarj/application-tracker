@@ -1,6 +1,7 @@
 import { QueryClient } from '@tanstack/react-query'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import * as Sentry from '@sentry/react'
 import {
   createRootRouteWithContext,
   createRoute,
@@ -10,6 +11,11 @@ import { AuthenticatedLayout } from '@/components/authenticated-layout'
 import { userQueryOptions, type User } from '@/lib/auth/user-query'
 import { renderWithRouter } from '@/test-utils/render-with-router'
 import { fetchMock } from '@/test-setup'
+
+vi.mock('@sentry/react', async () => {
+  const actual = await vi.importActual('@sentry/react')
+  return { ...actual, setUser: vi.fn() }
+})
 
 interface RouterContext {
   queryClient: QueryClient
@@ -64,6 +70,7 @@ describe('AuthenticatedLayout', () => {
   beforeEach(() => {
     queryClient = new QueryClient()
     queryClient.setQueryData(userQueryOptions.queryKey, fakeUser)
+    vi.mocked(Sentry.setUser).mockClear()
     fetchMock.mockImplementation((url: string) => {
       if (url.endsWith('/auth/logout')) {
         return Promise.resolve({
@@ -106,6 +113,14 @@ describe('AuthenticatedLayout', () => {
     expect(
       await screen.findByRole('status', { name: 'Loading' }),
     ).toBeInTheDocument()
+  })
+
+  it('sets the Sentry user context once the user loads', async () => {
+    renderWithRouter(routeTree, queryClient, '/dashboard')
+
+    await screen.findByRole('link', { name: 'Dashboard' })
+
+    expect(Sentry.setUser).toHaveBeenCalledWith({ id: '1' })
   })
 
   it('logs out and navigates to /login when Logout is clicked', async () => {

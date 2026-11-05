@@ -5,6 +5,7 @@ import { buildRouteTree } from '@/test-utils/build-route-tree'
 import { renderWithRouter } from '@/test-utils/render-with-router'
 import { RegisterPage } from '@/pages/register-page'
 import { fetchMock } from '@/test-setup'
+import { submitWhenEnabled } from '@/test-utils/submit-when-enabled'
 
 const routeTree = buildRouteTree({
   '/register': RegisterPage,
@@ -36,6 +37,7 @@ describe('RegisterPage', () => {
       screen.getByLabelText('Confirm Password'),
       'plain-text-password',
     )
+    await user.tab()
   }
 
   it('renders the name, email, password, and confirm password fields and a submit button', async () => {
@@ -82,7 +84,8 @@ describe('RegisterPage', () => {
       screen.getByLabelText('Confirm Password'),
       'plain-text-password',
     )
-    await user.click(screen.getByRole('button', { name: 'Create Account' }))
+    await user.click(screen.getByRole('textbox', { name: 'Full Name' }))
+    await user.tab()
 
     expect(await screen.findByText('Name is required')).toBeInTheDocument()
   })
@@ -143,7 +146,7 @@ describe('RegisterPage', () => {
     )
     await user.type(screen.getByLabelText('Password'), 'plain-text-password')
     await user.type(screen.getByLabelText('Confirm Password'), 'different')
-    await user.click(screen.getByRole('button', { name: 'Create Account' }))
+    await user.tab()
 
     expect(
       await screen.findByText('Passwords do not match'),
@@ -163,13 +166,13 @@ describe('RegisterPage', () => {
     renderWithRouter(routeTree, queryClient, '/register')
     await fillValidForm(user)
 
-    await user.click(screen.getByRole('button', { name: 'Create Account' }))
+    await submitWhenEnabled(user, 'Create Account')
 
     expect(
       await screen.findByText('a User with this email already exists'),
     ).toBeInTheDocument()
   })
-  it('logs in automatically and navigates to /dashboard when registration succeeds', async () => {
+  it('shows a check-your-email success message and does not log in or navigate to /dashboard', async () => {
     fetchMock.mockImplementation(() =>
       Promise.resolve({
         ok: true,
@@ -186,8 +189,15 @@ describe('RegisterPage', () => {
     renderWithRouter(routeTree, queryClient, '/register')
     await fillValidForm(user)
 
-    await user.click(screen.getByRole('button', { name: 'Create Account' }))
+    await submitWhenEnabled(user, 'Create Account')
 
-    expect(await screen.findByText('Dashboard page')).toBeInTheDocument()
+    expect(await screen.findByText(/check your email/i)).toBeInTheDocument()
+    expect(screen.getByText('jane@example.com')).toBeInTheDocument()
+    expect(screen.queryByText('Dashboard page')).not.toBeInTheDocument()
+
+    const loginCall = fetchMock.mock.calls.find(([url]) =>
+      (url as string).includes('/auth/login'),
+    )
+    expect(loginCall).toBeUndefined()
   })
 })

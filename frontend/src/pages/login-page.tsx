@@ -28,9 +28,11 @@ export function LoginPage() {
     register,
     handleSubmit,
     control,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
     defaultValues: { rememberMe: false },
   })
 
@@ -110,12 +112,15 @@ export function LoginPage() {
                   />
                   Remember me
                 </label>
-                <span className="cursor-not-allowed text-sm text-muted-foreground/50">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-muted-foreground underline underline-offset-4"
+                >
                   Forgot Password?
-                </span>
+                </Link>
               </div>
 
-              <Button type="submit" disabled={loginMutation.isPending}>
+              <Button type="submit" disabled={loginMutation.isPending || !isValid}>
                 {loginMutation.isPending ? (
                   'Logging in...'
                 ) : (

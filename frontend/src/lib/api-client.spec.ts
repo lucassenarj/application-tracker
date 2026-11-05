@@ -1,6 +1,7 @@
 describe('apiFetch', () => {
   let apiFetch: (typeof import('./api-client'))['apiFetch']
   let ApiError: (typeof import('./api-client'))['ApiError']
+  let invalidateCsrfToken: (typeof import('./api-client'))['invalidateCsrfToken']
   const fetchMock = vi.fn()
 
   beforeEach(async () => {
@@ -12,7 +13,7 @@ describe('apiFetch', () => {
       json: () => Promise.resolve({}),
     })
     vi.stubGlobal('fetch', fetchMock)
-    ;({ apiFetch, ApiError } = await import('./api-client'))
+    ;({ apiFetch, ApiError, invalidateCsrfToken } = await import('./api-client'))
   })
 
   afterEach(() => {
@@ -181,6 +182,27 @@ describe('apiFetch', () => {
         (url as string).endsWith('/auth/csrf-token'),
       )
       expect(csrfTokenCalls).toHaveLength(1)
+    })
+
+    it('invalidateCsrfToken clears the cached token so the next mutating request fetches a new one', async () => {
+      let csrfTokenCallCount = 0
+      fetchMock.mockImplementation((url: string) => {
+        if (url.endsWith('/auth/csrf-token')) {
+          csrfTokenCallCount += 1
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({ csrfToken: `csrf-token-${csrfTokenCallCount}` }),
+          })
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+      })
+
+      await apiFetch('/applications', { method: 'POST', body: {} })
+      invalidateCsrfToken()
+      await apiFetch('/applications', { method: 'POST', body: {} })
+
+      expect(csrfTokenCallCount).toBe(2)
     })
   })
 

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { apiFetch } from '../api-client'
+import { apiFetch, invalidateCsrfToken } from '../api-client'
 import { userQueryOptions, type User } from './user-query'
 
 interface LoginInput {
@@ -17,6 +17,7 @@ export function useLoginMutation() {
     mutationFn: (input: LoginInput) =>
       apiFetch<User>('/auth/login', { method: 'POST', body: input }),
     onSuccess: (user) => {
+      invalidateCsrfToken()
       queryClient.setQueryData(userQueryOptions.queryKey, user)
       navigate({ to: '/dashboard' })
     },

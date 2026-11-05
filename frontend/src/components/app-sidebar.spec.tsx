@@ -35,7 +35,7 @@ describe('AppSidebar', () => {
     ).toHaveAttribute('href', '/dashboard')
   })
 
-  it('renders links to Dashboard, Applications, and Profile', async () => {
+  it('renders links to Dashboard, Applications, Profile, and Security', async () => {
     const queryClient = new QueryClient()
     renderWithRouter(routeTree, queryClient, '/dashboard')
 
@@ -48,6 +48,10 @@ describe('AppSidebar', () => {
     expect(screen.getByRole('link', { name: 'Profile' })).toHaveAttribute(
       'href',
       '/profile',
+    )
+    expect(screen.getByRole('link', { name: 'Security' })).toHaveAttribute(
+      'href',
+      '/security',
     )
   })
 
