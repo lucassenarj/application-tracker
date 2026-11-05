@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Logger,
   NotFoundException,
@@ -15,6 +16,10 @@ import { FakePasswordHasher } from './test-utils/fakes/password-hasher.fake';
 import { FakePasswordResetTokenRepository } from './test-utils/fakes/password-reset-token.repository.fake';
 import { FakeRefreshTokenRepository } from './test-utils/fakes/refresh-token.repository.fake';
 import { FakeUserRepository } from './test-utils/fakes/user.repository.fake';
+
+function extractTokenFromEmailBody(body: string): string {
+  return body.match(/[?&]token=([^"&\s]+)/)![1];
+}
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -572,6 +577,16 @@ describe('AuthService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
+    it('throws a BadRequestException when the new password is the same as the current password', async () => {
+      await expect(
+        authService.changePassword(newUser.id, {
+          currentPassword: 'plain-text-password',
+          newPassword: 'plain-text-password',
+          revokeOtherSessions: false,
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it("revokes every other session's refresh tokens when revokeOtherSessions is true, but keeps the current session active", async () => {
       const currentLoginResult = await authService.login({
         email: 'jane@example.com',
@@ -646,9 +661,7 @@ describe('AuthService', () => {
       await authService.requestPasswordReset('jane@example.com');
 
       const sentEmail = emailSender.sentEmails[0];
-      const rawToken = new URL(
-        sentEmail.body.match(/https?:\/\/\S+/)![0],
-      ).searchParams.get('token')!;
+      const rawToken = extractTokenFromEmailBody(sentEmail.body);
 
       const passwordResetToken =
         await passwordResetTokenRepository.findByTokenHash(hashToken(rawToken));
@@ -673,9 +686,7 @@ describe('AuthService', () => {
       await authService.requestPasswordReset('jane@example.com');
 
       const sentEmail = emailSender.sentEmails[0];
-      const rawToken = new URL(
-        sentEmail.body.match(/https?:\/\/\S+/)![0],
-      ).searchParams.get('token')!;
+      const rawToken = extractTokenFromEmailBody(sentEmail.body);
       const passwordResetToken =
         await passwordResetTokenRepository.findByTokenHash(hashToken(rawToken));
 
@@ -726,9 +737,7 @@ describe('AuthService', () => {
       await authService.requestPasswordReset('jane@example.com');
 
       const sentEmail = emailSender.sentEmails[0];
-      rawToken = new URL(
-        sentEmail.body.match(/https?:\/\/\S+/)![0],
-      ).searchParams.get('token')!;
+      rawToken = extractTokenFromEmailBody(sentEmail.body);
     });
 
     it('hashes and persists the new password when the token is valid', async () => {
@@ -808,9 +817,7 @@ describe('AuthService', () => {
       });
 
       const sentEmail = emailSender.sentEmails[0];
-      rawToken = new URL(
-        sentEmail.body.match(/https?:\/\/\S+/)![0],
-      ).searchParams.get('token')!;
+      rawToken = extractTokenFromEmailBody(sentEmail.body);
     });
 
     it("marks the User's email as verified when the token is valid", async () => {

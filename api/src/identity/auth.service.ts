@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import {
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
@@ -19,6 +20,7 @@ import type { PasswordResetTokenRepository } from './domain/password-reset-token
 import type { RefreshTokenRepository } from './domain/refresh-token.repository';
 import type { UserRepository } from './domain/user.repository';
 import { generateToken, hashToken } from './infrastructure/token-crypto';
+import { renderTransactionalEmail } from '../utils/transactional-email.template';
 
 export const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 export const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
@@ -108,7 +110,16 @@ export class AuthService {
     await this.sendEmail({
       to: user.email,
       subject: 'Verify your email - Application Tracker',
-      body: `Click the link below to verify your email:\n\n${verificationLink}\n\nThis link expires in 1 hour.`,
+      body: renderTransactionalEmail({
+        greetingName: user.name,
+        heading: 'Verify your email',
+        bodyText:
+          'Thanks for signing up for Application Tracker! Please confirm your email address to activate your account and get started.',
+        buttonText: 'Verify Email',
+        buttonHref: verificationLink,
+        footnote:
+          "This link expires in 1 hour. If you didn't create this account, you can safely ignore this email.",
+      }),
     });
   }
 
@@ -291,6 +302,17 @@ export class AuthService {
       throw new UnauthorizedException('invalid credentials');
     }
 
+    const isNewPasswordSameAsCurrent = await this.passwordHasher.verify(
+      input.newPassword,
+      user.passwordHash,
+    );
+
+    if (isNewPasswordSameAsCurrent) {
+      throw new BadRequestException(
+        'New password must be different from the current password',
+      );
+    }
+
     const newPasswordHash = await this.passwordHasher.hash(input.newPassword);
     const updatedUser = user.changePassword(newPasswordHash);
     await this.userRepository.save(updatedUser);
@@ -320,7 +342,16 @@ export class AuthService {
     await this.sendEmail({
       to: user.email,
       subject: 'Reset your password - Application Tracker',
-      body: `Click the link below to reset your password:\n\n${resetLink}\n\nThis link expires in 1 hour.`,
+      body: renderTransactionalEmail({
+        greetingName: user.name,
+        heading: 'Reset your password',
+        bodyText:
+          'We received a request to reset the password for your account. Click the button below to choose a new one.',
+        buttonText: 'Reset Password',
+        buttonHref: resetLink,
+        footnote:
+          "This link expires in 1 hour. If you didn't request this, you can safely ignore this email — your password won't be changed.",
+      }),
     });
   }
 
