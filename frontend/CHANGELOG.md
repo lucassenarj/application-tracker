@@ -1,3 +1,24 @@
+# [frontend-v1.5.0](https://github.com/lucassenarj/application-tracker/compare/frontend-v1.4.1...frontend-v1.5.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* **frontend:** invalidate cached CSRF token on login/logout ([f1655ac](https://github.com/lucassenarj/application-tracker/commit/f1655ace6775e530da984a30c4cce428cadddaef))
+* **frontend:** stop auto-login after registration ([8dd78d3](https://github.com/lucassenarj/application-tracker/commit/8dd78d3922067a33f0a047f565afd339aac970de))
+
+
+### Features
+
+* **authentication:** block submit until client-side validation passes on all auth forms ([288fe57](https://github.com/lucassenarj/application-tracker/commit/288fe575ff4bb96355e6c77b659b1d560a2bc466))
+* **frontend:** add React error boundaries ([eca2b6f](https://github.com/lucassenarj/application-tracker/commit/eca2b6fe987b09386b40e9f38fefb4bb3767f613))
+* **frontend:** add Sentry error tracking setup ([d310f70](https://github.com/lucassenarj/application-tracker/commit/d310f70372459b7d3964637ebbac863cd4f4b873))
+* **frontend:** attach userId to Sentry error reports ([76926f3](https://github.com/lucassenarj/application-tracker/commit/76926f328ff559ecb74358a3fca972788a833642))
+* **frontend:** reject a new password same as the current one ([2f3f6a6](https://github.com/lucassenarj/application-tracker/commit/2f3f6a6afe87be4022c170624c7f23fe508ffd4b))
+* **frontend:** wire forgot password flow ([117267b](https://github.com/lucassenarj/application-tracker/commit/117267bf6193238d3f44b7680a5739ded97c4028))
+* **frontend:** wire real password change on the Security page ([bb56ff8](https://github.com/lucassenarj/application-tracker/commit/bb56ff8eef49c2c798031295731d04aac0438151))
+* **frontend:** wire reset password flow ([345f5fc](https://github.com/lucassenarj/application-tracker/commit/345f5fc0e291fac5873fb6ecd073b818acdbbcb3))
+* **frontend:** wire verify-email flow ([43c9ab9](https://github.com/lucassenarj/application-tracker/commit/43c9ab973547976eb65ca5b8c2d152fde6b460d8))
+
 # [frontend-v1.4.1](https://github.com/lucassenarj/application-tracker/compare/frontend-v1.4.0...frontend-v1.4.1) (2026-11-01)
 
 
