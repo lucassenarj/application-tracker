@@ -1,32 +1,36 @@
-# React + TypeScript + Vite
+# Application Tracker Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Frontend for [Application Tracker](../README.md), a personal portfolio project. This README covers how to run, test, and work on this app specifically — for architecture decisions, see the root `README.md` and `DECISIONS.md`.
 
-Currently, two official plugins are available:
+## Tech stack
+- **React 19 + [Vite](https://vite.dev) + TypeScript.**
+- **[TanStack Router](https://tanstack.com/router)** — file-based routing with automatic per-route code splitting, plus **[TanStack Query](https://tanstack.com/query)** for server state.
+- **[React Hook Form](https://react-hook-form.com) + [Zod](https://zod.dev)** — schema-validated forms that validate live (`onBlur`/`onChange`) and block submission while any error exists, rather than only surfacing errors after a submit attempt.
+- **Tailwind CSS v4 + [base-ui](https://base-ui.com)** — component primitives generated via `shadcn`.
+- **[@sentry/react](https://sentry.io)** — crash/error tracking: URL query-param scrubbing before events are sent, a top-level error boundary plus granular per-widget boundaries on the Dashboard.
+- **Google Analytics (GA4)** — consent-gated, no-ops entirely until a Measurement ID is configured.
+- **Vitest + Testing Library** — component and route-level tests.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Structure
+- `components/` — shared UI components.
+- `pages/` — page-level components.
+- `routes/` — TanStack Router route definitions (file-based, auto code-split).
+- `lib/` — domain logic: API client, auth schemas/mutations, analytics, Sentry setup.
+- `hooks/` — shared React hooks.
+- `test-utils/` — shared test helpers (`renderWithRouter`, `buildRouteTree`, `submitWhenEnabled`).
 
-## React Compiler
+## Local setup
+This app is normally run as part of the root Docker Compose stack — see the root `README.md`'s "Running the stack" section. To run it on its own instead:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Install dependencies: `yarn install`
+2. Copy the env file and fill in real values: `cp .env.example .env.local`
+3. Start the dev server: `yarn dev`
 
-## Expanding the Oxlint configuration
+## Testing
+- `yarn test` — run once
+- `yarn test:watch` — watch mode
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Build & type checking
+- `yarn build` — regenerates routes, type-checks, and builds
+- `yarn typecheck`
+- `yarn lint`
