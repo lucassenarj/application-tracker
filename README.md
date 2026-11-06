@@ -4,30 +4,30 @@
 Project that gives you an application manager for job applications.
 
 You can store an application
-    - User should provide the details of the application, like:
-        - Title (name)
-        - Description
-        - Company (name)
-        - Contact person (name, email, position)
-        - Application status (interview, waiting, rejected, etc)
-        - And others
+- User should provide the details of the application, like:
+    - Title (name)
+    - Description
+    - Company (name)
+    - Contact person (name, email, position)
+    - Application status (interview, waiting, rejected, etc)
+    - And others
 
 The application should have a page that lists the applications with filters available
-    - When the user clicks on an application, it should display a page with the details of the application
-    - User can update status
-        - Select box with the available statuses
-        - Display statuses in logical order (from application until possible feedback like rejection and job offer)
-        - When a status is selected, it should open a modal asking the user for more information
-            - Should have a text area for the user to provide more information
-            - Recruiter information is optional
-            - Date
-            - Text area for extra information
+- When the user clicks on an application, it should display a page with the details of the application
+- User can update status
+    - Select box with the available statuses
+    - Display statuses in logical order (from application until possible feedback like rejection and job offer)
+    - When a status is selected, it should open a modal asking the user for more information
+        - Should have a text area for the user to provide more information
+        - Recruiter information is optional
+        - Date
+        - Text area for extra information
 
 Project should have a dashboard with statistics about the applications,
-    - Application total
-    - Total rejections
-    - Total Offers
-    - Total interviews (technical and non-technical)
+- Application total
+- Total rejections
+- Total Offers
+- Total interviews (technical and non-technical)
 
 Users must register/log in to use the application — there is no anonymous mode
 
@@ -72,7 +72,7 @@ One deployable service, not microservices - a Go-style gateway-plus-services spl
 - **Local dev:** full self-hosted-style stack via Docker Compose — `nginx` (reverse proxy, TLS via mkcert), `api`, and (once scaffolded) `frontend`/`db` containers, kept ready to redeploy as-is to a VPS in a later phase. See `DECISIONS.md` #23.
 - **Public deploy (phase 1, this week):** no self-hosted reverse proxy — Vercel and Render each handle their own routing/TLS. See Deploy below and `DECISIONS.md` #24.
 
-**Local setup prerequisites:**
+#### Local setup prerequisites
 - [mkcert](https://github.com/FiloSottile/mkcert) — required because `.dev` domains are forced to HTTPS by browsers via HSTS preload, so local nginx needs a locally-trusted TLS cert. Install it, then run once per machine:
   ```
   mkcert -install
@@ -90,18 +90,39 @@ One deployable service, not microservices - a Go-style gateway-plus-services spl
   127.0.0.1 local.api.application-tracker.lucassenarj.dev
   ```
 
+#### Running the stack
+1. Copy the root env file and fill in real values (see "Providers & external services" below for where each one comes from): `cp .env.example .env`
+2. Copy the frontend's own env file (Vite reads `.env.local`, separate from the root `.env` used by Docker Compose): `cp frontend/.env.example frontend/.env.local`
+3. Build and start everything — `nginx`, `api`, `frontend`, `db`: `docker compose up --build`
+4. Run the database migrations (first run only, or after pulling new ones): `docker compose exec api npx prisma migrate dev`
+5. Visit `https://local.application-tracker.lucassenarj.dev`. The API is reachable directly at `https://local.api.application-tracker.lucassenarj.dev`, proxied by the local nginx container the same way the real deploy's reverse proxy would be.
+
+#### Running tests
+See each project's own README for the full command list.
+- `docker compose exec api yarn test`
+- `docker compose exec frontend yarn test`
+
 ### Deploy
 - Constraint: prefer a cheap or free hosting option.
-- **Frontend: Vercel.** **API + Postgres: Render.** Both have free tiers and near-zero deploy config, so no server or reverse proxy to provision/maintain by hand. Trade-off: Render's free web service cold-starts after inactivity — acceptable for a portfolio demo, not production traffic. See `DECISIONS.md` #22.
+- **Frontend: Vercel. API: Render. Database: Neon.** All three have free tiers and near-zero deploy config, so no server or reverse proxy to provision/maintain by hand. Render's own free Postgres was dropped for Neon instead — it expires 30 days after creation with no backups, while Neon's free tier is permanent (scale-to-zero after 5 min idle, not deletion). Trade-off: Render's free web service cold-starts after inactivity — acceptable for a portfolio demo, not production traffic. See `DECISIONS.md` #22 and #24.
 
 **TO DO:**
 - How to deploy (concrete steps/CI pipeline)
 - How to optimize FE
 - How to optimize BE
 
+### Providers & external services
+Beyond the three deploy platforms above, the running app depends on:
+- **[Resend](https://resend.com)** — transactional email (signup verification, password reset). Free tier: 3,000/month, 100/day.
+- **[Axiom](https://axiom.co)** — backend request logging (every request, all status codes, sensitive fields redacted) plus a Monitor alerting on `status >= 500`. Free tier: 500GB/month ingest.
+- **[Sentry](https://sentry.io)** — frontend crash/error tracking (unhandled exceptions, promise rejections, React render crashes via an Error Boundary). Free tier: 5,000 errors/month.
+- **[Backblaze B2](https://www.backblaze.com/cloud-storage)** — private bucket storing daily database backups (30-day lifecycle, 7-day Object Lock), uploaded by a scheduled GitHub Actions workflow.
+- **[cron-job.org](https://cron-job.org)** — pings the API's `/health` endpoint every 10 minutes on weekdays to keep Render's free-tier backend from cold-starting during likely-traffic hours.
+- **GitHub Actions** — the daily database backup workflow and the keep-alive ping above, plus CI.
+
+Full rationale for each is in `DECISIONS.md` and `notes/backend-hardening/`.
+
 ### Observability
-**TO DO:**
-- Search for observability strategies
-- Why to use
-- What to use
-- How to use
+**Backend:** every request logged to Axiom (method, path, status, duration, redacted body), via a `LoggingInterceptor` hooking the response's native `'finish'` event. An Axiom match monitor alerts by email on `status >= 500`.
+**Frontend:** Sentry captures unhandled exceptions, unhandled promise rejections, and React render crashes (top-level Error Boundary plus granular per-widget boundaries on the Dashboard). URL query params are scrubbed before any event is sent.
+Full design docs: `notes/backend-hardening/observability-design-doc.md` and `notes/backend-hardening/sentry-frontend-design-doc.md`.
