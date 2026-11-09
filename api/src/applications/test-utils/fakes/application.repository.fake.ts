@@ -34,6 +34,16 @@ export class FakeApplicationRepository implements ApplicationRepository {
     return Promise.resolve(this.applications.get(id) ?? null);
   }
 
+  findByExternalUrlAndUserId(
+    externalUrl: string,
+    userId: string,
+  ): Promise<Application | null> {
+    const found = [...this.applications.values()].find(
+      (a) => a.externalUrl === externalUrl && a.userId === userId,
+    );
+    return Promise.resolve(found ?? null);
+  }
+
   async findAllByUser(
     userId: string,
     options: FindAllByUserOptions,

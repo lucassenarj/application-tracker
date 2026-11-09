@@ -96,6 +96,21 @@ export class PrismaApplicationRepository implements ApplicationRepository {
     return row ? toApplication(row) : null;
   }
 
+  async findByExternalUrlAndUserId(
+    externalUrl: string,
+    userId: string,
+  ): Promise<Application | null> {
+    const row = await this.prisma.application.findFirst({
+      where: { externalUrl, userId },
+      include: {
+        statusChanges: { orderBy: { createdAt: 'asc' } },
+        tags: { select: { id: true, name: true } },
+      },
+    });
+
+    return row ? toApplication(row) : null;
+  }
+
   async findAllByUser(
     userId: string,
     options: FindAllByUserOptions,

@@ -66,4 +66,8 @@ export interface ApplicationRepository {
     start: Date,
     end: Date,
   ): Promise<UpcomingInterview[]>;
+  findByExternalUrlAndUserId(
+    externalUrl: string,
+    userId: string,
+  ): Promise<Application | null>;
 }

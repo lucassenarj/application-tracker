@@ -26,6 +26,7 @@ import { PrismaApplicationRepository } from './infrastructure/application.reposi
       useClass: PrismaApplicationRepository,
     },
   ],
+  exports: [ApplicationsService],
 })
 export class ApplicationsModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
