@@ -532,4 +532,84 @@ describe('AuthController', () => {
       expect(verifyEmailSpy).toHaveBeenCalledWith('raw-token');
     });
   });
+
+  describe('createPersonalAccessToken', () => {
+    let newUser: UserResponse;
+
+    beforeEach(async () => {
+      newUser = await authController.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+    });
+
+    it('creates a PersonalAccessToken for the authenticated user', async () => {
+      const mockRequest = { user: { id: newUser.id } } as unknown as Request;
+
+      const result = await authController.createPersonalAccessToken(
+        { label: 'LinkedIn extension' },
+        mockRequest,
+      );
+
+      expect(result.label).toBe('LinkedIn extension');
+    });
+
+    it('converts a provided expiresAt string into a Date before calling authService', async () => {
+      const mockRequest = { user: { id: newUser.id } } as unknown as Request;
+      const createPersonalAccessTokenSpy = jest.spyOn(
+        authService,
+        'createPersonalAccessToken',
+      );
+
+      await authController.createPersonalAccessToken(
+        { label: 'LinkedIn extension', expiresAt: '2026-12-01T00:00:00.000Z' },
+        mockRequest,
+      );
+
+      expect(createPersonalAccessTokenSpy).toHaveBeenCalledWith(newUser.id, {
+        label: 'LinkedIn extension',
+        expiresAt: new Date('2026-12-01T00:00:00.000Z'),
+      });
+    });
+  });
+
+  describe('listPersonalAccessTokens', () => {
+    it('lists PersonalAccessTokens for the authenticated user', async () => {
+      const newUser = await authController.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+      const mockRequest = { user: { id: newUser.id } } as unknown as Request;
+      await authController.createPersonalAccessToken(
+        { label: 'LinkedIn extension' },
+        mockRequest,
+      );
+
+      const tokens = await authController.listPersonalAccessTokens(mockRequest);
+
+      expect(tokens).toHaveLength(1);
+    });
+  });
+
+  describe('revokePersonalAccessToken', () => {
+    it('revokes the PersonalAccessToken for the authenticated user', async () => {
+      const newUser = await authController.register({
+        email: 'jane@example.com',
+        password: 'plain-text-password',
+        name: 'Jane Doe',
+      });
+      const mockRequest = { user: { id: newUser.id } } as unknown as Request;
+      const created = await authController.createPersonalAccessToken(
+        { label: 'LinkedIn extension' },
+        mockRequest,
+      );
+
+      await authController.revokePersonalAccessToken(created.id, mockRequest);
+
+      const tokens = await authController.listPersonalAccessTokens(mockRequest);
+      expect(tokens[0].revokedAt).toBeInstanceOf(Date);
+    });
+  });
 });
