@@ -21,6 +21,8 @@ import type { RefreshTokenRepository } from './domain/refresh-token.repository';
 import type { UserRepository } from './domain/user.repository';
 import { generateToken, hashToken } from './infrastructure/token-crypto';
 import { renderTransactionalEmail } from '../utils/transactional-email.template';
+import { PersonalAccessToken } from './domain/personal-access-token';
+import type { PersonalAccessTokenRepository } from './domain/personal-access-token.repository';
 
 export const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 export const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
@@ -63,6 +65,8 @@ export class AuthService {
     private readonly passwordResetTokenRepository: PasswordResetTokenRepository,
     @Inject('EmailVerificationTokenRepository')
     private readonly emailVerificationTokenRepository: EmailVerificationTokenRepository,
+    @Inject('PersonalAccessTokenRepository')
+    private readonly personalAccessTokenRepository: PersonalAccessTokenRepository,
     @Inject('EmailSender')
     private readonly emailSender: EmailSender,
     private readonly jwtService: JwtService,
@@ -121,6 +125,76 @@ export class AuthService {
           "This link expires in 1 hour. If you didn't create this account, you can safely ignore this email.",
       }),
     });
+  }
+
+  async createPersonalAccessToken(
+    userId: string,
+    input: { label: string; expiresAt?: Date },
+  ): Promise<{
+    id: string;
+    label: string;
+    token: string;
+    expiresAt?: Date;
+    createdAt: Date;
+  }> {
+    const rawToken = generateToken();
+    const personalAccessToken = PersonalAccessToken.create({
+      userId,
+      tokenHash: hashToken(rawToken),
+      label: input.label,
+      expiresAt: input.expiresAt,
+    });
+
+    await this.personalAccessTokenRepository.save(personalAccessToken);
+
+    return {
+      id: personalAccessToken.id,
+      label: personalAccessToken.label,
+      token: rawToken,
+      expiresAt: personalAccessToken.expiresAt,
+      createdAt: personalAccessToken.createdAt,
+    };
+  }
+
+  async listPersonalAccessTokens(userId: string): Promise<
+    Array<{
+      id: string;
+      label: string;
+      createdAt: Date;
+      expiresAt?: Date;
+      lastUsedAt?: Date;
+      revokedAt?: Date;
+    }>
+  > {
+    const personalAccessTokens =
+      await this.personalAccessTokenRepository.findAllByUserId(userId);
+
+    return personalAccessTokens.map((personalAccessToken) => ({
+      id: personalAccessToken.id,
+      label: personalAccessToken.label,
+      createdAt: personalAccessToken.createdAt,
+      expiresAt: personalAccessToken.expiresAt,
+      lastUsedAt: personalAccessToken.lastUsedAt,
+      revokedAt: personalAccessToken.revokedAt,
+    }));
+  }
+
+  async revokePersonalAccessToken(
+    userId: string,
+    tokenId: string,
+  ): Promise<void> {
+    const personalAccessToken =
+      await this.personalAccessTokenRepository.findById(tokenId);
+
+    if (!personalAccessToken) {
+      throw new NotFoundException('personal access token not found');
+    }
+
+    if (personalAccessToken.userId !== userId) {
+      throw new UnauthorizedException('personal access token not found');
+    }
+
+    await this.personalAccessTokenRepository.save(personalAccessToken.revoke());
   }
 
   private async sendEmail(input: {

@@ -8,6 +8,7 @@ import type { UserResponse } from './dto/user-response.dto';
 import { FakeEmailSender } from './test-utils/fakes/email-sender.fake';
 import { FakeEmailVerificationTokenRepository } from './test-utils/fakes/email-verification-token.repository.fake';
 import { FakePasswordHasher } from './test-utils/fakes/password-hasher.fake';
+import { FakePersonalAccessTokenRepository } from './test-utils/fakes/personal-access-token.repository.fake';
 import { FakePasswordResetTokenRepository } from './test-utils/fakes/password-reset-token.repository.fake';
 import { FakeRefreshTokenRepository } from './test-utils/fakes/refresh-token.repository.fake';
 import { FakeUserRepository } from './test-utils/fakes/user.repository.fake';
@@ -25,6 +26,7 @@ describe('AuthController', () => {
       new FakeRefreshTokenRepository(),
       new FakePasswordResetTokenRepository(),
       new FakeEmailVerificationTokenRepository(),
+      new FakePersonalAccessTokenRepository(),
       new FakeEmailSender(),
       new JwtService({ secret: 'test-secret' }),
     );

@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Patch,
   Post,
   Req,
@@ -15,6 +17,7 @@ import { Throttle } from '@nestjs/throttler';
 import { generateCsrfToken } from '../csrf.config';
 import { AuthService, REFRESH_TOKEN_TTL_MS } from './auth.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { CreatePersonalAccessTokenDto } from './dto/create-personal-access-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -184,6 +187,33 @@ export class AuthController {
       revokeOtherSessions: dto.revokeOtherSessions,
       currentRawRefreshToken,
     });
+  }
+
+  @Post('personal-access-tokens')
+  @UseGuards(JwtAuthGuard)
+  async createPersonalAccessToken(
+    @Body() dto: CreatePersonalAccessTokenDto,
+    @Req() request: Request,
+  ) {
+    return this.authService.createPersonalAccessToken(request.user!.id, {
+      label: dto.label,
+      expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined,
+    });
+  }
+
+  @Get('personal-access-tokens')
+  @UseGuards(JwtAuthGuard)
+  async listPersonalAccessTokens(@Req() request: Request) {
+    return this.authService.listPersonalAccessTokens(request.user!.id);
+  }
+
+  @Delete('personal-access-tokens/:id')
+  @UseGuards(JwtAuthGuard)
+  async revokePersonalAccessToken(
+    @Param('id') id: string,
+    @Req() request: Request,
+  ): Promise<void> {
+    await this.authService.revokePersonalAccessToken(request.user!.id, id);
   }
 
   @Post('forgot-password')
