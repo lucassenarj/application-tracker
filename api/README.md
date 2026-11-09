@@ -18,6 +18,7 @@ Backend service for [Application Tracker](../README.md), a personal portfolio pr
 - `applications/` — the `Application` aggregate and its status state machine.
 - `companies/` — the shared `Company` entity.
 - `tags/` — tagging for applications.
+- `external/` — the personal-access-token-authenticated API for third-party clients (currently: creating an `Application`, used by the Chrome extension).
 - `observability/` — the request-logging interceptor and Axiom client.
 - `utils/` — small stateless cross-module helpers (e.g. the transactional email template).
 
