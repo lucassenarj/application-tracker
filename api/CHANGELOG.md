@@ -1,3 +1,14 @@
+# [api-v1.17.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.16.0...api-v1.17.0) (2026-11-09)
+
+
+### Features
+
+* **application:** findByExternalUrlForUser, export ApplicationsService ([cb0a5e8](https://github.com/lucassenarj/application-tracker/commit/cb0a5e881c37b4f93f0bc42e1a27559fe0ff75bc))
+* **authentication:** personal access token management + ApiTokenGuard ([721a41f](https://github.com/lucassenarj/application-tracker/commit/721a41fa788219752458e03e84c322bd5c2eb7f6))
+* **authentication:** PersonalAccessToken domain entity ([996ec23](https://github.com/lucassenarj/application-tracker/commit/996ec23d65d28e27f93e9a48508a198f29b10bf7))
+* **authentication:** PersonalAccessToken repository ([068f18d](https://github.com/lucassenarj/application-tracker/commit/068f18d568138d9228281cb8e24c743e23944f41))
+* **external:** personal-access-token-authenticated application capture ([8e29e2d](https://github.com/lucassenarj/application-tracker/commit/8e29e2d69de33c33e7b8f9eac60d1fc0fcbad652))
+
 # [api-v1.16.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.15.1...api-v1.16.0) (2026-11-05)
 
 
