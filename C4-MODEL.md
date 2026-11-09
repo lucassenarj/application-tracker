@@ -96,6 +96,8 @@ C4Component
         Component(identityService, "IdentityService", "NestJS Service", "Auth orchestration: JWT cookies (decision 10), password reset, email verification (decision 33)")
         Component(userRepo, "UserRepository", "Repository", "Maps Prisma types to the User aggregate")
         Component(appController, "AppController", "NestJS Controller", "GET /health — dedicated keep-alive endpoint (decision 36)")
+        Component(externalController, "ExternalController", "NestJS Controller", "POST /external/applications — personal-access-token-authenticated capture endpoint, for third-party clients (decision 39)")
+        Component(apiTokenGuard, "ApiTokenGuard", "NestJS Guard", "Bearer personal-access-token auth, scoped to ExternalController only (decision 39)")
         Component(loggingInterceptor, "LoggingInterceptor", "NestJS Interceptor, global APP_INTERCEPTOR", "Logs every request via the response's native 'finish' event, excludes /health (decision 35)")
         Component(throttlerGuard, "ThrottlerGuard", "NestJS Guard, global APP_GUARD", "Per-IP rate limiting, tiered by route (decision 34)")
         Component(prisma, "PrismaService", "Shared infra", "Hand-written wrapper around Prisma Client")
@@ -123,9 +125,11 @@ C4Component
     Rel(loggingInterceptor, axiom, "Logs every request to (decision 35)")
     Rel(throttlerGuard, appsController, "Guards (and every other controller — global APP_GUARD)")
     Rel(loggingInterceptor, appsController, "Wraps (and every other controller — global APP_INTERCEPTOR)")
+    Rel(apiTokenGuard, externalController, "Guards")
+    Rel(externalController, appsService, "Calls (reuses company/tag resolution, decision 39)")
 ```
 
-The `ApplicationsController`/`Service`/`Repository`/domain group, `Companies*`, `Tags*`, and `Identity*` are four bounded-context modules (`ApplicationsModule`, `CompaniesModule`, `TagsModule`, `IdentityModule`, decisions 7 and 30) living inside the one container — `PrismaService` is the only thing all of them share. `ApplicationsModule` imports `CompaniesModule` and `TagsModule` to reach their exported services; it never imports their repositories. `LoggingInterceptor` and `ThrottlerGuard` are cross-cutting, registered globally (`APP_INTERCEPTOR`/`APP_GUARD`) rather than per-module — the diagram only draws their relation to one controller to avoid redrawing the same arrow at every box. `AppController`'s `/health` route is deliberately outside both the Applications and Identity bounded contexts and excluded from `LoggingInterceptor` (decision 36).
+The `ApplicationsController`/`Service`/`Repository`/domain group, `Companies*`, `Tags*`, and `Identity*` are four bounded-context modules (`ApplicationsModule`, `CompaniesModule`, `TagsModule`, `IdentityModule`, decisions 7 and 30) living inside the one container — `PrismaService` is the only thing all of them share. `ApplicationsModule` imports `CompaniesModule` and `TagsModule` to reach their exported services; it never imports their repositories. `ExternalModule` (decision 39) is a fifth, deliberately thin module: it imports `IdentityModule` for `ApiTokenGuard` and `ApplicationsModule` for `ApplicationsService`, reusing both rather than owning any domain logic of its own. `LoggingInterceptor` and `ThrottlerGuard` are cross-cutting, registered globally (`APP_INTERCEPTOR`/`APP_GUARD`) rather than per-module — the diagram only draws their relation to one controller to avoid redrawing the same arrow at every box. `AppController`'s `/health` route is deliberately outside both the Applications and Identity bounded contexts and excluded from `LoggingInterceptor` (decision 36).
 
 ---
 
