@@ -26,4 +26,5 @@ export default defineManifest({
     js: ['src/content/main.tsx'],
     matches: ['https://www.linkedin.com/jobs/view/*'],
   }],
+  options_page: 'src/options/index.html',
 })
