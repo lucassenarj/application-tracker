@@ -4,6 +4,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ApplicationsModule } from './applications/applications.module';
+import { ExternalModule } from './external/external.module';
 import { IdentityModule } from './identity/identity.module';
 import { LoggingInterceptor } from './observability/logging.interceptor';
 import { TagsModule } from './tags/tags.module';
@@ -29,6 +30,7 @@ import {
       },
     ]),
     ApplicationsModule,
+    ExternalModule,
     IdentityModule,
     TagsModule,
   ],

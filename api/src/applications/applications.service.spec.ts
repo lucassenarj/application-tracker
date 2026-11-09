@@ -870,4 +870,33 @@ describe('ApplicationsService', () => {
       ]);
     });
   });
+
+  describe('findByExternalUrlForUser', () => {
+    it('returns the Application matching the given externalUrl for the user', async () => {
+      const newApplication = await applicationService.create({
+        title: 'Senior Backend Engineer',
+        companyName: 'Acme Corp',
+        userId: 'user-1',
+        externalUrl: 'https://www.linkedin.com/jobs/view/123',
+      });
+
+      const foundApplication =
+        await applicationService.findByExternalUrlForUser(
+          'https://www.linkedin.com/jobs/view/123',
+          'user-1',
+        );
+
+      expect(foundApplication?.id).toBe(newApplication.id);
+    });
+
+    it('returns null when no Application matches the given externalUrl for the user', async () => {
+      const foundApplication =
+        await applicationService.findByExternalUrlForUser(
+          'https://www.linkedin.com/jobs/view/999',
+          'user-1',
+        );
+
+      expect(foundApplication).toBeNull();
+    });
+  });
 });

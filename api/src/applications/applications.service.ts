@@ -102,6 +102,16 @@ export class ApplicationsService {
     return application;
   }
 
+  async findByExternalUrlForUser(
+    externalUrl: string,
+    userId: string,
+  ): Promise<Application | null> {
+    return this.applicationRepository.findByExternalUrlAndUserId(
+      externalUrl,
+      userId,
+    );
+  }
+
   private async resolveTagIds(tagNames?: string[]): Promise<string[]> {
     if (!tagNames) return [];
 

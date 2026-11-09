@@ -13,6 +13,7 @@ import { hashToken } from './infrastructure/token-crypto';
 import { FakeEmailSender } from './test-utils/fakes/email-sender.fake';
 import { FakeEmailVerificationTokenRepository } from './test-utils/fakes/email-verification-token.repository.fake';
 import { FakePasswordHasher } from './test-utils/fakes/password-hasher.fake';
+import { FakePersonalAccessTokenRepository } from './test-utils/fakes/personal-access-token.repository.fake';
 import { FakePasswordResetTokenRepository } from './test-utils/fakes/password-reset-token.repository.fake';
 import { FakeRefreshTokenRepository } from './test-utils/fakes/refresh-token.repository.fake';
 import { FakeUserRepository } from './test-utils/fakes/user.repository.fake';
@@ -28,6 +29,7 @@ describe('AuthService', () => {
   let refreshTokenRepository: FakeRefreshTokenRepository;
   let passwordResetTokenRepository: FakePasswordResetTokenRepository;
   let emailVerificationTokenRepository: FakeEmailVerificationTokenRepository;
+  let personalAccessTokenRepository: FakePersonalAccessTokenRepository;
   let emailSender: FakeEmailSender;
   let jwtService: JwtService;
 
@@ -38,6 +40,7 @@ describe('AuthService', () => {
     passwordResetTokenRepository = new FakePasswordResetTokenRepository();
     emailVerificationTokenRepository =
       new FakeEmailVerificationTokenRepository();
+    personalAccessTokenRepository = new FakePersonalAccessTokenRepository();
     emailSender = new FakeEmailSender();
     jwtService = new JwtService({ secret: 'test-secret' });
     authService = new AuthService(
@@ -46,6 +49,7 @@ describe('AuthService', () => {
       refreshTokenRepository,
       passwordResetTokenRepository,
       emailVerificationTokenRepository,
+      personalAccessTokenRepository,
       emailSender,
       jwtService,
     );
@@ -863,6 +867,109 @@ describe('AuthService', () => {
       await expect(authService.verifyEmail(rawToken)).rejects.toThrow(
         UnauthorizedException,
       );
+    });
+  });
+
+  describe('createPersonalAccessToken', () => {
+    let result: Awaited<
+      ReturnType<typeof authService.createPersonalAccessToken>
+    >;
+
+    beforeEach(async () => {
+      result = await authService.createPersonalAccessToken('user-1', {
+        label: 'LinkedIn extension',
+      });
+    });
+
+    it('creates a PersonalAccessToken and returns the plaintext token', async () => {
+      const persistedToken =
+        await personalAccessTokenRepository.findByTokenHash(
+          hashToken(result.token),
+        );
+      expect(persistedToken?.userId).toBe('user-1');
+      expect(result.label).toBe('LinkedIn extension');
+    });
+
+    it('persists only the hash, never the plaintext', async () => {
+      const persistedToken =
+        await personalAccessTokenRepository.findByTokenHash(
+          hashToken(result.token),
+        );
+      expect(persistedToken?.tokenHash).not.toBe(result.token);
+    });
+
+    it('creates a PersonalAccessToken without expiresAt when none is provided', () => {
+      expect(result.expiresAt).toBeUndefined();
+    });
+  });
+
+  describe('listPersonalAccessTokens', () => {
+    let tokens: Awaited<
+      ReturnType<typeof authService.listPersonalAccessTokens>
+    >;
+
+    beforeEach(async () => {
+      await authService.createPersonalAccessToken('user-1', {
+        label: 'Token A',
+      });
+      await authService.createPersonalAccessToken('user-1', {
+        label: 'Token B',
+      });
+      await authService.createPersonalAccessToken('user-2', {
+        label: 'Other user token',
+      });
+
+      tokens = await authService.listPersonalAccessTokens('user-1');
+    });
+
+    it('returns metadata for every PersonalAccessToken belonging to the user', () => {
+      expect(tokens).toHaveLength(2);
+      expect(tokens.map((token) => token.label)).toEqual(
+        expect.arrayContaining(['Token A', 'Token B']),
+      );
+    });
+
+    it('never includes the tokenHash', () => {
+      tokens.forEach((token) => {
+        expect(token).not.toHaveProperty('tokenHash');
+      });
+    });
+
+    it('does not return tokens belonging to a different user', () => {
+      expect(tokens.map((token) => token.label)).not.toContain(
+        'Other user token',
+      );
+    });
+  });
+
+  describe('revokePersonalAccessToken', () => {
+    let tokenId: string;
+
+    beforeEach(async () => {
+      const result = await authService.createPersonalAccessToken('user-1', {
+        label: 'LinkedIn extension',
+      });
+      tokenId = result.id;
+    });
+
+    it('revokes the PersonalAccessToken', async () => {
+      await authService.revokePersonalAccessToken('user-1', tokenId);
+
+      const persistedToken =
+        await personalAccessTokenRepository.findById(tokenId);
+      expect(persistedToken?.revokedAt).toBeInstanceOf(Date);
+    });
+
+    it('throws a NotFoundException when no PersonalAccessToken matches the given id', async () => {
+      await expect(
+        authService.revokePersonalAccessToken('user-1', 'nonexistent-id'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws an UnauthorizedException when the PersonalAccessToken belongs to a different user', async () => {
+      await expect(
+        authService.revokePersonalAccessToken('user-2', tokenId),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 });
