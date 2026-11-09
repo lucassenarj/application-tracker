@@ -1,3 +1,13 @@
+# [frontend-v1.6.0](https://github.com/lucassenarj/application-tracker/compare/frontend-v1.5.0...frontend-v1.6.0) (2026-11-09)
+
+
+### Features
+
+* **authentication:** add a reusable AlertDialog UI primitive ([4eb365c](https://github.com/lucassenarj/application-tracker/commit/4eb365c572562e7a5bc90d07c409a728c986b5c9))
+* **authentication:** API Tokens page ([35273fc](https://github.com/lucassenarj/application-tracker/commit/35273fcb6e7f22d5b1b12bfcdb2c4c1f16d1b0d5))
+* **authentication:** create-personal-access-token dialog ([1978db9](https://github.com/lucassenarj/application-tracker/commit/1978db9f175467c70ff8776bea78eae76b76b466))
+* **authentication:** personal access token data layer ([c47e342](https://github.com/lucassenarj/application-tracker/commit/c47e342bf25e72e18c7da867cbc02df4693ed95c))
+
 # [frontend-v1.5.0](https://github.com/lucassenarj/application-tracker/compare/frontend-v1.4.1...frontend-v1.5.0) (2026-11-05)
 
 
