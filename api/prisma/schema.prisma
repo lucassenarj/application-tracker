@@ -108,6 +108,7 @@ model User {
   refreshTokens           RefreshToken[]
   passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
+  personalAccessTokens    PersonalAccessToken[]
 }
 
 model RefreshToken {
@@ -133,6 +134,21 @@ model PasswordResetToken {
   expiresAt DateTime
   createdAt DateTime  @default(now())
   usedAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model PersonalAccessToken {
+  id         String    @id @default(uuid())
+  userId     String
+  tokenHash  String    @unique
+  label      String
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id])
 
