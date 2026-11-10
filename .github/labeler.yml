@@ -6,6 +6,10 @@ frontend:
   - changed-files:
       - any-glob-to-any-file: 'frontend/**'
 
+chrome-extension:
+  - changed-files:
+      - any-glob-to-any-file: 'chrome-extension/**'
+
 ci:
   - changed-files:
       - any-glob-to-any-file:
