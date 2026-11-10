@@ -31,6 +31,7 @@ export default function App() {
 
   return (
     <div className="options">
+      <img src="/logo.png" alt="Application Tracker" className="logo" />
       <h1>Application Tracker for LinkedIn</h1>
       <p className="status">
         {hasStoredToken ? 'Token configured.' : 'No token configured.'}

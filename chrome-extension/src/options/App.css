@@ -1,45 +1,70 @@
 .options {
-  font-family: system-ui, sans-serif;
+  width: 100%;
   max-width: 420px;
-  margin: 0 auto;
-  padding: 2rem;
+  margin: 2rem;
+  padding: 2.5rem 2rem;
   color: var(--foreground);
-  background-color: var(--background);
+  background-color: var(--card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+}
+
+.logo {
+  display: block;
+  height: auto;
+  width: 160px;
+  max-width: 100%;
+  margin: 0 auto 1rem;
+}
+
+h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+  text-align: center;
 }
 
 .status {
+  text-align: center;
   color: var(--muted-foreground);
   font-size: 0.875rem;
+  margin: 0 0 1.5rem;
 }
 
 label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
+  font-size: 0.875rem;
 }
 
 input {
   width: 100%;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--border);
-  background-color: var(--card);
+  background-color: var(--background);
   color: var(--foreground);
   border-radius: var(--radius);
   box-sizing: border-box;
+  font-size: 0.9rem;
 }
 
 .actions {
   display: flex;
   gap: 0.5rem;
-  margin-top: 1rem;
+  margin-top: 1.25rem;
 }
 
 button {
-  padding: 0.5rem 1rem;
+  flex: 1;
+  padding: 0.6rem 1rem;
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
   font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .actions button:first-child {
@@ -50,4 +75,11 @@ button {
 .actions button:last-child {
   background-color: var(--destructive);
   color: var(--destructive-foreground);
+}
+
+[role='status'] {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
 }
