@@ -1,52 +1,34 @@
-# React + Vite + CRXJS
+# Application Tracker Chrome Extension
 
-This template helps you quickly start developing Chrome extensions with React, TypeScript and Vite. It includes the CRXJS Vite plugin for seamless Chrome extension development.
+Chrome extension for [Application Tracker](../README.md), a personal portfolio project. Captures a LinkedIn job posting into Application Tracker in one click, via a Personal Access Token rather than the web session's auth. This README covers how to run, test, and work on this app specifically — for architecture decisions, see the root `README.md`'s "Chrome Extension" section and `DECISIONS.md` #39.
 
-## Features
+## Tech stack
+- **React 19 + [Vite](https://vite.dev) + TypeScript**, bundled via **[@crxjs/vite-plugin](https://crxjs.dev)** for Manifest V3 support.
+- **No background service worker** — the popup talks directly to the content script (`chrome.tabs.sendMessage`) and to the API, no intermediary.
+- **Vitest + Testing Library** — unit and component tests.
+- **oxlint** — linting.
+- No shared design-system package with `frontend/` — just the color token *values* copied into `src/styles/tokens.css`, with hand-built plain form elements.
 
-- React with TypeScript
-- TypeScript support
-- Vite build tool
-- CRXJS Vite plugin integration
-- Chrome extension manifest configuration
+## Structure
+- `src/content/` — the content script: extracts title/company/description/skills from the LinkedIn job page (JSON-LD first, DOM fallback otherwise), and responds to the popup's request for that data.
+- `src/popup/` — the popup UI: shows the extracted data as an editable form before submitting.
+- `src/options/` — the options page: where the Personal Access Token is pasted/stored (`chrome.storage.local`).
+- `src/lib/` — cross-context logic: token storage, the API client call, and the message bridge to the content script.
 
-## Quick Start
+## Local setup
+1. Install dependencies: `yarn install`
+2. Copy the env file and fill in real values: `cp .env.example .env.local`
+3. Build the extension: `yarn dev` (watches and rebuilds) or `yarn build` (one-off)
+4. Load it into Chrome: go to `chrome://extensions`, enable "Developer mode", click "Load unpacked", and select the `dist/` folder.
 
-1. Install dependencies:
+## Getting a Personal Access Token
+Generate one from the web app's "API Tokens" page (`frontend/`, under Settings), then paste it into the extension's options page (right-click the extension icon → Options, or use the "Open Settings" link in the popup).
 
-```bash
-npm install
-```
+## Testing
+- `yarn test` — run once
+- `yarn test:watch` — watch mode
 
-2. Start development server:
-
-```bash
-npm run dev
-```
-
-3. Open Chrome and navigate to `chrome://extensions/`, enable "Developer mode", and load the unpacked extension from the `dist` directory.
-
-4. Build for production:
-
-```bash
-npm run build
-```
-
-## Project Structure
-
-- `src/popup/` - Extension popup UI
-- `src/content/` - Content scripts
-- `manifest.config.ts` - Chrome extension manifest configuration
-
-## Documentation
-
-- [React Documentation](https://reactjs.org/)
-- [Vite Documentation](https://vitejs.dev/)
-- [CRXJS Documentation](https://crxjs.dev/vite-plugin)
-
-## Chrome Extension Development Notes
-
-- Use `manifest.config.ts` to configure your extension
-- The CRXJS plugin automatically handles manifest generation
-- Content scripts should be placed in `src/content/`
-- Popup UI should be placed in `src/popup/`
+## Build & type checking
+- `yarn build` — type-checks and builds
+- `yarn typecheck`
+- `yarn lint`
