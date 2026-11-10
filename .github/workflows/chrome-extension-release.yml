@@ -1,0 +1,34 @@
+name: chrome-extension-release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'chrome-extension/**'
+
+defaults:
+  run:
+    working-directory: chrome-extension
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+          cache-dependency-path: chrome-extension/yarn.lock
+      - run: yarn install --immutable
+      - run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,72 @@
+name: chrome-extension-ci
+
+on:
+  pull_request:
+    paths:
+      - 'chrome-extension/**'
+      - '.github/workflows/chrome-extension-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'chrome-extension/**'
+      - '.github/workflows/chrome-extension-ci.yml'
+
+defaults:
+  run:
+    working-directory: chrome-extension
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+          cache-dependency-path: chrome-extension/yarn.lock
+      - run: yarn install --immutable
+      - run: yarn lint
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+          cache-dependency-path: chrome-extension/yarn.lock
+      - run: yarn install --immutable
+      - run: yarn typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+          cache-dependency-path: chrome-extension/yarn.lock
+      - run: yarn install --immutable
+      - run: yarn test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+          cache-dependency-path: chrome-extension/yarn.lock
+      - run: yarn install --immutable
+      - run: yarn build
+        env:
+          VITE_API_URL: https://api.application-tracker.lucassenarj.dev
+          VITE_FRONTEND_URL: https://application-tracker.lucassenarj.dev

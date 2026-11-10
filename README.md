@@ -68,6 +68,14 @@ One deployable service, not microservices - a Go-style gateway-plus-services spl
 - **Auth:** JWT in an httpOnly cookie scoped to `.application-tracker.lucassenarj.dev`, so it's sent automatically to `api.application-tracker.lucassenarj.dev`. CORS configured for credentials plus the explicit frontend origin. Chosen over a bearer-token-in-header approach for XSS resistance. Access + refresh token split with rotation/reuse detection, Argon2id password hashing, and an explicit double-submit CSRF token: see `DECISIONS.md` #26–28. A second mechanism, personal access tokens, exists for third-party/programmatic clients (currently the Chrome extension), deliberately scoped to a single route rather than full account access: see `DECISIONS.md` #39.
 - **Test pyramid:** unit tests on the domain layer (state machine, aggregates - no DB), integration tests on repositories (real Postgres), e2e tests on the HTTP layer.
 
+### Chrome Extension
+- **Framework: React + Vite, TypeScript**, bundled via `@crxjs/vite-plugin` (Manifest V3). Separate `yarn` project, same independent-project pattern as `api`/`frontend` — no shared workspace tooling.
+- **Auth: Personal Access Tokens**, not the web session's cookie-based auth — decouples the extension's auth lifecycle from the frontend's 15-minute JWT refresh dance. See `DECISIONS.md` #39.
+- **No background service worker.** The popup is already an extension-privileged context, so it talks directly to the content script (`chrome.tabs.sendMessage`) and to the API, with no intermediary.
+- **Extraction strategy:** JSON-LD (`<script type="application/ld+json">`) first when LinkedIn provides it, falling back to DOM scraping (anchored on stable attributes like `data-testid`, never LinkedIn's rotating/hashed utility classes) otherwise — confirmed necessary against real saved postings, since JSON-LD turned out to be absent on most of them.
+- **Skills:** best-effort only — matched against a small known-skills dictionary scanned over the extracted description, since LinkedIn's own `skills` JSON-LD field is unreliable/empty in practice and there's no dedicated DOM element for it either. Manual entry in the popup's form is the primary path.
+- **No shared design-system package with `frontend/`** — just the color token values copied into a small local stylesheet, with hand-built plain form elements instead of the frontend's full component library.
+
 ### Infrastructure
 - **Local dev:** full self-hosted-style stack via Docker Compose — `nginx` (reverse proxy, TLS via mkcert), `api`, and (once scaffolded) `frontend`/`db` containers, kept ready to redeploy as-is to a VPS in a later phase. See `DECISIONS.md` #23.
 - **Public deploy (phase 1, this week):** no self-hosted reverse proxy — Vercel and Render each handle their own routing/TLS. See Deploy below and `DECISIONS.md` #24.

@@ -1,0 +1,6 @@
+@import '../styles/tokens.css';
+
+body {
+  margin: 0;
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
