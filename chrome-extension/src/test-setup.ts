@@ -1,12 +1,19 @@
 import '@testing-library/jest-dom/vitest'
 
 export const fetchMock = vi.fn()
+export const chromeTabsQueryMock = vi.fn()
+export const chromeTabsSendMessageMock = vi.fn()
+export const chromeRuntimeOpenOptionsPageMock = vi.fn()
 
 const storageData: Record<string, unknown> = {}
 
 beforeEach(() => {
   fetchMock.mockReset()
   vi.stubGlobal('fetch', fetchMock)
+
+  chromeTabsQueryMock.mockReset()
+  chromeTabsSendMessageMock.mockReset()
+  chromeRuntimeOpenOptionsPageMock.mockReset()
 
   for (const key of Object.keys(storageData)) {
     delete storageData[key]
@@ -32,6 +39,13 @@ beforeEach(() => {
           return Promise.resolve()
         }),
       },
+    },
+    tabs: {
+      query: chromeTabsQueryMock,
+      sendMessage: chromeTabsSendMessageMock,
+    },
+    runtime: {
+      openOptionsPage: chromeRuntimeOpenOptionsPageMock,
     },
   })
 })
