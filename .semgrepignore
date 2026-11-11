@@ -1,0 +1,7 @@
+
+# nginx/conf.d/default.conf's generic.nginx.security.request-host-used finding
+# is a false positive: $host is read only as the map block's own allow-list
+# input (map $host $safe_host { ... }), which IS the rule's recommended fix.
+# Inline nosemgrep suppression doesn't take effect for this generic-mode rule,
+# so the file is excluded here instead. See DECISIONS.md #40.
+nginx/conf.d/default.conf
