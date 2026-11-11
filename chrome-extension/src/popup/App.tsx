@@ -65,6 +65,7 @@ export default function App() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
+    if (status === 'submitting') return
     setStatus('submitting')
 
     try {
