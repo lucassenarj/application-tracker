@@ -1,3 +1,10 @@
+# [api-v1.17.1](https://github.com/lucassenarj/application-tracker/compare/api-v1.17.0...api-v1.17.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* **docker:** run dev containers as non-root ([168f9e0](https://github.com/lucassenarj/application-tracker/commit/168f9e09c822bc4983448406d5aabd99ffc3d529))
+
 # [api-v1.17.0](https://github.com/lucassenarj/application-tracker/compare/api-v1.16.0...api-v1.17.0) (2026-11-09)
 
 
