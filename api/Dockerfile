@@ -3,16 +3,19 @@
 
 FROM node:22-slim
 
-WORKDIR /app
-
 RUN corepack enable
 
 RUN apt-get update -y && apt-get install -y openssl git && rm -rf /var/lib/apt/lists/*
 
-COPY package.json yarn.lock .yarnrc.yml ./
+WORKDIR /app
+RUN chown node:node /app
+
+USER node
+
+COPY --chown=node:node package.json yarn.lock .yarnrc.yml ./
 RUN yarn install
 
-COPY . .
+COPY --chown=node:node . .
 
 EXPOSE 3000
 
