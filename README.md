@@ -127,6 +127,7 @@ Beyond the three deploy platforms above, the running app depends on:
 - **[Backblaze B2](https://www.backblaze.com/cloud-storage)** — private bucket storing daily database backups (30-day lifecycle, 7-day Object Lock), uploaded by a scheduled GitHub Actions workflow.
 - **[cron-job.org](https://cron-job.org)** — pings the API's `/health` endpoint every 10 minutes on weekdays to keep Render's free-tier backend from cold-starting during likely-traffic hours.
 - **GitHub Actions** — the daily database backup workflow and the keep-alive ping above, plus CI.
+- **[Semgrep](https://semgrep.dev)** — static code analysis (SAST) on every PR and push to `main`, using free community rulesets (OWASP Top 10, security-audit, JS/TS). Results land in GitHub's Security → Code Scanning tab — no account or token needed.
 
 Full rationale for each is in `DECISIONS.md` and `notes/backend-hardening/`.
 

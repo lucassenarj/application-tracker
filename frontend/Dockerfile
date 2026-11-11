@@ -3,14 +3,17 @@
 
 FROM node:22-slim
 
-WORKDIR /app
-
 RUN corepack enable
 
-COPY package.json yarn.lock .yarnrc.yml ./
+WORKDIR /app
+RUN chown node:node /app
+
+USER node
+
+COPY --chown=node:node package.json yarn.lock .yarnrc.yml ./
 RUN yarn install
 
-COPY . .
+COPY --chown=node:node . .
 
 EXPOSE 5173
 
