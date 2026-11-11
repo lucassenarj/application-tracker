@@ -1,3 +1,10 @@
+# [chrome-extension-v1.0.1](https://github.com/lucassenarj/application-tracker/compare/chrome-extension-v1.0.0...chrome-extension-v1.0.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* **popup:** guard handleSubmit against re-entry while submitting ([ee934ed](https://github.com/lucassenarj/application-tracker/commit/ee934ed92ba3afbc5670a1bcf5e1a328e7f8ed6b))
+
 # chrome-extension-v1.0.0 (2026-11-10)
 
 
