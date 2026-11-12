@@ -8,6 +8,7 @@ import { Badge, badgeVariants } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
@@ -85,6 +86,21 @@ export function ApplicationsPage() {
       : [...current, tag]
     setTags(next)
   }
+
+  const renderTagButton = (tag: string) => (
+    <button
+      key={tag}
+      type="button"
+      className={cn(
+        badgeVariants({ variant: 'outline' }),
+        'h-auto cursor-pointer p-2 hover:bg-emerald-light/20',
+        tags?.includes(tag) && 'bg-accent',
+      )}
+      onClick={() => toggleTagFilter(tag)}
+    >
+      {tag}
+    </button>
+  )
 
   const goToPage = (nextPage: number) => {
     navigate({
@@ -199,22 +215,31 @@ export function ApplicationsPage() {
                           {item.title}
                         </TableCell>
                         <TableCell>{item.companyName}</TableCell>
-                        <TableCell>
+                        <TableCell className="whitespace-normal">
                           <div className="flex flex-wrap gap-1">
-                            {item.tags.map((tag) => (
-                              <button
-                                key={tag}
-                                type="button"
-                                className={cn(
-                                  badgeVariants({ variant: 'outline' }),
-                                  'h-auto cursor-pointer p-2 hover:bg-emerald-light/20',
-                                  tags?.includes(tag) && 'bg-accent',
-                                )}
-                                onClick={() => toggleTagFilter(tag)}
-                              >
-                                {tag}
-                              </button>
-                            ))}
+                            {item.tags.slice(0, 3).map(renderTagButton)}
+                            {item.tags.length > 3 && (
+                              <Popover>
+                                <PopoverTrigger
+                                  render={
+                                    <button
+                                      type="button"
+                                      className={cn(
+                                        badgeVariants({ variant: 'outline' }),
+                                        'h-auto cursor-pointer p-2 hover:bg-emerald-light/20',
+                                      )}
+                                    >
+                                      +{item.tags.length - 3} more
+                                    </button>
+                                  }
+                                />
+                                <PopoverContent>
+                                  <div className="flex flex-wrap gap-1">
+                                    {item.tags.slice(3).map(renderTagButton)}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>

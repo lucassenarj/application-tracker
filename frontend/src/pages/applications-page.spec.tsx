@@ -308,6 +308,83 @@ describe('ApplicationsPage', () => {
     })
   })
 
+  describe('tag overflow', () => {
+    function mockItemsWithManyTags() {
+      fetchMock.mockImplementation(() =>
+        Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              items: [
+                buildApplicationListItem({
+                  tags: ['Remote', 'Dream Job', 'Urgent', 'Senior', 'Backend'],
+                }),
+              ],
+              total: 1,
+            }),
+        }),
+      )
+    }
+
+    it('shows at most 3 tags directly, with a "+N more" badge for the rest', async () => {
+      mockItemsWithManyTags()
+
+      renderWithRouter(routeTree, queryClient, '/applications?page=1')
+
+      expect(await screen.findByRole('button', { name: 'Remote' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Dream Job' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Urgent' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Senior' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Backend' })).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '+2 more' })).toBeInTheDocument()
+    })
+
+    it('clicking the "+N more" badge reveals the remaining tags', async () => {
+      const user = userEvent.setup()
+      mockItemsWithManyTags()
+
+      renderWithRouter(routeTree, queryClient, '/applications?page=1')
+
+      await user.click(await screen.findByRole('button', { name: '+2 more' }))
+
+      expect(await screen.findByRole('button', { name: 'Senior' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Backend' })).toBeInTheDocument()
+    })
+
+    it('clicking a tag revealed in the overflow popover toggles it as a filter', async () => {
+      const user = userEvent.setup()
+      mockItemsWithManyTags()
+
+      renderWithRouter(routeTree, queryClient, '/applications?page=1')
+
+      await user.click(await screen.findByRole('button', { name: '+2 more' }))
+      await user.click(await screen.findByRole('button', { name: 'Senior' }))
+
+      const lastCallUrl = fetchMock.mock.calls.at(-1)?.[0] as string
+      expect(lastCallUrl).toContain('tags=Senior')
+    })
+
+    it('does not show a "+N more" badge when there are 3 or fewer tags', async () => {
+      fetchMock.mockImplementation(() =>
+        Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              items: [
+                buildApplicationListItem({ tags: ['Remote', 'Dream Job', 'Urgent'] }),
+              ],
+              total: 1,
+            }),
+        }),
+      )
+
+      renderWithRouter(routeTree, queryClient, '/applications?page=1')
+
+      await screen.findByRole('button', { name: 'Remote' })
+      expect(screen.queryByText(/\+\d+ more/)).not.toBeInTheDocument()
+    })
+  })
+
   describe('pagination', () => {
     beforeEach(() => {
       fetchMock.mockImplementation(() =>
